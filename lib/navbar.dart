@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Import Font Awesome
-import 'portfolio_button.dart';
+import 'portfolio_button.dart'; // Custom Portfolio Button Widget
+import 'package:url_launcher/url_launcher.dart';
+
 
 class NavBar extends StatelessWidget {
   const NavBar({super.key});
@@ -8,7 +10,7 @@ class NavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 730, // Adjusted width to fit content
+      width: 630, // Adjusted width to fit content
       height: 60, // Height of the nav bar
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.8), // 80% black
@@ -33,10 +35,11 @@ class NavBar extends StatelessWidget {
                   print('About Me clicked');
                 },
                 child: const Text(
-                  'About me',
+                  'About Me',
                   style: TextStyle(
                     color: Colors.grey, // Lighter text for inactive
                     fontWeight: FontWeight.bold,
+                    fontSize: 16, // Added font size for better readability
                   ),
                 ),
               ),
@@ -52,22 +55,38 @@ class NavBar extends StatelessWidget {
                 IconButton(
                   icon: const FaIcon(FontAwesomeIcons.github), // GitHub icon
                   color: const Color(0xFF808080),
-                  onPressed: () {
-                    print('GitHub clicked');
+                  onPressed: () async {
+                    const url = 'https://github.com/LakshmanTurlapati';
+                    if (await canLaunchUrl(Uri.parse(url))) {
+                      await launchUrl(Uri.parse(url));
+                    } else {
+                      throw 'Could not launch $url';
+                    }
                   },
                 ),
                 IconButton(
                   icon: const FaIcon(FontAwesomeIcons.linkedin), // LinkedIn icon
                   color: const Color(0xFF808080),
-                  onPressed: () {
-                    print('LinkedIn clicked');
+                  onPressed: () async {
+                    const url =
+                        'https://www.linkedin.com/in/lakshman-turlapati-3091aa191/';
+                    if (await canLaunchUrl(Uri.parse(url))) {
+                      await launchUrl(Uri.parse(url));
+                    } else {
+                      throw 'Could not launch $url';
+                    }
                   },
                 ),
                 IconButton(
                   icon: const FaIcon(FontAwesomeIcons.twitter), // Twitter icon
                   color: const Color(0xFF808080),
-                  onPressed: () {
-                    print('Twitter clicked');
+                  onPressed: () async {
+                    const url = 'https://x.com/parzival1213';
+                    if (await canLaunchUrl(Uri.parse(url))) {
+                      await launchUrl(Uri.parse(url));
+                    } else {
+                      throw 'Could not launch $url';
+                    }
                   },
                 ),
               ],

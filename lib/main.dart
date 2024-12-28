@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'navbar.dart';
+import 'home_text.dart';
 
 void main() {
   runApp(const MyApp());
@@ -51,6 +52,7 @@ class _HomePageState extends State<HomePage> {
   bool isHovered = false;
 
   @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
@@ -63,36 +65,31 @@ class _HomePageState extends State<HomePage> {
                 end: Alignment.centerRight,
                 stops: [0.05, 0.4, 0.6, 0.95],
                 colors: [
-                  Color(0xFFFFFFFF), 
-                  Color(0xFFD0D0D0), 
-                  Color(0xFFD0D0D0), 
-                  Color(0xFFFFFFFF), 
+                  Color(0xFFFFFFFF), // Light gray on the left
+                  Color(0xFFD0D0D0), // Mid-gray in the center
+                  Color(0xFFD0D0D0), // Mid-gray in the center
+                  Color(0xFFFFFFFF), // Light gray on the right
                 ],
-              ),
-            ),
-            child: const Center(
-              child: Text(
-                'Home Page',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
               ),
             ),
           ),
 
-          
-       const Positioned(
-        top: 10,
-        left: 0,
-        right: 0,
-        child: Center(
-        child: NavBar(),
-        ),
-        ),
+          // Scrolling Text (Center of the screen)
+          const Center(
+            child: ScrollingText(), // Custom infinite scrolling text widget
+          ),
 
-          // Bottom Left Icons for Dark and Light Mode
+          // Navigation Bar at the Top
+          const Positioned(
+            top: 10,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: NavBar(), // Custom navigation bar widget
+            ),
+          ),
+
+          // Bottom Left: Dark/Light Mode Icons
           Positioned(
             bottom: 20,
             left: 20,
@@ -133,7 +130,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // Button in Bottom-Right Corner
+          // Bottom Right: Signature Button
           Positioned(
             bottom: 20,
             right: 20,

@@ -32,7 +32,6 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Dynamic Glowing Spread
             AnimatedBuilder(
               animation: _controller,
               builder: (context, child) {
@@ -42,27 +41,27 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
                     Colors.cyan, Colors.blue, cos(_controller.value * pi))!;
 
                 return Container(
-                  width: constraints.maxWidth * 1, // Slightly larger for spread
-                  height: constraints.maxHeight * 1, // Slightly larger for spread
+                  width: constraints.maxWidth * 1, 
+                  height: constraints.maxHeight * 1, 
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(25),
                     boxShadow: [
                       BoxShadow(
-                        color: animatedColor1.withOpacity(0.7), // Dynamic glow color
-                        blurRadius: 30, // Blur for glow effect
-                        spreadRadius: 5, // Spread to create glowing halo
+                        color: animatedColor1.withOpacity(0.5), 
+                        blurRadius: 20, 
+                        spreadRadius: 2, 
                       ),
                       BoxShadow(
-                        color: animatedColor2.withOpacity(0.5),
-                        blurRadius: 50,
-                        spreadRadius: 5,
+                        color: animatedColor2.withOpacity(0.4),
+                        blurRadius: 30,
+                        spreadRadius: 2,
                       ),
                     ],
                   ),
                 );
               },
             ),
-            // Button in the foreground
+           
             ElevatedButton(
               onPressed: () {
                 print('Portfolio clicked');
@@ -87,7 +86,7 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
                   'Portfolio',
                   style: TextStyle(
                     color: Colors.black,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     fontSize: 18,
                   ),
                 ),
