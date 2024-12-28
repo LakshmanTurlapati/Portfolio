@@ -32,27 +32,32 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Glowing Gradient Background
+            // Dynamic Glowing Spread
             AnimatedBuilder(
               animation: _controller,
               builder: (context, child) {
+                final animatedColor1 = Color.lerp(
+                    Colors.purple, Colors.cyan, sin(_controller.value * pi))!;
+                final animatedColor2 = Color.lerp(
+                    Colors.cyan, Colors.blue, cos(_controller.value * pi))!;
+
                 return Container(
-                  width: constraints.maxWidth,
-                  height: constraints.maxHeight,
+                  width: constraints.maxWidth * 1, // Slightly larger for spread
+                  height: constraints.maxHeight * 1, // Slightly larger for spread
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color.lerp(Colors.purple, Colors.cyan,
-                            sin(_controller.value * pi))!,
-                        Color.lerp(Colors.cyan, Colors.blue,
-                            cos(_controller.value * pi))!,
-                        Color.lerp(Colors.blue, Colors.purple,
-                            sin(_controller.value * pi))!,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(25),
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: animatedColor1.withOpacity(0.7), // Dynamic glow color
+                        blurRadius: 30, // Blur for glow effect
+                        spreadRadius: 5, // Spread to create glowing halo
+                      ),
+                      BoxShadow(
+                        color: animatedColor2.withOpacity(0.5),
+                        blurRadius: 50,
+                        spreadRadius: 5,
+                      ),
+                    ],
                   ),
                 );
               },
@@ -65,8 +70,8 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white, // Add a distinct background
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20), // Slightly smaller radius
-                  side: BorderSide(color: Colors.black.withOpacity(0), width: 0), // Add border
+                  borderRadius: BorderRadius.circular(20), // Button shape
+                  side: BorderSide(color: Colors.black.withOpacity(0), width: 0),
                 ),
                 shadowColor: Colors.transparent,
                 elevation: 5,
@@ -75,8 +80,8 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
               child: Container(
                 alignment: Alignment.center,
                 constraints: BoxConstraints(
-                  maxWidth: constraints.maxWidth * 0.95, // Slightly smaller than gradient
-                  maxHeight: constraints.maxHeight * 0.8, // Slightly smaller than gradient
+                  maxWidth: constraints.maxWidth * 0.95, // Button size
+                  maxHeight: constraints.maxHeight * 0.8,
                 ),
                 child: const Text(
                   'Portfolio',
