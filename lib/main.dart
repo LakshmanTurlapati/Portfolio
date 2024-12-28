@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'navbar.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,7 +14,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool isDarkMode = false; // Track dark mode state
+  bool isDarkMode = false; 
 
   void toggleTheme() {
     setState(() {
@@ -31,26 +32,30 @@ class _MyAppState extends State<MyApp> {
         textTheme: GoogleFonts.latoTextTheme(),
         primarySwatch: Colors.blue,
       ),
-      home: const HomePage(),
+      home: HomePage(toggleTheme: toggleTheme, isDarkMode: isDarkMode),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final VoidCallback toggleTheme;
+  final bool isDarkMode;
+
+  const HomePage({super.key, required this.toggleTheme, required this.isDarkMode});
 
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  bool isHovered = false; 
+  bool isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
+          // Background Gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -58,10 +63,10 @@ class _HomePageState extends State<HomePage> {
                 end: Alignment.centerRight,
                 stops: [0.05, 0.4, 0.6, 0.95],
                 colors: [
-                  Color(0xFFFFFFFF), // White at 5%
-                  Color(0xFFD0D0D0), // Light Gray at 40%
-                  Color(0xFFD0D0D0), // Light Gray at 60%
-                  Color(0xFFFFFFFF), // White at 95%
+                  Color(0xFFFFFFFF), 
+                  Color(0xFFD0D0D0), 
+                  Color(0xFFD0D0D0), 
+                  Color(0xFFFFFFFF), 
                 ],
               ),
             ),
@@ -77,6 +82,16 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
+          
+       const Positioned(
+        top: 10,
+        left: 0,
+        right: 0,
+        child: Center(
+        child: NavBar(),
+        ),
+        ),
+
           // Bottom Left Icons for Dark and Light Mode
           Positioned(
             bottom: 20,
@@ -84,43 +99,34 @@ class _HomePageState extends State<HomePage> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Sun Icon
+                // Sun Icon for Light Mode
                 GestureDetector(
-                  onTap: () {
-                    // Switch to light mode
-                    final state = context.findAncestorStateOfType<_MyAppState>();
-                    state?.toggleTheme();
-                  },
-                  child: const Icon(
-                    Icons.wb_sunny, // Material Sun Icon
+                  onTap: widget.toggleTheme,
+                  child: Icon(
+                    Icons.wb_sunny,
                     size: 22,
-                    color: Colors.black,
+                    color: widget.isDarkMode ? Colors.grey : Colors.black,
                   ),
                 ),
 
                 // Vertical Dashed Line
-                  // Dashed Line
-    const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12),
-      child: DashedLine(
-        height: 22,
-        dashWidth: 1,
-        dashHeight: 3,
-        color: Colors.black26,
-      ),
-    ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: DashedLine(
+                    height: 22,
+                    dashWidth: 1,
+                    dashHeight: 3,
+                    color: Colors.black26,
+                  ),
+                ),
 
-                // Moon Icon
+                // Moon Icon for Dark Mode
                 GestureDetector(
-                  onTap: () {
-                    // Switch to dark mode
-                    final state = context.findAncestorStateOfType<_MyAppState>();
-                    state?.toggleTheme();
-                  },
-                  child: const Icon(
-                    Icons.nightlight_round, // Material Moon Icon
+                  onTap: widget.toggleTheme,
+                  child: Icon(
+                    Icons.nightlight_round,
                     size: 24,
-                    color: Colors.black,
+                    color: widget.isDarkMode ? Colors.yellow : Colors.black26,
                   ),
                 ),
               ],
@@ -133,7 +139,6 @@ class _HomePageState extends State<HomePage> {
             right: 20,
             child: GestureDetector(
               onTap: () {
-                // Navigate to home or perform other actions
                 print('Venkat L. Turlapati clicked!');
               },
               child: MouseRegion(
@@ -164,6 +169,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
 class DashedLine extends StatelessWidget {
   final double height;
   final double dashWidth;
