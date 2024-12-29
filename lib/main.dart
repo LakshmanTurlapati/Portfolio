@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'navbar.dart';
 import 'home_text.dart';
+import 'particle_background.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,7 +32,7 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         brightness: isDarkMode ? Brightness.dark : Brightness.light,
         textTheme: GoogleFonts.latoTextTheme(),
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.grey,
       ),
       home: HomePage(toggleTheme: toggleTheme, isDarkMode: isDarkMode),
     );
@@ -57,7 +58,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Gradient
+           
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -65,38 +66,35 @@ class _HomePageState extends State<HomePage> {
                 end: Alignment.centerRight,
                 stops: [0.05, 0.4, 0.6, 0.95],
                 colors: [
-                  Color(0xFFFFFFFF), // Light gray on the left
-                  Color(0xFFD0D0D0), // Mid-gray in the center
-                  Color(0xFFD0D0D0), // Mid-gray in the center
-                  Color(0xFFFFFFFF), // Light gray on the right
+                  Color(0xFFFFFFFF), 
+                  Color(0xFFD0D0D0), 
+                  Color(0xFFD0D0D0), 
+                  Color(0xFFFFFFFF), 
                 ],
               ),
+              
             ),
-          ),
+          ),const AnimatedCircleBackground(),
 
-          // Scrolling Text (Center of the screen)
           const Center(
-            child: ScrollingText(), // Custom infinite scrolling text widget
+            child: ScrollingText(), 
           ),
 
-          // Navigation Bar at the Top
           const Positioned(
             top: 10,
             left: 0,
             right: 0,
             child: Center(
-              child: NavBar(), // Custom navigation bar widget
+              child: NavBar(), 
             ),
           ),
 
-          // Bottom Left: Dark/Light Mode Icons
           Positioned(
             bottom: 20,
             left: 20,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Sun Icon for Light Mode
                 GestureDetector(
                   onTap: widget.toggleTheme,
                   child: Icon(
@@ -106,7 +104,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
 
-                // Vertical Dashed Line
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: DashedLine(
@@ -117,7 +114,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
 
-                // Moon Icon for Dark Mode
                 GestureDetector(
                   onTap: widget.toggleTheme,
                   child: Icon(
@@ -130,7 +126,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // Bottom Right: Signature Button
           Positioned(
             bottom: 20,
             right: 20,
@@ -220,7 +215,7 @@ class DashedLinePainter extends CustomPainter {
         Offset(0, startY + dashHeight),
         paint,
       );
-      startY += dashHeight * 2; // Space between dashes
+      startY += dashHeight * 2; 
     }
   }
 

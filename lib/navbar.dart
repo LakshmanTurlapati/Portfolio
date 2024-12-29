@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Import Font Awesome
-import 'portfolio_button.dart'; // Custom Portfolio Button Widget
+import 'package:font_awesome_flutter/font_awesome_flutter.dart'; 
+import 'portfolio_button.dart'; 
 import 'package:url_launcher/url_launcher.dart';
 
 
@@ -10,23 +10,21 @@ class NavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 630, // Adjusted width to fit content
-      height: 60, // Height of the nav bar
+      width: 630, 
+      height: 60, 
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.8), // 80% black
-        borderRadius: BorderRadius.circular(25), // Rounded corners
+        color: Colors.black.withOpacity(0.8), 
+        borderRadius: BorderRadius.circular(25), 
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Space between sections
-        crossAxisAlignment: CrossAxisAlignment.center, // Center content vertically
+        mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+        crossAxisAlignment: CrossAxisAlignment.center, 
         children: [
-          // Portfolio Button
           Flexible(
             flex: 1,
-            child: AnimatedGradientButton(), // Ensure the button respects parent constraints
+            child: AnimatedGradientButton(), 
           ),
 
-          // About Me Text
           Flexible(
             flex: 1,
             child: Center(
@@ -37,16 +35,15 @@ class NavBar extends StatelessWidget {
                 child: const Text(
                   'About Me',
                   style: TextStyle(
-                    color: Colors.grey, // Lighter text for inactive
+                    color: Colors.grey, 
                     fontWeight: FontWeight.bold,
-                    fontSize: 16, // Added font size for better readability
+                    fontSize: 16, 
                   ),
                 ),
               ),
             ),
           ),
 
-          // Social Icons
           Flexible(
             flex: 1,
             child: Row(

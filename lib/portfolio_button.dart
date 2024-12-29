@@ -67,9 +67,9 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
                 print('Portfolio clicked');
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white, // Add a distinct background
+                backgroundColor: Colors.white, 
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20), // Button shape
+                  borderRadius: BorderRadius.circular(20), 
                   side: BorderSide(color: Colors.black.withOpacity(0), width: 0),
                 ),
                 shadowColor: Colors.transparent,
@@ -79,7 +79,7 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
               child: Container(
                 alignment: Alignment.center,
                 constraints: BoxConstraints(
-                  maxWidth: constraints.maxWidth * 0.95, // Button size
+                  maxWidth: constraints.maxWidth * 0.95, 
                   maxHeight: constraints.maxHeight * 0.8,
                 ),
                 child: const Text(
