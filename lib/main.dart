@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'navbar.dart';
 import 'home_text.dart';
 import 'particle_background.dart';
+import 'dot_matrix.dart';
 
 void main() {
   runApp(const MyApp());
@@ -76,10 +77,14 @@ class _HomePageState extends State<HomePage> {
             ),
           ),const AnimatedCircleBackground(),
 
-          const Center(
-            child: ScrollingText(), 
-          ),
-
+          Align(
+  alignment: Alignment.center,
+  child: Transform.translate(
+    offset: Offset(0, -40), // Move 20px to the right
+    child: ScrollingText(),
+  ),
+),
+            
           const Positioned(
             top: 10,
             left: 0,
@@ -88,7 +93,14 @@ class _HomePageState extends State<HomePage> {
               child: NavBar(), 
             ),
           ),
-
+          const Positioned(
+            bottom: 100,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: DotMatrixPattern(), 
+            ),
+          ),
           Positioned(
             bottom: 20,
             left: 20,
@@ -128,7 +140,7 @@ class _HomePageState extends State<HomePage> {
 
           Positioned(
             bottom: 20,
-            right: 20,
+            right: 30,
             child: GestureDetector(
               onTap: () {
                 print('Venkat L. Turlapati clicked!');
@@ -138,10 +150,10 @@ class _HomePageState extends State<HomePage> {
                 onExit: (_) => setState(() => isHovered = false),
                 cursor: SystemMouseCursors.click,
                 child: Text(
-                  'Venkat L. Turlapati',
+                  'Lakshman Turlapati',
                   style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
                     shadows: isHovered
                         ? [
                             const Shadow(
