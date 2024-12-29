@@ -7,11 +7,7 @@ class ScrollingText extends StatefulWidget {
   _ScrollingTextState createState() => _ScrollingTextState();
 }
 
-class _ScrollingTextState extends State<ScrollingText>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-
-  // Scrolling roles
+class _ScrollingTextState extends State<ScrollingText> {
   final List<String> roles = [
     'UI/UX Designer',
     'Product Developer',
@@ -20,77 +16,82 @@ class _ScrollingTextState extends State<ScrollingText>
     'Cloud Developer',
   ];
 
-  // Static parts of the text
   final String staticTextStart = 'I’m an enthused';
   final String staticTextEnd = 'from Texas!';
 
   @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true); // Continuous animation
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 200, // Total height of the widget
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Static text start
-              Text(
-                staticTextStart,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Static text start
+                Text(
+                  staticTextStart,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.normal,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
 
-              const SizedBox(width: 8), // Space between static text and roles
-
-              // Animated roles
-              AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  final roleIndex =
-                      (_animationController.value * roles.length).floor() %
-                          roles.length;
-                  return Text(
-                    roles[roleIndex],
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                // Scrolling text with 3D effect
+                SizedBox(
+                  height: 160, // Adjust height to fit visible area
+                  width: 230, // Width for the scrolling text
+                  child: ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent, // Fully transparent at the top
+                          Colors.black, // Fully visible in the middle
+                          Colors.transparent, // Fully transparent at the bottom
+                        ],
+                        stops: [0.0, 0.5, 1.0], // Control the gradient stops
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: ListWheelScrollView.useDelegate(
+                      physics: const FixedExtentScrollPhysics(),
+                      perspective: 0.003, // Creates the 3D effect
+                      itemExtent: 30, // Height of each item
+                      childDelegate: ListWheelChildLoopingListDelegate(
+                        children: roles.map((role) {
+                          return Text(
+                            role,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ),
-                  );
-                },
-              ),
-
-              const SizedBox(width: 8), // Space between roles and static text end
-
-              // Static text end
-              Text(
-                staticTextEnd,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
+                const SizedBox(width: 8),
+
+                // Static text end
+                Text(
+                  staticTextEnd,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
