@@ -72,7 +72,7 @@ class _DotMatrixPatternState extends State<DotMatrixPattern> {
                 child: GestureDetector(
                   onTap: _openUrl,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 500), // Smooth animation
+                    duration: const Duration(milliseconds: 300), // Smooth animation
                     width: isHovered ? widget.dotSize + 3 : widget.dotSize,
                     height: isHovered ? widget.dotSize + 3 : widget.dotSize,
                     margin: EdgeInsets.all(widget.dotSize * 0.15),

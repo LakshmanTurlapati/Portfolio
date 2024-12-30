@@ -4,6 +4,7 @@ import 'navbar.dart';
 import 'home_text.dart';
 import 'particle_background.dart';
 import 'dot_matrix.dart';
+import 'theme_toggle.dart'; // Import the new ThemeToggle widget
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +18,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool isDarkMode = false; 
+  bool isDarkMode = false;
 
   void toggleTheme() {
     setState(() {
@@ -54,12 +55,11 @@ class _HomePageState extends State<HomePage> {
   bool isHovered = false;
 
   @override
-@override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-           
+          // Background gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -67,77 +67,57 @@ class _HomePageState extends State<HomePage> {
                 end: Alignment.centerRight,
                 stops: [0.05, 0.4, 0.6, 0.95],
                 colors: [
-                  Color(0xFFFFFFFF), 
-                  Color(0xFFD0D0D0), 
-                  Color(0xFFD0D0D0), 
-                  Color(0xFFFFFFFF), 
+                  Color(0xFFFFFFFF),
+                  Color(0xFFD0D0D0),
+                  Color(0xFFD0D0D0),
+                  Color(0xFFFFFFFF),
                 ],
               ),
-              
             ),
-          ),const AnimatedCircleBackground(),
+          ),
+          // Particle background
+          const AnimatedCircleBackground(),
 
+          // Scrolling text
           Align(
-  alignment: Alignment.center,
-  child: Transform.translate(
-    offset: Offset(0, -40), // Move 20px to the right
-    child: ScrollingText(),
-  ),
-),
-            
+            alignment: Alignment.center,
+            child: Transform.translate(
+              offset: const Offset(0, -40),
+              child: const ScrollingText(),
+            ),
+          ),
+
+          // Navbar
           const Positioned(
             top: 10,
             left: 0,
             right: 0,
             child: Center(
-              child: NavBar(), 
+              child: NavBar(),
             ),
           ),
+
+          // Dot matrix pattern
           const Positioned(
             bottom: 100,
             left: 0,
             right: 0,
             child: Center(
-              child: DotMatrixPattern(), 
+              child: DotMatrixPattern(),
             ),
           ),
+
+          // Theme toggle buttons
           Positioned(
             bottom: 20,
             left: 20,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: widget.toggleTheme,
-                  child: Icon(
-                    Icons.wb_sunny,
-                    size: 22,
-                    color: widget.isDarkMode ? Colors.grey : Colors.black,
-                  ),
-                ),
-
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: DashedLine(
-                    height: 22,
-                    dashWidth: 1,
-                    dashHeight: 3,
-                    color: Colors.black26,
-                  ),
-                ),
-
-                GestureDetector(
-                  onTap: widget.toggleTheme,
-                  child: Icon(
-                    Icons.nightlight_round,
-                    size: 24,
-                    color: widget.isDarkMode ? Colors.yellow : Colors.black26,
-                  ),
-                ),
-              ],
+            child: ThemeToggle(
+              toggleTheme: widget.toggleTheme,
+              isDarkMode: widget.isDarkMode,
             ),
           ),
 
+          // Hoverable text at the bottom right
           Positioned(
             bottom: 20,
             right: 30,
@@ -172,65 +152,4 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-}
-
-class DashedLine extends StatelessWidget {
-  final double height;
-  final double dashWidth;
-  final double dashHeight;
-  final Color color;
-
-  const DashedLine({
-    super.key,
-    this.height = 24,
-    this.dashWidth = 1,
-    this.dashHeight = 4,
-    this.color = Colors.black26,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      child: CustomPaint(
-        painter: DashedLinePainter(
-          dashWidth: dashWidth,
-          dashHeight: dashHeight,
-          color: color,
-        ),
-      ),
-    );
-  }
-}
-
-class DashedLinePainter extends CustomPainter {
-  final double dashWidth;
-  final double dashHeight;
-  final Color color;
-
-  DashedLinePainter({
-    required this.dashWidth,
-    required this.dashHeight,
-    required this.color,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = dashWidth;
-
-    double startY = 0;
-    while (startY < size.height) {
-      canvas.drawLine(
-        Offset(0, startY),
-        Offset(0, startY + dashHeight),
-        paint,
-      );
-      startY += dashHeight * 2; 
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
