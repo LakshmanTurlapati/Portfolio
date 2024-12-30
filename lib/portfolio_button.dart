@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 
 class AnimatedGradientButton extends StatefulWidget {
+  final bool isDarkMode; 
+
+  const AnimatedGradientButton({super.key, required this.isDarkMode});
+
   @override
   _AnimatedGradientButtonState createState() => _AnimatedGradientButtonState();
 }
@@ -36,9 +40,9 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
             builder: (context, child) {
               final t = _controller.value * 2 * pi;
 
-              const color1 = Color(0xFF002BFF); 
-              const color2 = Color(0xFF00FFCC); 
-              const color3 = Color(0xFFFF4AD5); 
+              const color1 = Color(0xFF002BFF);
+              const color2 = Color(0xFF00FFCC);
+              const color3 = Color(0xFFFF4AD5);
 
               const double radius = 4.0;
 
@@ -56,7 +60,7 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
                 width: constraints.maxWidth,
                 height: constraints.maxHeight,
                 decoration: BoxDecoration(
-                  color: Colors.transparent, // no solid fill
+                  color: Colors.transparent, 
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
@@ -85,7 +89,9 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
           ElevatedButton(
             onPressed: () => print('Portfolio clicked'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
+              backgroundColor: widget.isDarkMode
+                  ? Colors.black 
+                  : Colors.white, 
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide.none,
@@ -100,10 +106,12 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
                 maxWidth: constraints.maxWidth * 0.95,
                 maxHeight: constraints.maxHeight * 0.8,
               ),
-              child: const Text(
+              child: Text(
                 'Portfolio',
                 style: TextStyle(
-                  color: Colors.black,
+                  color: widget.isDarkMode
+                      ? Colors.white 
+                      : Colors.black, 
                   fontWeight: FontWeight.w600,
                   fontSize: 18,
                 ),

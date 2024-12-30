@@ -122,11 +122,11 @@ class FloatingCirclePainter extends CustomPainter {
         ))
         ..maskFilter = MaskFilter.blur(
           BlurStyle.normal,
-          circleSizes[i] / 8, // Proportional blur
+          circleSizes[i] / 8, 
         )
         ..style = PaintingStyle.fill;
 
-      // Draw the blurred circle
+      
       canvas.drawCircle(circlePositions[i], circleSizes[i], paint);
     }
   }

@@ -1,30 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; 
-import 'portfolio_button.dart'; 
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'portfolio_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
 class NavBar extends StatelessWidget {
-  const NavBar({super.key});
+  final bool isDarkMode; // Add isDarkMode parameter
+
+  const NavBar({super.key, required this.isDarkMode});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 630, 
-      height: 60, 
+      width: 630,
+      height: 60,
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.8), 
-        borderRadius: BorderRadius.circular(25), 
+        color: isDarkMode
+            ? Colors.white.withOpacity(0.8) // White with 80% opacity in dark mode
+            : Colors.black.withOpacity(0.8), // Black with 80% opacity otherwise
+        borderRadius: BorderRadius.circular(25),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween, 
-        crossAxisAlignment: CrossAxisAlignment.center, 
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Flexible(
             flex: 1,
-            child: AnimatedGradientButton(), 
+            child: AnimatedGradientButton(isDarkMode: isDarkMode),
           ),
-
           Flexible(
             flex: 1,
             child: Center(
@@ -32,26 +34,29 @@ class NavBar extends StatelessWidget {
                 onTap: () {
                   print('About Me clicked');
                 },
-                child: const Text(
+                child: Text(
                   'About Me',
                   style: TextStyle(
-                    color: Colors.grey, 
+                    color: isDarkMode
+                        ? Colors.grey[800] // Dark grey text in dark mode
+                        : Colors.grey, // Default grey text otherwise
                     fontWeight: FontWeight.bold,
-                    fontSize: 16, 
+                    fontSize: 16,
                   ),
                 ),
               ),
             ),
           ),
-
           Flexible(
             flex: 1,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.github), // GitHub icon
-                  color: const Color(0xFF808080),
+                  icon: const FaIcon(FontAwesomeIcons.github), 
+                  color: isDarkMode
+                      ? Colors.grey[800] 
+                      : const Color(0xFF808080), 
                   onPressed: () async {
                     const url = 'https://github.com/LakshmanTurlapati';
                     if (await canLaunchUrl(Uri.parse(url))) {
@@ -62,8 +67,10 @@ class NavBar extends StatelessWidget {
                   },
                 ),
                 IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.linkedin), // LinkedIn icon
-                  color: const Color(0xFF808080),
+                  icon: const FaIcon(FontAwesomeIcons.linkedin), 
+                  color: isDarkMode
+                      ? Colors.grey[800] 
+                      : const Color(0xFF808080), 
                   onPressed: () async {
                     const url =
                         'https://www.linkedin.com/in/lakshman-turlapati-3091aa191/';
@@ -75,8 +82,10 @@ class NavBar extends StatelessWidget {
                   },
                 ),
                 IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.twitter), // Twitter icon
-                  color: const Color(0xFF808080),
+                  icon: const FaIcon(FontAwesomeIcons.twitter), 
+                  color: isDarkMode
+                      ? Colors.grey[800] 
+                      : const Color(0xFF808080), 
                   onPressed: () async {
                     const url = 'https://x.com/parzival1213';
                     if (await canLaunchUrl(Uri.parse(url))) {

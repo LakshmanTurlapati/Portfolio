@@ -8,7 +8,7 @@ class ThemeToggle extends StatefulWidget {
   const ThemeToggle({
     super.key,
     required this.toggleTheme,
-    required this.isDarkMode,
+    this.isDarkMode = false, 
   });
 
   @override
@@ -30,7 +30,7 @@ class _ThemeToggleState extends State<ThemeToggle>
   void initState() {
     super.initState();
 
-    // Sun Animation
+    
     _sunController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -41,19 +41,19 @@ class _ThemeToggleState extends State<ThemeToggle>
       curve: Curves.easeInOut,
     ));
 
-    // Moon Animation
+   
     _moonController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
 
-    _moonRotation = Tween<double>(begin: -0.523599, end: -0.523599) // -30° to 0°
+    _moonRotation = Tween<double>(begin: -0.523599, end: -0.523599) 
         .animate(CurvedAnimation(
       parent: _moonController,
       curve: Curves.easeInOut,
     ));
 
-    _moonSize = Tween<double>(begin: 24.0, end: 26.0) // 24px to 26px
+    _moonSize = Tween<double>(begin: 24.0, end: 26.0) 
         .animate(CurvedAnimation(
       parent: _moonController,
       curve: Curves.easeInOut,
@@ -90,7 +90,7 @@ class _ThemeToggleState extends State<ThemeToggle>
           child: GestureDetector(
             onTap: () {
               if (widget.isDarkMode) {
-                widget.toggleTheme(); // Change to light mode
+                widget.toggleTheme(); 
               }
             },
             child: Stack(
@@ -101,7 +101,12 @@ class _ThemeToggleState extends State<ThemeToggle>
                   builder: (context, child) {
                     return CustomPaint(
                       size: const Size(30, 30),
-                      painter: SunCirclePainter(rayLength: _rayAnimation.value),
+                      painter: SunCirclePainter(
+                        rayLength: _rayAnimation.value,
+                        sunColor: widget.isDarkMode
+                            ? Colors.grey[600]! 
+                            : Colors.black, 
+                      ),
                     );
                   },
                 ),
@@ -109,16 +114,16 @@ class _ThemeToggleState extends State<ThemeToggle>
             ),
           ),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
-          child: DashedLine(
-            height: 22,
-            dashWidth: 1,
-            dashHeight: 3,
-            color: Colors.black26,
-          ),
+        const SizedBox(width: 12),
+        
+        DashedLine(
+          height: 22,
+          dashWidth: 1,
+          dashHeight: 3,
+          isDarkMode: widget.isDarkMode, 
         ),
-        // Moon
+        const SizedBox(width: 12),
+        
         MouseRegion(
           onEnter: (_) {
             setState(() {
@@ -136,7 +141,7 @@ class _ThemeToggleState extends State<ThemeToggle>
           child: GestureDetector(
             onTap: () {
               if (!widget.isDarkMode) {
-                widget.toggleTheme(); // Change to dark mode
+                widget.toggleTheme(); 
               }
             },
             child: AnimatedBuilder(
@@ -147,7 +152,9 @@ class _ThemeToggleState extends State<ThemeToggle>
                   child: Icon(
                     Icons.nightlight_round,
                     size: _moonSize.value,
-                    color: widget.isDarkMode ? Colors.yellow : Colors.black26,
+                    color: widget.isDarkMode
+                        ? Colors.grey[300]! 
+                        : Colors.black26, 
                   ),
                 );
               },
@@ -161,32 +168,33 @@ class _ThemeToggleState extends State<ThemeToggle>
 
 class SunCirclePainter extends CustomPainter {
   final double rayLength;
+  final Color sunColor; 
 
-  SunCirclePainter({required this.rayLength});
+  SunCirclePainter({required this.rayLength, required this.sunColor});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black
+      ..color = sunColor 
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
-    // Center of the sun (circle)
+    
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 6;
 
-    // Draw the black circle as a stroke
+    
     canvas.drawCircle(center, radius, paint);
 
-    // Rays paint
+    
     final rayPaint = Paint()
-      ..color = Colors.black
+      ..color = sunColor 
       ..strokeWidth = 2;
 
-    // Gap between the circle and rays
+    
     final gap = 4;
 
-    // Draw rays
+    
     for (int i = 0; i < 8; i++) {
       final angle = (i * 45) * (pi / 180);
       final startX = center.dx + (radius + gap) * cos(angle);
@@ -200,7 +208,8 @@ class SunCirclePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant SunCirclePainter oldDelegate) {
-    return oldDelegate.rayLength != rayLength;
+    return oldDelegate.rayLength != rayLength ||
+        oldDelegate.sunColor != sunColor; 
   }
 }
 
@@ -208,14 +217,14 @@ class DashedLine extends StatelessWidget {
   final double height;
   final double dashWidth;
   final double dashHeight;
-  final Color color;
+  final bool isDarkMode;
 
   const DashedLine({
     super.key,
     this.height = 24,
     this.dashWidth = 1,
     this.dashHeight = 4,
-    this.color = Colors.black26,
+    required this.isDarkMode, 
   });
 
   @override
@@ -226,7 +235,7 @@ class DashedLine extends StatelessWidget {
         painter: DashedLinePainter(
           dashWidth: dashWidth,
           dashHeight: dashHeight,
-          color: color,
+          color: isDarkMode ? Colors.grey : Colors.black26, 
         ),
       ),
     );

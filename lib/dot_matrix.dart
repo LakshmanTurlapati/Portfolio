@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
+import 'package:url_launcher/url_launcher.dart'; 
 import 'dart:math';
 
 class DotMatrixPattern extends StatefulWidget {
   final int rows;
   final int columns;
   final double dotSize;
+  final bool isDarkMode; 
 
   const DotMatrixPattern({
     Key? key,
     this.rows = 7,
     this.columns = 12 * 4,
     this.dotSize = 14.0,
+    required this.isDarkMode, 
   }) : super(key: key);
 
   @override
@@ -54,10 +56,10 @@ class _DotMatrixPatternState extends State<DotMatrixPattern> {
             children: List.generate(widget.columns, (colIndex) {
               double intensity = _pattern[rowIndex][colIndex];
               bool isHovered =
-                  _hoveredDots[rowIndex]?[colIndex] ?? false; // Check hover state
+                  _hoveredDots[rowIndex]?[colIndex] ?? false; 
 
               return MouseRegion(
-                cursor: SystemMouseCursors.click, // Change cursor to hand
+                cursor: SystemMouseCursors.click, 
                 onEnter: (_) {
                   setState(() {
                     _hoveredDots[rowIndex] ??= {};
@@ -72,16 +74,22 @@ class _DotMatrixPatternState extends State<DotMatrixPattern> {
                 child: GestureDetector(
                   onTap: _openUrl,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300), // Smooth animation
+                    duration: const Duration(milliseconds: 300), 
                     width: isHovered ? widget.dotSize + 3 : widget.dotSize,
                     height: isHovered ? widget.dotSize + 3 : widget.dotSize,
                     margin: EdgeInsets.all(widget.dotSize * 0.15),
                     decoration: BoxDecoration(
-                      color: Color.lerp(
-                        Colors.grey[300]!,
-                        Colors.grey[800]!,
-                        intensity,
-                      ),
+                      color: widget.isDarkMode
+                          ? Color.lerp(
+                              const Color(0xFFB0B0B0), 
+                              const Color(0xFF1A1A1A), 
+                              intensity,
+                            )
+                          : Color.lerp(
+                              Colors.grey[300]!, 
+                              Colors.grey[800]!, 
+                              intensity,
+                            ),
                       shape: BoxShape.rectangle,
                       borderRadius: BorderRadius.circular(widget.dotSize * 0.2),
                     ),
@@ -110,7 +118,7 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         backgroundColor: Colors.transparent,
         body: const Center(
-          child: DotMatrixPattern(),
+          child: DotMatrixPattern(isDarkMode: true), 
         ),
       ),
     );
