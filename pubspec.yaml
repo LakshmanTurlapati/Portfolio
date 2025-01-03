@@ -1,5 +1,6 @@
 name: portfolio_v2
 description: "A new Flutter project."
+
 # Prevents accidental publishing to pub.dev.
 publish_to: 'none'
 
@@ -22,5 +23,8 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 flutter:
-  # Ensures Material Icons font is included with your application.
   uses-material-design: true
+
+  assets:
+    - web/icons/portfolio.png
+    - web/icons/portfolio_light.png

@@ -4,7 +4,8 @@ import 'navbar.dart';
 import 'home_text.dart';
 import 'particle_background.dart';
 import 'dot_matrix.dart';
-import 'theme_toggle.dart'; 
+import 'theme_toggle.dart';
+import 'mobile.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,7 +37,23 @@ class _MyAppState extends State<MyApp> {
         textTheme: GoogleFonts.latoTextTheme(),
         primarySwatch: Colors.grey,
       ),
-      home: HomePage(toggleTheme: toggleTheme, isDarkMode: isDarkMode),
+      home: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 600) {
+            // Mobile layout
+            return MobileHome(
+              toggleTheme: toggleTheme,
+              isDarkMode: isDarkMode,
+            );
+          } else {
+            // Desktop layout
+            return HomePage(
+              toggleTheme: toggleTheme,
+              isDarkMode: isDarkMode,
+            );
+          }
+        },
+      ),
     );
   }
 }
@@ -59,50 +76,52 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: Stack(
         children: [
-          
-          Container(
-  decoration: BoxDecoration(
-    gradient: widget.isDarkMode
-        ? SweepGradient(
-            center: Alignment.center, 
-            startAngle: 0.0, 
-            endAngle: 2 * 3.14159, 
-            colors: [
-              Color(0xFF000000), 
-              Color(0xFF101010).withOpacity(0.9), 
-              Color(0xFF1A1A1A).withOpacity(0.8), 
-              Color(0xFF202020).withOpacity(0.7), 
-              Color(0xFF101010).withOpacity(0.9), 
-              Color(0xFF000000), 
-            ],
-            stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0], 
-          )
-        : LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            stops: [0.05, 0.4, 0.6, 0.95],
-            colors: [
-              Color(0xFFFFFFFF),
-              Color(0xFFD0D0D0),
-              Color(0xFFD0D0D0),
-              Color(0xFFFFFFFF),
-            ],
+          // Background gradient with smooth transition
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300), // Smooth transition duration
+            decoration: BoxDecoration(
+              gradient: widget.isDarkMode
+                  ? SweepGradient(
+                      center: Alignment.center,
+                      startAngle: 0.0,
+                      endAngle: 2 * 3.14159,
+                      colors: [
+                        const Color(0xFF000000),
+                        const Color(0xFF101010).withOpacity(0.9),
+                        const Color(0xFF1A1A1A).withOpacity(0.8),
+                        const Color(0xFF202020).withOpacity(0.7),
+                        const Color(0xFF101010).withOpacity(0.9),
+                        const Color(0xFF000000),
+                      ],
+                      stops: const [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+                    )
+                  : const LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      stops: [0.05, 0.4, 0.6, 0.95],
+                      colors: [
+                        Color(0xFFFFFFFF),
+                        Color(0xFFD0D0D0),
+                        Color(0xFFD0D0D0),
+                        Color(0xFFFFFFFF),
+                      ],
+                    ),
+            ),
           ),
-  ),
-),
-         
+
+          // Particle background
           const AnimatedCircleBackground(),
 
-          
+          // Scrolling text
           Align(
             alignment: Alignment.center,
             child: Transform.translate(
               offset: const Offset(0, -40),
-              child: ScrollingText(isDarkMode: widget.isDarkMode), 
+              child: ScrollingText(isDarkMode: widget.isDarkMode),
             ),
           ),
 
-          
+          // Navbar
           Positioned(
             top: 10,
             left: 0,
@@ -112,15 +131,17 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-           Positioned(
+          // Dot matrix pattern
+          Positioned(
             bottom: 100,
             left: 0,
             right: 0,
             child: Center(
-              child: DotMatrixPattern(isDarkMode: widget.isDarkMode,),
+              child: DotMatrixPattern(isDarkMode: widget.isDarkMode),
             ),
           ),
 
+          // Theme toggle buttons
           Positioned(
             bottom: 20,
             left: 20,
@@ -130,6 +151,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
+          // Hoverable text at the bottom right
           Positioned(
             bottom: 20,
             right: 30,
@@ -150,7 +172,7 @@ class _HomePageState extends State<HomePage> {
                     shadows: isHovered
                         ? [
                             Shadow(
-                              offset: Offset(2, 2),
+                              offset: const Offset(2, 2),
                               blurRadius: 4,
                               color: widget.isDarkMode
                                   ? Colors.black54
