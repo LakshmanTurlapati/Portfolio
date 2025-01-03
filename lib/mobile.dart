@@ -3,6 +3,7 @@ import 'mobile_navbar.dart';
 import 'particle_background.dart';
 import 'theme_toggle.dart';
 import 'mobile_home_text.dart';
+import 'mobile_dot_matrix.dart';
 
 
 class MobileHome extends StatelessWidget {
@@ -82,10 +83,19 @@ class MobileHome extends StatelessWidget {
           Align(
             alignment: Alignment.center,
             child: Transform.translate(
-              offset: const Offset(0, -40),
+              offset: const Offset(0, -80),
               child: ScrollingText(isDarkMode: isDarkMode),
             ),
           ),
+
+           Positioned(
+            bottom: 140,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: DotMatrixPattern(isDarkMode: isDarkMode),
+            ),
+          ), 
           // Navbar at the bottom (reused)
           Positioned(
             bottom: 20,
