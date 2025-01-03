@@ -105,7 +105,7 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
             child: Container(
               alignment: Alignment.center,
               constraints: BoxConstraints(
-                maxWidth: constraints.maxWidth * 0.925,
+                maxWidth: constraints.maxWidth * 0.9,
                 maxHeight: constraints.maxHeight * 0.8,
               ),
               child: Image.asset(

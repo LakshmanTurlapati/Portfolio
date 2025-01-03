@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'mobile_navbar.dart';
 import 'particle_background.dart';
 import 'theme_toggle.dart';
+import 'mobile_home_text.dart';
+
 
 class MobileHome extends StatelessWidget {
   final VoidCallback toggleTheme;
@@ -55,13 +57,13 @@ class MobileHome extends StatelessWidget {
 
           // Name at the top-left
           Positioned(
-            top: 20,
+            top:20,
             left: 20,
             child: Text(
               'Lakshman Turlapati',
               style: TextStyle(
                 fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w500,
                 color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
@@ -76,7 +78,14 @@ class MobileHome extends StatelessWidget {
               isDarkMode: isDarkMode,
             ),
           ),
-
+        // Scrolling text
+          Align(
+            alignment: Alignment.center,
+            child: Transform.translate(
+              offset: const Offset(0, -40),
+              child: ScrollingText(isDarkMode: isDarkMode),
+            ),
+          ),
           // Navbar at the bottom (reused)
           Positioned(
             bottom: 20,
