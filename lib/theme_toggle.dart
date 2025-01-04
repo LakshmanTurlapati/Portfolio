@@ -8,7 +8,7 @@ class ThemeToggle extends StatefulWidget {
   const ThemeToggle({
     super.key,
     required this.toggleTheme,
-    this.isDarkMode = false, 
+    required this.isDarkMode,
   });
 
   @override
@@ -30,7 +30,6 @@ class _ThemeToggleState extends State<ThemeToggle>
   void initState() {
     super.initState();
 
-    
     _sunController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -41,20 +40,18 @@ class _ThemeToggleState extends State<ThemeToggle>
       curve: Curves.easeInOut,
     ));
 
-   
     _moonController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
 
-    _moonRotation = Tween<double>(begin: -0.523599, end: -0.523599) 
+    _moonRotation = Tween<double>(begin: -0.523599, end: -0.523599)
         .animate(CurvedAnimation(
       parent: _moonController,
       curve: Curves.easeInOut,
     ));
 
-    _moonSize = Tween<double>(begin: 24.0, end: 26.0) 
-        .animate(CurvedAnimation(
+    _moonSize = Tween<double>(begin: 24.0, end: 26.0).animate(CurvedAnimation(
       parent: _moonController,
       curve: Curves.easeInOut,
     ));
@@ -72,7 +69,6 @@ class _ThemeToggleState extends State<ThemeToggle>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Sun
         MouseRegion(
           onEnter: (_) {
             setState(() {
@@ -104,8 +100,8 @@ class _ThemeToggleState extends State<ThemeToggle>
                       painter: SunCirclePainter(
                         rayLength: _rayAnimation.value,
                         sunColor: widget.isDarkMode
-                            ? Colors.grey[600]! 
-                            : Colors.black, 
+                            ? Colors.grey[600]!
+                            : Colors.black,
                       ),
                     );
                   },
@@ -115,15 +111,17 @@ class _ThemeToggleState extends State<ThemeToggle>
           ),
         ),
         const SizedBox(width: 12),
-        
+
+        // Dashed line separator
         DashedLine(
           height: 22,
           dashWidth: 1,
           dashHeight: 3,
-          isDarkMode: widget.isDarkMode, 
+          isDarkMode: widget.isDarkMode,
         ),
         const SizedBox(width: 12),
-        
+
+        // Moon button
         MouseRegion(
           onEnter: (_) {
             setState(() {
@@ -153,8 +151,8 @@ class _ThemeToggleState extends State<ThemeToggle>
                     Icons.nightlight_round,
                     size: _moonSize.value,
                     color: widget.isDarkMode
-                        ? Colors.grey[300]! 
-                        : Colors.black26, 
+                        ? Colors.grey[300]!
+                        : Colors.black26,
                   ),
                 );
               },
@@ -168,33 +166,28 @@ class _ThemeToggleState extends State<ThemeToggle>
 
 class SunCirclePainter extends CustomPainter {
   final double rayLength;
-  final Color sunColor; 
+  final Color sunColor;
 
   SunCirclePainter({required this.rayLength, required this.sunColor});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = sunColor 
+      ..color = sunColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
-    
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 6;
 
-    
     canvas.drawCircle(center, radius, paint);
 
-    
     final rayPaint = Paint()
-      ..color = sunColor 
+      ..color = sunColor
       ..strokeWidth = 2;
 
-    
     final gap = 4;
 
-    
     for (int i = 0; i < 8; i++) {
       final angle = (i * 45) * (pi / 180);
       final startX = center.dx + (radius + gap) * cos(angle);
@@ -208,8 +201,7 @@ class SunCirclePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant SunCirclePainter oldDelegate) {
-    return oldDelegate.rayLength != rayLength ||
-        oldDelegate.sunColor != sunColor; 
+    return oldDelegate.rayLength != rayLength || oldDelegate.sunColor != sunColor;
   }
 }
 
@@ -224,7 +216,7 @@ class DashedLine extends StatelessWidget {
     this.height = 24,
     this.dashWidth = 1,
     this.dashHeight = 4,
-    required this.isDarkMode, 
+    required this.isDarkMode,
   });
 
   @override
@@ -235,7 +227,7 @@ class DashedLine extends StatelessWidget {
         painter: DashedLinePainter(
           dashWidth: dashWidth,
           dashHeight: dashHeight,
-          color: isDarkMode ? Colors.grey : Colors.black26, 
+          color: isDarkMode ? Colors.grey : Colors.black26,
         ),
       ),
     );

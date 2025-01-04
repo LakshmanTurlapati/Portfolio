@@ -5,7 +5,7 @@ import 'home_text.dart';
 import 'particle_background.dart';
 import 'dot_matrix.dart';
 import 'theme_toggle.dart';
-import 'mobile.dart';
+import 'mobile.dart'; 
 
 void main() {
   runApp(const MyApp());
@@ -127,7 +127,10 @@ class _HomePageState extends State<HomePage> {
             left: 0,
             right: 0,
             child: Center(
-              child: NavBar(isDarkMode: widget.isDarkMode),
+              child: NavBar(
+                isDarkMode: widget.isDarkMode,
+                toggleTheme: widget.toggleTheme,
+              ),
             ),
           ),
 

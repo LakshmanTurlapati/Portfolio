@@ -1,8 +1,9 @@
+// portfolio_button.dart
 import 'package:flutter/material.dart';
 import 'dart:math';
 
 class AnimatedGradientButton extends StatefulWidget {
-  final bool isDarkMode; 
+  final bool isDarkMode;
 
   const AnimatedGradientButton({super.key, required this.isDarkMode});
 
@@ -20,7 +21,7 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
-    )..repeat(); // continuously loops
+    )..repeat();
   }
 
   @override
@@ -60,7 +61,7 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
                 width: constraints.maxWidth,
                 height: constraints.maxHeight,
                 decoration: BoxDecoration(
-                  color: Colors.transparent, 
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
@@ -89,9 +90,7 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
           ElevatedButton(
             onPressed: () => print('Portfolio clicked'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: widget.isDarkMode
-                  ? Colors.black 
-                  : Colors.white, 
+              backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide.none,
@@ -109,9 +108,7 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
               child: Text(
                 'Portfolio',
                 style: TextStyle(
-                  color: widget.isDarkMode
-                      ? Colors.white 
-                      : Colors.black, 
+                  color: widget.isDarkMode ? Colors.white : Colors.black,
                   fontWeight: FontWeight.w600,
                   fontSize: 18,
                 ),
