@@ -1,43 +1,35 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/gestures.dart'; // Required for TapGestureRecognizer
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Required for FontAwesomeIcons
+import 'package:font_awesome_flutter/font_awesome_flutter.dart'; 
+import 'spotlight.dart';
 
 class AboutPage extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback toggleTheme;
 
   const AboutPage({
-    Key? key,
+    super.key,
     required this.isDarkMode,
     required this.toggleTheme,
-  }) : super(key: key);
+  });
 
   @override
   State<AboutPage> createState() => _AboutPageState();
 }
 
 class _AboutPageState extends State<AboutPage> {
-  // ScrollController to control the scrolling
   final ScrollController _scrollController = ScrollController();
-
-  // GlobalKeys for each section
   final GlobalKey _aboutKey = GlobalKey();
   final GlobalKey _experienceKey = GlobalKey();
   final GlobalKey _academicsKey = GlobalKey();
-
-  // GlobalKey for the SingleChildScrollView
   final GlobalKey _scrollViewKey = GlobalKey();
 
-  // Current active section
   String _activeSection = 'About';
 
-  // Function to launch URLs (used in other sections)
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      // Could not launch URL
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not launch $url')),
       );
@@ -48,43 +40,36 @@ class _AboutPageState extends State<AboutPage> {
   void initState() {
     super.initState();
 
-    // Listen to scroll events to update active section
     _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    // Dispose ScrollController
     _scrollController.dispose();
 
     super.dispose();
   }
 
-  // Function to handle scrolling to a section
   void _scrollToSection(GlobalKey key) {
     final context = key.currentContext;
     if (context != null) {
       Scrollable.ensureVisible(
         context,
-        duration: const Duration(milliseconds: 500),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        alignment: 0.1, // Adjust alignment as needed
+        alignment: 0.1, 
       );
     }
   }
 
-  // Function to determine the active section based on scroll position
   void _onScroll() {
-    // Define a lower threshold from the top of the scroll view for increased sensitivity
-    const double threshold = 40.0; // Reduced from 80.0 to 40.0
+    const double threshold = 40.0; 
 
-    // Get the RenderBox of the scroll view
     final RenderBox? scrollViewBox =
         _scrollViewKey.currentContext?.findRenderObject() as RenderBox?;
 
     if (scrollViewBox == null) return;
 
-    // Function to get the offset of a section relative to the scroll view
     double getSectionOffset(GlobalKey key) {
       final RenderBox? renderBox =
           key.currentContext?.findRenderObject() as RenderBox?;
@@ -92,38 +77,26 @@ class _AboutPageState extends State<AboutPage> {
       return renderBox.localToGlobal(Offset.zero, ancestor: scrollViewBox).dy;
     }
 
-    // Get the positions of each section
     double aboutPosition = getSectionOffset(_aboutKey);
     double experiencePosition = getSectionOffset(_experienceKey);
     double academicsPosition = getSectionOffset(_academicsKey);
-
-    // Debugging: Print the positions
-    print('About Position: $aboutPosition');
-    print('Experience Position: $experiencePosition');
-    print('Academics Position: $academicsPosition');
-
     String newActiveSection = _activeSection;
 
-    // Check if the scroll has reached the end of the scroll view
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - threshold) {
       newActiveSection = 'Academics';
     } else {
-      // Prioritize Academics section
       if (academicsPosition - threshold <= 0) {
         newActiveSection = 'Academics';
       }
-      // Then check Experience section
       else if (experiencePosition - threshold <= 0) {
         newActiveSection = 'Experience';
       }
-      // Finally, check About section
       else if (aboutPosition - threshold <= 0) {
         newActiveSection = 'About';
       }
     }
 
-    // Update the active section if it has changed
     if (newActiveSection != _activeSection) {
       setState(() {
         _activeSection = newActiveSection;
@@ -131,7 +104,6 @@ class _AboutPageState extends State<AboutPage> {
     }
   }
 
-  // Helper method to get the section key
   GlobalKey _getSectionKey(String section) {
     switch (section) {
       case 'About':
@@ -145,7 +117,6 @@ class _AboutPageState extends State<AboutPage> {
     }
   }
 
-  // Widget builder for navigation links with animations
   Widget _buildNavLink(String title, String section) {
     bool isActive = _activeSection == section;
     return GestureDetector(
@@ -154,7 +125,6 @@ class _AboutPageState extends State<AboutPage> {
       },
       child: Row(
         children: [
-          // Animated Line Before the Link
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             width: isActive ? 60.0 : 30.0,
@@ -166,7 +136,6 @@ class _AboutPageState extends State<AboutPage> {
                     : Colors.white.withOpacity(0.6)),
           ),
           const SizedBox(width: 8.0),
-          // Animated Link Text
           AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 300),
             style: TextStyle(
@@ -186,14 +155,16 @@ class _AboutPageState extends State<AboutPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: widget.isDarkMode
-          ? const Color(0xFFDBDBDB) // Light background for dark mode
-          : const Color(0xFF2A2A2A), // Dark background for light mode
-      body: Row(
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: widget.isDarkMode
+        ? const Color(0xFFDBDBDB) // Light background for dark mode
+        : const Color(0xFF2A2A2A), // Dark background for light mode
+    body: SpotlightEffect(
+      isDarkMode: widget.isDarkMode, // Pass the theme mode dynamically
+      child: Row(
         children: [
-          // Left Half - Fixed Section with Modified Navigation Links and Footer
+          // Sidebar
           Container(
             width: MediaQuery.of(context).size.width * 0.4,
             color: widget.isDarkMode
@@ -203,7 +174,6 @@ class _AboutPageState extends State<AboutPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Back Button
                 Hero(
                   tag: 'portfolioButtonHero',
                   child: Container(
@@ -225,7 +195,6 @@ class _AboutPageState extends State<AboutPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Name
                 Text(
                   'Venkat L. Turlapati',
                   style: TextStyle(
@@ -235,19 +204,19 @@ class _AboutPageState extends State<AboutPage> {
                   ),
                 ),
                 const SizedBox(height: 40),
-                // Navigation Links with Enhanced Styling and Animations
+                // Navigation Links
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildNavLink('About', 'About'),
-                    const SizedBox(height: 24.0), // Space Between Links
+                    const SizedBox(height: 24.0),
                     _buildNavLink('Experience', 'Experience'),
-                    const SizedBox(height: 24.0), // Space Between Links
+                    const SizedBox(height: 24.0),
                     _buildNavLink('Academics', 'Academics'),
                   ],
                 ),
-                const Spacer(), // Pushes the footer to the bottom
-                // Footer with Social Media Icons
+                const Spacer(),
+                // Social Links
                 Padding(
                   padding: const EdgeInsets.only(left: 0.0, bottom: 0.0),
                   child: Row(
@@ -308,17 +277,15 @@ class _AboutPageState extends State<AboutPage> {
               ],
             ),
           ),
-          // Right Half - Scrollable Section
           Expanded(
             child: SingleChildScrollView(
-              key: _scrollViewKey, // Assign the GlobalKey here
+              key: _scrollViewKey, 
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 120),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 70),
-                  // About Section
                   Container(
                     key: _aboutKey,
                     child: RichText(
@@ -443,8 +410,7 @@ class _AboutPageState extends State<AboutPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 40), // Space before Experience Section
-                  // Experience Section
+                  const SizedBox(height: 40), 
                   Container(
                     key: _experienceKey,
                     child: Column(
@@ -476,7 +442,7 @@ class _AboutPageState extends State<AboutPage> {
                             'JavaScript',
                             'Flutter'
                           ],
-                          onTap: () => _launchURL('https://example.com/church-dwight'),
+                          onTap: () => _launchURL('https://churchdwight.com/'),
                         ),
                         const SizedBox(height: 20),
                         TimelineEntry(
@@ -494,7 +460,7 @@ class _AboutPageState extends State<AboutPage> {
                             'JavaScript',
                             'Figma'
                           ],
-                          onTap: () => _launchURL('https://example.com/revv-digital'),
+                          onTap: () => _launchURL('https://www.revvdigital.in/'),
                         ),
                         const SizedBox(height: 20),
                         TimelineEntry(
@@ -509,13 +475,12 @@ class _AboutPageState extends State<AboutPage> {
                             'Python',
                             'TensorFlow'
                           ],
-                          onTap: () => _launchURL('https://example.com/coign-pvt-ltd'),
+                          onTap: () => _launchURL('https://www.linkedin.com/company/coign-edu-&-it-services-pvt-ltd-/'),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 60), // Space before Academics Section
-                  // Academics Section
+                  const SizedBox(height: 60), 
                   Container(
                     key: _academicsKey,
                     child: Column(
@@ -542,7 +507,7 @@ class _AboutPageState extends State<AboutPage> {
                           skills: [
                             'GPA: 3.77 / 4.0'
                           ],
-                          onTap: () => _launchURL('https://example.com/ut-dallas'),
+                          onTap: () => _launchURL('https://www.utdallas.edu/'),
                         ),
                         const SizedBox(height: 20),
                         TimelineEntry(
@@ -555,47 +520,46 @@ class _AboutPageState extends State<AboutPage> {
                           skills: [
                             'GPA: 3.0 / 4.0'
                           ],
-                          onTap: () => _launchURL('https://example.com/osmania-university'),
+                          onTap: () => _launchURL('https://www.linkedin.com/school/osmania-university/'),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 180), // Adjusted spacing
-                  // Footer Section
+                  const SizedBox(height: 180), 
                   Padding(
-  padding: const EdgeInsets.only(right: 200.0),
-  child: Align(
-    alignment: Alignment.center,
-    child: Text.rich(
-      TextSpan(
-        text: 'Designed in ',
-        style: TextStyle(
-          fontSize: 14,
-          color: widget.isDarkMode ? Colors.black87 : Colors.white70,
-          height: 1.5,
-        ),
-        children: [
-          TextSpan(
-            text: 'Figma',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          TextSpan(text: ', coded in '),
-          TextSpan(
-            text: 'Flutter',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          TextSpan(text: ' (because why not?), and deployed on '),
-          TextSpan(
-            text: 'AWS',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          TextSpan(text: '. Inter typeface ties it all together.'),
-        ],
-      ),
-      textAlign: TextAlign.left,
-    ),
-  ),
-),
+                  padding: const EdgeInsets.only(right: 200.0),
+                  child: Align(
+                  alignment: Alignment.center,
+                  child: Text.rich(
+                  TextSpan(
+                    text: 'Designed in ',
+                    style: TextStyle(
+                    fontSize: 14,
+                    color: widget.isDarkMode ? Colors.black87 : Colors.white70,
+                    height: 1.5,
+                  ),
+                  children: [
+                    TextSpan(
+                     text: 'Figma',
+                     style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(text: ', coded in '),
+                    TextSpan(
+                       text: 'Flutter',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(text: ' (because why not?), and deployed on '),
+                    TextSpan(
+                      text: 'AWS',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(text: '. Inter typeface ties it all together.'),
+                    ],
+                  ),
+                  textAlign: TextAlign.left,
+                ),
+              ),
+            ),
 
                   const SizedBox(height: 20),
                 ],
@@ -604,7 +568,7 @@ class _AboutPageState extends State<AboutPage> {
           ),
         ],
       ),
-    );
+  ));
   }
 }
 
@@ -615,7 +579,7 @@ class TimelineEntry extends StatefulWidget {
   final String companyOrInstitution;
   final List<String> descriptions;
   final List<String> skills;
-  final VoidCallback? onTap; // Optional callback for clicks
+  final VoidCallback? onTap; 
 
   const TimelineEntry({
     Key? key,
@@ -637,10 +601,9 @@ class _TimelineEntryState extends State<TimelineEntry> {
 
   @override
   Widget build(BuildContext context) {
-    // Define hover color based on theme
     Color hoverColor = widget.isDarkMode
-        ? Colors.grey.withOpacity(0.05) // Slightly darker than light grey
-        : Colors.black.withOpacity(0.05); // Light hover effect for light mode
+        ? Colors.grey.withOpacity(0.05) 
+        : Colors.black.withOpacity(0.05); 
 
     return MouseRegion(
       cursor: widget.onTap != null
@@ -675,7 +638,6 @@ class _TimelineEntryState extends State<TimelineEntry> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Timeline Section
                     SizedBox(
                       width: MediaQuery.of(context).size.width * 0.1,
                       child: Text(
@@ -690,12 +652,10 @@ class _TimelineEntryState extends State<TimelineEntry> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    // Content Section
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Title
                           Text(
                             widget.title,
                             style: TextStyle(
@@ -704,11 +664,10 @@ class _TimelineEntryState extends State<TimelineEntry> {
                               color: widget.isDarkMode
                                   ? Colors.black
                                   : Colors.white,
-                              decoration: TextDecoration.none, // Removed underline
+                              decoration: TextDecoration.none, 
                             ),
                           ),
                           const SizedBox(height: 4),
-                          // Company or Institution
                           Text(
                             widget.companyOrInstitution,
                             style: TextStyle(
@@ -719,7 +678,6 @@ class _TimelineEntryState extends State<TimelineEntry> {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          // Descriptions
                           ...widget.descriptions.map(
                             (description) => Padding(
                               padding: const EdgeInsets.only(bottom: 8.0),
@@ -735,7 +693,6 @@ class _TimelineEntryState extends State<TimelineEntry> {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          // Skills
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
