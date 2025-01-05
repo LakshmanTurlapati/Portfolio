@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/gestures.dart'; // Required for TapGestureRecognizer
+import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Required for FontAwesomeIcons
 
 class AboutPage extends StatefulWidget {
   final bool isDarkMode;
@@ -188,11 +189,11 @@ class _AboutPageState extends State<AboutPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: widget.isDarkMode
-          ? const Color(0xFFDBDBDB)
-          : const Color(0xFF2A2A2A),
+          ? const Color(0xFFDBDBDB) // Light background for dark mode
+          : const Color(0xFF2A2A2A), // Dark background for light mode
       body: Row(
         children: [
-          // Left Half - Fixed Section with Modified Navigation Links
+          // Left Half - Fixed Section with Modified Navigation Links and Footer
           Container(
             width: MediaQuery.of(context).size.width * 0.4,
             color: widget.isDarkMode
@@ -209,16 +210,13 @@ class _AboutPageState extends State<AboutPage> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color:
-                          widget.isDarkMode ? Colors.black : Colors.white,
+                      color: widget.isDarkMode ? Colors.black : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
                       icon: Icon(
                         Icons.arrow_back,
-                        color: widget.isDarkMode
-                            ? Colors.white
-                            : Colors.black,
+                        color: widget.isDarkMode ? Colors.white : Colors.black,
                       ),
                       onPressed: () {
                         Navigator.of(context).pop();
@@ -233,11 +231,9 @@ class _AboutPageState extends State<AboutPage> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color:
-                        widget.isDarkMode ? Colors.black : Colors.white,
+                    color: widget.isDarkMode ? Colors.black : Colors.white,
                   ),
                 ),
-              
                 const SizedBox(height: 40),
                 // Navigation Links with Enhanced Styling and Animations
                 Column(
@@ -249,6 +245,65 @@ class _AboutPageState extends State<AboutPage> {
                     const SizedBox(height: 24.0), // Space Between Links
                     _buildNavLink('Academics', 'Academics'),
                   ],
+                ),
+                const Spacer(), // Pushes the footer to the bottom
+                // Footer with Social Media Icons
+                Padding(
+                  padding: const EdgeInsets.only(left: 0.0, bottom: 0.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      IconButton(
+                        icon: const FaIcon(FontAwesomeIcons.github),
+                        color: widget.isDarkMode
+                            ? Colors.grey[800]
+                            : const Color(0xFF808080),
+                        onPressed: () async {
+                          const url = 'https://github.com/LakshmanTurlapati';
+                          if (await canLaunchUrl(Uri.parse(url))) {
+                            await launchUrl(Uri.parse(url));
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Could not launch $url')),
+                            );
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const FaIcon(FontAwesomeIcons.linkedin),
+                        color: widget.isDarkMode
+                            ? Colors.grey[800]
+                            : const Color(0xFF808080),
+                        onPressed: () async {
+                          const url =
+                              'https://www.linkedin.com/in/lakshman-turlapati-3091aa191/';
+                          if (await canLaunchUrl(Uri.parse(url))) {
+                            await launchUrl(Uri.parse(url));
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Could not launch $url')),
+                            );
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const FaIcon(FontAwesomeIcons.twitter),
+                        color: widget.isDarkMode
+                            ? Colors.grey[800]
+                            : const Color(0xFF808080),
+                        onPressed: () async {
+                          const url = 'https://x.com/parzival1213';
+                          if (await canLaunchUrl(Uri.parse(url))) {
+                            await launchUrl(Uri.parse(url));
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Could not launch $url')),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -508,22 +563,40 @@ class _AboutPageState extends State<AboutPage> {
                   const SizedBox(height: 180), // Adjusted spacing
                   // Footer Section
                   Padding(
-                    padding: const EdgeInsets.only(right: 200.0),
-                    child: Align(
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Designed in Figma, coded in Flutter (because why not?), and deployed on AWS. Inter typeface ties it all together.',
-                        textAlign: TextAlign.left,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: widget.isDarkMode
-                              ? Colors.black87
-                              : Colors.white70,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
+  padding: const EdgeInsets.only(right: 200.0),
+  child: Align(
+    alignment: Alignment.center,
+    child: Text.rich(
+      TextSpan(
+        text: 'Designed in ',
+        style: TextStyle(
+          fontSize: 14,
+          color: widget.isDarkMode ? Colors.black87 : Colors.white70,
+          height: 1.5,
+        ),
+        children: [
+          TextSpan(
+            text: 'Figma',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          TextSpan(text: ', coded in '),
+          TextSpan(
+            text: 'Flutter',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          TextSpan(text: ' (because why not?), and deployed on '),
+          TextSpan(
+            text: 'AWS',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          TextSpan(text: '. Inter typeface ties it all together.'),
+        ],
+      ),
+      textAlign: TextAlign.left,
+    ),
+  ),
+),
+
                   const SizedBox(height: 20),
                 ],
               ),
@@ -564,6 +637,11 @@ class _TimelineEntryState extends State<TimelineEntry> {
 
   @override
   Widget build(BuildContext context) {
+    // Define hover color based on theme
+    Color hoverColor = widget.isDarkMode
+        ? Colors.grey.withOpacity(0.05) // Slightly darker than light grey
+        : Colors.black.withOpacity(0.05); // Light hover effect for light mode
+
     return MouseRegion(
       cursor: widget.onTap != null
           ? SystemMouseCursors.click
@@ -576,16 +654,12 @@ class _TimelineEntryState extends State<TimelineEntry> {
           duration: const Duration(milliseconds: 300),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: isHovered
-                ? widget.isDarkMode
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.1)
-                : Colors.transparent,
+            color: isHovered ? hoverColor : Colors.transparent,
             border: isHovered
                 ? Border.all(
                     color: widget.isDarkMode
-                        ? Colors.white.withOpacity(0.2)
-                        : Colors.black.withOpacity(0.2),
+                        ? Colors.black.withOpacity(0.2)
+                        : Colors.white.withOpacity(0.2),
                   )
                 : null,
           ),
@@ -610,8 +684,8 @@ class _TimelineEntryState extends State<TimelineEntry> {
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: widget.isDarkMode
-                              ? Colors.black
-                              : Colors.white,
+                              ? Colors.black.withOpacity(0.6)
+                              : Colors.white.withOpacity(0.6),
                         ),
                       ),
                     ),
@@ -630,9 +704,7 @@ class _TimelineEntryState extends State<TimelineEntry> {
                               color: widget.isDarkMode
                                   ? Colors.black
                                   : Colors.white,
-                              decoration: widget.onTap != null
-                                  ? TextDecoration.underline
-                                  : TextDecoration.none,
+                              decoration: TextDecoration.none, // Removed underline
                             ),
                           ),
                           const SizedBox(height: 4),
