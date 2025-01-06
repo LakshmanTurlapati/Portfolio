@@ -29,3 +29,7 @@ flutter:
     - web/icons/portfolio.png
     - web/icons/portfolio_light.png
     - assets/
+artifacts:
+    baseDirectory: build/web
+    files:
+      - '**/*'
