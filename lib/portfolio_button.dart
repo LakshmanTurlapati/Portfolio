@@ -4,8 +4,13 @@ import 'dart:math';
 
 class AnimatedGradientButton extends StatefulWidget {
   final bool isDarkMode;
+  final VoidCallback onPressed; // Added onPressed callback
 
-  const AnimatedGradientButton({super.key, required this.isDarkMode});
+  const AnimatedGradientButton({
+    Key? key,
+    required this.isDarkMode,
+    required this.onPressed, // Require onPressed in constructor
+  }) : super(key: key);
 
   @override
   _AnimatedGradientButtonState createState() => _AnimatedGradientButtonState();
@@ -36,6 +41,7 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
       return Stack(
         alignment: Alignment.center,
         children: [
+          // Animated Gradient Background
           AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
@@ -87,10 +93,12 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
               );
             },
           ),
+          // Elevated Button
           ElevatedButton(
-            onPressed: () => print('Portfolio clicked'),
+            onPressed: widget.onPressed, // Use the passed callback
             style: ElevatedButton.styleFrom(
-              backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
+              backgroundColor:
+                  widget.isDarkMode ? Colors.black : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide.none,
@@ -108,7 +116,8 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
               child: Text(
                 'Portfolio',
                 style: TextStyle(
-                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                  color:
+                      widget.isDarkMode ? Colors.white : Colors.black,
                   fontWeight: FontWeight.w600,
                   fontSize: 18,
                 ),

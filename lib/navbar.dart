@@ -1,19 +1,101 @@
+// nav_bar.dart
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'portfolio_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'about_page.dart';
-import 'circular_reveal_page_route.dart'; // Our custom radial route
+import 'portfolio.dart'; // Import the new PortfolioPage
+import 'circular_reveal_page_route.dart'; // Your custom radial route
 
-class NavBar extends StatelessWidget {
+class NavBar extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback toggleTheme;
 
   const NavBar({
-    super.key,
+    Key? key,
     required this.isDarkMode,
     required this.toggleTheme,
-  });
+  }) : super(key: key);
+
+  @override
+  State<NavBar> createState() => _NavBarState();
+}
+
+class _NavBarState extends State<NavBar> {
+  final GlobalKey _portfolioButtonKey = GlobalKey();
+
+  void _navigateToPortfolio() {
+    // Ensure the widget is rendered before trying to get its position
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final RenderBox? box = _portfolioButtonKey.currentContext?.findRenderObject() as RenderBox?;
+      if (box != null) {
+        // Get the global position of the button
+        final position = box.localToGlobal(Offset.zero);
+        final size = box.size;
+        final centerX = position.dx + size.width / 2;
+        final centerY = position.dy + size.height / 2;
+        final offset = Offset(centerX, centerY);
+
+        Navigator.of(context).push(
+          CircularRevealPageRoute(
+            page: PortfolioPage(
+              isDarkMode: widget.isDarkMode,
+              toggleTheme: widget.toggleTheme,
+            ),
+            startOffset: offset,
+            startRadius: 0,
+            duration: const Duration(milliseconds: 500),
+            reverseDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      } else {
+        // Fallback in case the position couldn't be determined
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => PortfolioPage(
+              isDarkMode: widget.isDarkMode,
+              toggleTheme: widget.toggleTheme,
+            ),
+          ),
+        );
+      }
+    });
+  }
+
+  void _navigateToAbout() {
+    // Get the position of the NavBar itself
+    final RenderBox? box = context.findRenderObject() as RenderBox?;
+    if (box != null) {
+      final position = box.localToGlobal(Offset.zero);
+      final size = box.size;
+      final centerX = position.dx + size.width / 2;
+      final centerY = position.dy + size.height / 2;
+      final offset = Offset(centerX, centerY);
+
+      Navigator.of(context).push(
+        CircularRevealPageRoute(
+          page: AboutPage(
+            isDarkMode: widget.isDarkMode,
+            toggleTheme: widget.toggleTheme,
+          ),
+          startOffset: offset,
+          startRadius: 0,
+          duration: const Duration(milliseconds: 500),
+          reverseDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    } else {
+      // Fallback in case the position couldn't be determined
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => AboutPage(
+            isDarkMode: widget.isDarkMode,
+            toggleTheme: widget.toggleTheme,
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +109,7 @@ class NavBar extends StatelessWidget {
             width: 630,
             height: 60,
             decoration: BoxDecoration(
-              color: isDarkMode
+              color: widget.isDarkMode
                   ? Colors.white.withOpacity(0.8)
                   : Colors.black.withOpacity(0.8),
               borderRadius: BorderRadius.circular(25),
@@ -42,39 +124,23 @@ class NavBar extends StatelessWidget {
             width: 200,
             child: Hero(
               tag: 'portfolioButtonHero',
-              child: AnimatedGradientButton(isDarkMode: isDarkMode),
+              child: AnimatedGradientButton(
+                key: _portfolioButtonKey,
+                isDarkMode: widget.isDarkMode,
+                onPressed: _navigateToPortfolio, // Pass the navigation callback
+              ),
             ),
           ),
 
+          // "About Me" button
           Positioned.fill(
             child: Center(
               child: GestureDetector(
-                onTap: () {
-                  final box = context.findRenderObject() as RenderBox?;
-                  if (box != null) {
-                    final navBarPos = box.localToGlobal(Offset.zero);
-                    final centerX = navBarPos.dx + (box.size.width / 2);
-                    final centerY = navBarPos.dy + (box.size.height / 2);
-                    final offset = Offset(centerX, centerY);
-
-                    Navigator.of(context).push(
-                      CircularRevealPageRoute(
-                        page: AboutPage(
-                          isDarkMode: isDarkMode,
-                          toggleTheme: toggleTheme,
-                        ),
-                        startOffset: offset,
-                        startRadius: 0,
-                        duration: const Duration(milliseconds: 500),
-                        reverseDuration: const Duration(milliseconds: 500),
-                      ),
-                    );
-                  }
-                },
+                onTap: _navigateToAbout, // Handle navigation on tap
                 child: Text(
                   'About Me',
                   style: TextStyle(
-                    color: isDarkMode ? Colors.grey[800] : Colors.grey,
+                    color: widget.isDarkMode ? Colors.grey[800] : Colors.grey,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
@@ -93,37 +159,47 @@ class NavBar extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const FaIcon(FontAwesomeIcons.github),
-                  color: isDarkMode ? Colors.grey[800] : const Color(0xFF808080),
+                  color:
+                      widget.isDarkMode ? Colors.grey[800] : const Color(0xFF808080),
                   onPressed: () async {
                     const url = 'https://github.com/LakshmanTurlapati';
                     if (await canLaunchUrl(Uri.parse(url))) {
                       await launchUrl(Uri.parse(url));
                     } else {
-                      throw 'Could not launch $url';
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Could not launch $url')),
+                      );
                     }
                   },
                 ),
                 IconButton(
                   icon: const FaIcon(FontAwesomeIcons.linkedin),
-                  color: isDarkMode ? Colors.grey[800] : const Color(0xFF808080),
+                  color:
+                      widget.isDarkMode ? Colors.grey[800] : const Color(0xFF808080),
                   onPressed: () async {
-                    const url = 'https://www.linkedin.com/in/lakshman-turlapati-3091aa191/';
+                    const url =
+                        'https://www.linkedin.com/in/lakshman-turlapati-3091aa191/';
                     if (await canLaunchUrl(Uri.parse(url))) {
                       await launchUrl(Uri.parse(url));
                     } else {
-                      throw 'Could not launch $url';
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Could not launch $url')),
+                      );
                     }
                   },
                 ),
                 IconButton(
                   icon: const FaIcon(FontAwesomeIcons.twitter),
-                  color: isDarkMode ? Colors.grey[800] : const Color(0xFF808080),
+                  color:
+                      widget.isDarkMode ? Colors.grey[800] : const Color(0xFF808080),
                   onPressed: () async {
                     const url = 'https://x.com/parzival1213';
                     if (await canLaunchUrl(Uri.parse(url))) {
                       await launchUrl(Uri.parse(url));
                     } else {
-                      throw 'Could not launch $url';
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Could not launch $url')),
+                      );
                     }
                   },
                 ),
