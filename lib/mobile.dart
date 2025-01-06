@@ -5,16 +5,15 @@ import 'theme_toggle.dart';
 import 'mobile_home_text.dart';
 import 'mobile_dot_matrix.dart';
 
-
 class MobileHome extends StatelessWidget {
   final VoidCallback toggleTheme;
   final bool isDarkMode;
 
   const MobileHome({
-    super.key,
+    Key? key,
     required this.toggleTheme,
     required this.isDarkMode,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +57,7 @@ class MobileHome extends StatelessWidget {
 
           // Name at the top-left
           Positioned(
-            top:20,
+            top: 20,
             left: 20,
             child: Text(
               'Lakshman Turlapati',
@@ -79,7 +78,8 @@ class MobileHome extends StatelessWidget {
               isDarkMode: isDarkMode,
             ),
           ),
-        // Scrolling text
+
+          // Scrolling text
           Align(
             alignment: Alignment.center,
             child: Transform.translate(
@@ -88,20 +88,28 @@ class MobileHome extends StatelessWidget {
             ),
           ),
 
-           Positioned(
+          // Dot matrix pattern near the bottom
+          Positioned(
             bottom: 140,
             left: 0,
             right: 0,
             child: Center(
               child: DotMatrixPattern(isDarkMode: isDarkMode),
             ),
-          ), 
-          // Navbar at the bottom (reused)
+          ),
+
+          // Mobile NavBar at the bottom
           Positioned(
             bottom: 20,
             left: 20,
             right: 20,
-            child: NavBar(isDarkMode: isDarkMode),
+            // -------------------------------
+            // FIX: Must provide toggleTheme!
+            // -------------------------------
+            child: NavBar(
+              isDarkMode: isDarkMode,
+              toggleTheme: toggleTheme, // <-- This fixes the error
+            ),
           ),
         ],
       ),

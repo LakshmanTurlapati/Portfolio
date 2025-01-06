@@ -3,8 +3,13 @@ import 'dart:math';
 
 class AnimatedGradientButton extends StatefulWidget {
   final bool isDarkMode;
+  final VoidCallback? onPressed; // Allow an external callback
 
-  const AnimatedGradientButton({super.key, required this.isDarkMode});
+  const AnimatedGradientButton({
+    Key? key,
+    required this.isDarkMode,
+    this.onPressed, // optional or required, your choice
+  }) : super(key: key);
 
   @override
   _AnimatedGradientButtonState createState() => _AnimatedGradientButtonState();
@@ -90,11 +95,10 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
 
           // Button with Image
           ElevatedButton(
-            onPressed: () => print('Portfolio clicked'),
+            // Use the passed callback if provided, else default
+            onPressed: widget.onPressed ?? () => print('Portfolio clicked'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: widget.isDarkMode
-                  ? Colors.black
-                  : Colors.white,
+              backgroundColor: widget.isDarkMode ? Colors.black : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
