@@ -28,7 +28,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
       "name": "Blockchain Smartcontracts",
       "image": "assets/blockchain.jpg",
       "links": {
-        "GitHub": "https://github.com/LakshmanTurlapati/Portfolio",
+        "GitHub": "https://github.com/LakshmanTurlapati/Blockchain",
       }
     },
     {
