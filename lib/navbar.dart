@@ -127,16 +127,15 @@ class _NavBarState extends State<NavBar> {
               child: AnimatedGradientButton(
                 key: _portfolioButtonKey,
                 isDarkMode: widget.isDarkMode,
-                onPressed: _navigateToPortfolio, // Pass the navigation callback
+                onPressed: _navigateToPortfolio, 
               ),
             ),
           ),
 
-          // "About Me" button
           Positioned.fill(
             child: Center(
               child: GestureDetector(
-                onTap: _navigateToAbout, // Handle navigation on tap
+                onTap: _navigateToAbout, 
                 child: Text(
                   'About Me',
                   style: TextStyle(
@@ -151,7 +150,7 @@ class _NavBarState extends State<NavBar> {
 
           // Social icons
           Positioned(
-            right: 10,
+            right: 12,
             top: 0,
             bottom: 0,
             child: Row(
@@ -172,6 +171,7 @@ class _NavBarState extends State<NavBar> {
                     }
                   },
                 ),
+                const SizedBox(width: 8), 
                 IconButton(
                   icon: const FaIcon(FontAwesomeIcons.linkedin),
                   color:
@@ -187,7 +187,9 @@ class _NavBarState extends State<NavBar> {
                       );
                     }
                   },
-                ),
+                ),      
+                const SizedBox(width: 8), 
+
                 IconButton(
                   icon: const FaIcon(FontAwesomeIcons.twitter),
                   color:

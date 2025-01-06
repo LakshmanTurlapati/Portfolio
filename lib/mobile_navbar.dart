@@ -143,7 +143,7 @@ class _NavBarState extends State<NavBar> {
 
           // Social Icons
           Expanded(
-            flex: 3,
+            flex: 2,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 double iconSize = constraints.maxWidth / 5; // Adjust if needed

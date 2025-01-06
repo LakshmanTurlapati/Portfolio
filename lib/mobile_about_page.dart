@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+// import 'fog.dart';
 
 class MobileAboutPage extends StatefulWidget {
   final bool isDarkMode;
@@ -161,7 +162,11 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
       backgroundColor: widget.isDarkMode
           ? const Color(0xFFDBDBDB) // Light background for dark mode
           : const Color(0xFF2A2A2A), // Dark background for light mode
-      body: SingleChildScrollView(
+      body: 
+      // FoggedScreenEffect(
+      // isDarkMode: widget.isDarkMode,
+      // child: 
+      SingleChildScrollView(
         key: _scrollViewKey,
         controller: _scrollController,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -193,7 +198,7 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
             
 
             // About Section
-            const SizedBox(height: 70),
+            const SizedBox(height: 40),
             Container(
               key: _aboutKey,
               child: RichText(
@@ -484,8 +489,12 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
             const SizedBox(height: 20),
           ],
         ),
-      ),
+      // ),
+    ),
     );
+    
+    
+
   }
 }
 

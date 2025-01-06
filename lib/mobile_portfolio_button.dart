@@ -112,11 +112,13 @@ class _AnimatedGradientButtonState extends State<AnimatedGradientButton>
                 maxWidth: constraints.maxWidth * 0.9,
                 maxHeight: constraints.maxHeight * 0.8,
               ),
-              child: Image.asset(
-                widget.isDarkMode
-                    ? 'web/icons/portfolio_light.png'
-                    : 'web/icons/portfolio.png',
-                fit: BoxFit.contain,
+             child: Transform.scale(
+    scale: 1.4, // Increase the scale (1.0 is default, 1.2 increases size by 20%)
+    child: Image.asset(
+      widget.isDarkMode
+          ? 'web/icons/portfolio_light.png'
+          : 'web/icons/portfolio.png',
+      fit: BoxFit.scaleDown,),
               ),
             ),
           ),

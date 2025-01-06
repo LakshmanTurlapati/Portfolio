@@ -22,12 +22,17 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
   final ScrollController mobile_scrollController = ScrollController();
   final GlobalKey mobile_scrollViewKey = GlobalKey();
 
+  // Define GlobalKeys for each project
   final List<GlobalKey> mobile_projectKeys = [
     for (var i = 0; i < 6; i++) GlobalKey(),
   ];
 
+  // Track the index of the active project
   int mobile_activeProjectIndex = -1;
 
+  // -----------------------------------------------------
+  // 1) Define the projects here so we can precache them
+  // -----------------------------------------------------
   final List<Map<String, dynamic>> projects = [
     {
       "name": "Blockchain Smartcontracts",
@@ -88,10 +93,14 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
     super.initState();
     mobile_scrollController.addListener(mobile_onScroll);
 
+    // -----------------------------------------------------
+    // 2) Precache each project's image for better performance
+    // -----------------------------------------------------
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (var project in projects) {
         final imageUrl = project['image'];
         if (imageUrl is String && imageUrl.isNotEmpty) {
+          // Check if it's a remote URL or a local asset
           if (imageUrl.startsWith('http')) {
             precacheImage(NetworkImage(imageUrl), context);
           } else {
@@ -161,6 +170,7 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
+    // Determine number of columns based on screen width
     int crossAxisCount = 1;
     double screenWidth = size.width;
     if (screenWidth >= 600) {
@@ -170,23 +180,29 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
       crossAxisCount = 3;
     }
 
-    const double backButtonPadding = 20.0;
-    const double gridOuterPadding = 58.0;
+    const double backButtonPadding = 10.0;
+    const double gridOuterPadding = 24.0;
     const double gridSpacing = 44.0;
-    const double gridItemAspectRatio = 1.4;
+    const double gridItemAspectRatio = 1.4; // Width / Height
 
     return Scaffold(
       backgroundColor: widget.isDarkMode
-          ? const Color(0xFFDBDBDB)
-          : const Color(0xFF2A2A2A),
+          ? const Color(0xFFDBDBDB) // Light background for dark mode
+          : const Color(0xFF2A2A2A), // Dark background for light mode
       body: SnowfallEffect(
         isDarkMode: widget.isDarkMode,
+        // ----------------------------------------------
+        // 3) Wrap your scroll view with the snow effect
+        // ----------------------------------------------
         child: SingleChildScrollView(
           key: mobile_scrollViewKey,
           controller: mobile_scrollController,
+          padding:
+              const EdgeInsets.symmetric(horizontal: gridOuterPadding, vertical: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header with Back Button
               Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: backButtonPadding, vertical: 10),
@@ -213,44 +229,46 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
                         ),
                       ),
                     ),
+                    // Optional: Add theme toggle or other actions here
                   ],
                 ),
               ),
               const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: gridOuterPadding),
-                child: GridView.builder(
-                  key: const PageStorageKey<String>('portfolioGridMobile'),
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: gridSpacing,
-                    mainAxisSpacing: gridSpacing,
-                    childAspectRatio: gridItemAspectRatio,
-                  ),
-                  itemCount: projects.length,
-                  itemBuilder: (context, index) {
-                    final project = projects[index];
-                    return MobilePortfolioGridItem(
-                      key: mobile_projectKeys[index],
-                      isDarkMode: widget.isDarkMode,
-                      isActive: mobile_activeProjectIndex == index,
-                      onTap: () {
-                        mobile_launchURL(
-                          project["links"]["Website"] as String? ??
-                              project["links"]["GitHub"] as String? ??
-                              "",
-                        );
-                      },
-                      projectName: project["name"] as String,
-                      projectImage: project["image"] as String,
-                      links: Map<String, String>.from(project["links"]),
-                    );
-                  },
+
+              // Projects Grid
+              GridView.builder(
+                key: const PageStorageKey<String>('portfolioGridMobile'),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: gridSpacing,
+                  mainAxisSpacing: gridSpacing,
+                  childAspectRatio: gridItemAspectRatio,
                 ),
+                itemCount: projects.length,
+                itemBuilder: (context, index) {
+                  final project = projects[index];
+                  return MobilePortfolioGridItem(
+                    key: mobile_projectKeys[index],
+                    isDarkMode: widget.isDarkMode,
+                    isActive: mobile_activeProjectIndex == index,
+                    onTap: () {
+                      mobile_launchURL(
+                        project["links"]["Website"] as String? ??
+                            project["links"]["GitHub"] as String? ??
+                            "",
+                      );
+                    },
+                    projectName: project["name"] as String,
+                    projectImage: project["image"] as String,
+                    links: Map<String, String>.from(project["links"]),
+                  );
+                },
               ),
               const SizedBox(height: 20),
+
+              // Footer
               Center(
                 child: RichText(
                   text: TextSpan(
@@ -261,7 +279,7 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
                     children: [
                       const TextSpan(text: "Some of my "),
                       TextSpan(
-                        text: "finest works",
+                        text: "'finest works'",
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const TextSpan(text: " are missing, Thanks to the "),
@@ -274,8 +292,7 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-
+              const SizedBox(height: 10),
             ],
           ),
         ),
@@ -344,9 +361,10 @@ class MobilePortfolioGridItem extends StatelessWidget {
             ),
             child: Stack(
               children: [
+                // Project Image
                 Positioned.fill(
                   child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.only(left:12.0,right:12,top:12,bottom: 12+26),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: projectImage.startsWith('http')
@@ -361,31 +379,36 @@ class MobilePortfolioGridItem extends StatelessWidget {
                     ),
                   ),
                 ),
+                // Project Name and Links Overlay
                 Positioned(
                   bottom: 8,
                   left: 12,
                   right: 12,
                   child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0, vertical: 4.0),
                     decoration: BoxDecoration(
                       color: isDarkMode
                           ? Colors.black.withOpacity(0.5)
                           : Colors.white.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          projectName,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: isDarkMode ? Colors.white : Colors.black,
+                        // Project Name
+                        Expanded(
+                          child: Text(
+                            projectName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color:
+                                  isDarkMode ? Colors.white : Colors.black,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        // Action Icons
                         Row(
                           children: links.entries.map((entry) {
                             IconData icon;
@@ -394,7 +417,7 @@ class MobilePortfolioGridItem extends StatelessWidget {
                                 icon = FontAwesomeIcons.link;
                                 break;
                               case "GitHub":
-                                icon = FontAwesomeIcons.codeFork;
+                                icon = FontAwesomeIcons.codeBranch;
                                 break;
                               case "Design":
                                 icon = FontAwesomeIcons.figma;
@@ -402,17 +425,21 @@ class MobilePortfolioGridItem extends StatelessWidget {
                               default:
                                 icon = FontAwesomeIcons.link;
                             }
-                            return IconButton(
-                              icon: FaIcon(
-                                icon,
-                                size: 12,
-                                color: isDarkMode ? Colors.white : Colors.black,
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: IconButton(
+                                icon: FaIcon(
+                                  icon,
+                                  size: 16,
+                                  color:
+                                      isDarkMode ? Colors.white : Colors.black,
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: () {
+                                  mobile_launchLink(context, entry.value);
+                                },
                               ),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              onPressed: () {
-                                mobile_launchLink(context, entry.value);
-                              },
                             );
                           }).toList(),
                         ),
