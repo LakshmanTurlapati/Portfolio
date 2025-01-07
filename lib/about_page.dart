@@ -513,7 +513,7 @@ class _AboutPageState extends State<AboutPage> {
                                 'Master’s Degree · Information Technology and Management',
                             descriptions: [],
                             skills: [
-                              'GPA: 3.77 / 4.0'
+                              'GPA: 3.8 / 4.0'
                             ],
                             onTap: () => _launchURL('https://www.utdallas.edu/'),
                           ),

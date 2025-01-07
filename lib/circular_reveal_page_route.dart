@@ -15,8 +15,8 @@ class CircularRevealPageRoute<T> extends PageRouteBuilder<T> {
     required this.page,
     required this.startOffset,
     this.startRadius = 0,
-    this.duration = const Duration(milliseconds: 300),
-    this.reverseDuration = const Duration(milliseconds: 300),
+    this.duration = const Duration(milliseconds: 500),
+    this.reverseDuration = const Duration(milliseconds: 500),
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => page,
           transitionDuration: duration,

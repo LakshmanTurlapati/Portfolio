@@ -425,7 +425,7 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                         'Master’s Degree · Information Technology and Management',
                     descriptions: [],
                     skills: [
-                      'GPA: 3.77 / 4.0'
+                      'GPA: 3.8 / 4.0'
                     ],
                     isActive: _activeTimelineIndex == 3,
                     onTap: () => _launchURL('https://www.utdallas.edu/'),

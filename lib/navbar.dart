@@ -134,6 +134,8 @@ class _NavBarState extends State<NavBar> {
 
           Positioned.fill(
             child: Center(
+            child:MouseRegion(              
+            cursor: SystemMouseCursors.click, // Change cursor to pointer
               child: GestureDetector(
                 onTap: _navigateToAbout, 
                 child: Text(
@@ -144,6 +146,7 @@ class _NavBarState extends State<NavBar> {
                     fontSize: 16,
                   ),
                 ),
+              ),
               ),
             ),
           ),

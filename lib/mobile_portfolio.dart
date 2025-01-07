@@ -364,7 +364,7 @@ class MobilePortfolioGridItem extends StatelessWidget {
                 // Project Image
                 Positioned.fill(
                   child: Padding(
-                    padding: const EdgeInsets.only(left:12.0,right:12,top:12,bottom: 12+26),
+                    padding: const EdgeInsets.only(left:12.0,right:12,top:12,bottom: 58),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: projectImage.startsWith('http')
@@ -381,7 +381,7 @@ class MobilePortfolioGridItem extends StatelessWidget {
                 ),
                 // Project Name and Links Overlay
                 Positioned(
-                  bottom: 8,
+                  bottom: 6,
                   left: 12,
                   right: 12,
                   child: Container(
@@ -389,8 +389,8 @@ class MobilePortfolioGridItem extends StatelessWidget {
                         horizontal: 8.0, vertical: 4.0),
                     decoration: BoxDecoration(
                       color: isDarkMode
-                          ? Colors.black.withOpacity(0.5)
-                          : Colors.white.withOpacity(0.5),
+                          ? Colors.black.withOpacity(0)
+                          : Colors.white.withOpacity(0),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -403,7 +403,7 @@ class MobilePortfolioGridItem extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                               color:
-                                  isDarkMode ? Colors.white : Colors.black,
+                                  isDarkMode ? Colors.black : Colors.white,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -432,7 +432,7 @@ class MobilePortfolioGridItem extends StatelessWidget {
                                   icon,
                                   size: 16,
                                   color:
-                                      isDarkMode ? Colors.white : Colors.black,
+                                      isDarkMode ? Colors.black : Colors.white,
                                 ),
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(),
