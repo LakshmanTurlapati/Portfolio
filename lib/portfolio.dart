@@ -167,7 +167,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: headerPadding,
-                vertical: 10.0,
+                vertical: 8.0,
               ),
               child: SizedBox(
                 height: headerHeight,
@@ -201,7 +201,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
 
             // Desktop Projects Grid
             Expanded(
@@ -209,11 +209,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
                 padding: EdgeInsets.only(
                   left: gridOuterPadding,
                   right: gridOuterPadding,
-                  top: 20,
+                  top: 0,
                   bottom: gridOuterPadding,
                 ),
                 child: GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
+                  physics: const BouncingScrollPhysics(),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     mainAxisSpacing: verticalSpacing,
