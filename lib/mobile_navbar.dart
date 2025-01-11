@@ -191,7 +191,7 @@ class _NavBarState extends State<NavBar> {
                     // Twitter
                     IconButton(
                       icon: FaIcon(
-                        FontAwesomeIcons.twitter,
+                        FontAwesomeIcons.xTwitter,
                         size: iconSize.clamp(12.0, 18.0),
                       ),
                       color: widget.isDarkMode
