@@ -194,7 +194,7 @@ class _NavBarState extends State<NavBar> {
                 const SizedBox(width: 8), 
 
                 IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.twitter),
+                  icon: const FaIcon(FontAwesomeIcons.xTwitter),
                   color:
                       widget.isDarkMode ? Colors.grey[800] : const Color(0xFF808080),
                   onPressed: () async {
