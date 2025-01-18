@@ -21,7 +21,7 @@ To run this project locally, follow these steps:
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/yourusername/portfolio-website.git
+   git clone https://github.com/LakshmanTurlapati/Portfolio.git
    cd portfolio-website
    ```
 
