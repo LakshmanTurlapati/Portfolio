@@ -642,7 +642,7 @@ class _TimelineEntryState extends State<TimelineEntry> {
                 sigmaY: isHovered ? 10.0 : 0.0,
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.only(bottom: 12.0, right: 12.0, top: 12.0, left: 12.0), // Added right padding
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
