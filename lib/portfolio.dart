@@ -60,11 +60,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
       }
     },
     {
-      "name": "Movie Recommender",
-      "image": "assets/movie.png",
+      "name": "LinkedIn Auto Connect",
+      "image": "assets/linkedin.png",
       "links": {
         "GitHub":
-            "https://github.com/LakshmanTurlapati/Movie-Recommendation-System",
+            "https://github.com/LakshmanTurlapati/linkedin-autoconnect-extension/tree/main",
       }
     },
     {
