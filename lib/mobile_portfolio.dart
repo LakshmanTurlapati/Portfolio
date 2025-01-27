@@ -61,11 +61,12 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
     },
     {
       "name": "Financial Inclusion",
-      "image": "assets/finance.jpg",
+      "image": "assets/fi.png",
       "links": {
-        "Website": "https://www.youtube.com/watch?v=4-z_v_sE5C8",
+        "Website": "https://docs.google.com/document/d/1cq1xeUpl-lst5bj4376_QhCSo7HIc1EvPecKw0cmQGc/edit?usp=sharing",
         "GitHub":
-            "https://github.com/LakshmanTurlapati/Financial-Inclusion/tree/main/Dashboard",
+            "https://github.com/LakshmanTurlapati/Financial-Inclusion-v2",
+            "Design":"https://www.figma.com/design/5kNlAtt2Hh6NTx2YAPLhIu/Financial-Inclusion?node-id=0-1&t=jnAr4kRmQeHKDdOg-1"
       }
     },
     {
