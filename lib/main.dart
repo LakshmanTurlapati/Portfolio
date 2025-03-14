@@ -5,7 +5,8 @@ import 'home_text.dart';
 import 'particle_background.dart';
 import 'dot_matrix.dart';
 import 'theme_toggle.dart';
-import 'mobile.dart'; 
+import 'mobile.dart';
+import 'chat.dart';
 
 void main() {
   runApp(const MyApp());
@@ -70,6 +71,15 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool isHovered = false;
+  bool isChatOpen = false;
+  Rect? _chatPopupRect;
+
+  void _toggleChat(Rect? rect) {
+    setState(() {
+      isChatOpen = rect != null;
+      _chatPopupRect = rect;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -136,13 +146,28 @@ class _HomePageState extends State<HomePage> {
 
           // Dot matrix pattern
           Positioned(
-            bottom: 100,
+            bottom: 160,
             left: 0,
             right: 0,
             child: Center(
               child: DotMatrixPattern(isDarkMode: widget.isDarkMode),
             ),
           ),
+
+          // Only show ChatPlaceholder when chat is not open
+          if (!isChatOpen)
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: ChatPlaceholder(
+                  isDarkMode: widget.isDarkMode,
+                  initialWidth: 200,
+                  onSendMessage: (rect) => _toggleChat(rect),
+                ),
+              ),
+            ),
 
           // Theme toggle buttons
           Positioned(
@@ -188,6 +213,21 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+          if (isChatOpen && _chatPopupRect != null)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => _toggleChat(null),
+                child: Container(
+                  color: const Color(0xFF2a2a2a).withOpacity(0.5),
+                ),
+              ),
+            ),
+          if (isChatOpen && _chatPopupRect != null)
+            ChatPopup(
+              isDarkMode: widget.isDarkMode,
+              onClose: () => _toggleChat(null),
+              initialRect: _chatPopupRect!,
+            ),
         ],
       ),
     );
