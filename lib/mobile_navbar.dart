@@ -9,11 +9,13 @@ import 'circular_reveal_page_route.dart'; // Your custom radial route
 class NavBar extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback toggleTheme;
+  final VoidCallback? onNavigationClick;
 
   const NavBar({
     Key? key,
     required this.isDarkMode,
     required this.toggleTheme,
+    this.onNavigationClick,
   }) : super(key: key);
 
   @override
@@ -26,6 +28,10 @@ class _NavBarState extends State<NavBar> {
 
   /// Navigate to AboutPage with circular reveal
   void _navigateToAbout() {
+    // Increment click count when navigating to about
+    print('About button clicked - incrementing count');
+    widget.onNavigationClick?.call();
+    
     final RenderBox? box = context.findRenderObject() as RenderBox?;
     if (box != null) {
       final position = box.localToGlobal(Offset.zero);
@@ -60,6 +66,10 @@ class _NavBarState extends State<NavBar> {
 
   /// Navigate to PortfolioPage with circular reveal **from the Portfolio button**.
   void _navigateToPortfolio() {
+    // Increment click count when navigating to portfolio
+    print('Portfolio button clicked - incrementing count');
+    widget.onNavigationClick?.call();
+    
     // Use the _portfolioButtonKey instead of the NavBar's context
     final RenderBox? box = _portfolioButtonKey.currentContext?.findRenderObject() as RenderBox?;
     if (box != null) {

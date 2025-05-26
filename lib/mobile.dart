@@ -5,7 +5,7 @@ import 'theme_toggle.dart';
 import 'mobile_home_text.dart';
 import 'mobile_dot_matrix.dart';
 
-class MobileHome extends StatelessWidget {
+class MobileHome extends StatefulWidget {
   final VoidCallback toggleTheme;
   final bool isDarkMode;
 
@@ -16,6 +16,20 @@ class MobileHome extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<MobileHome> createState() => _MobileHomeState();
+}
+
+class _MobileHomeState extends State<MobileHome> {
+  int _clickCount = 0;
+
+  void _incrementClickCount() {
+    setState(() {
+      _clickCount++;
+    });
+    print('Mobile Home - Click count incremented to: $_clickCount');
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
@@ -24,7 +38,7 @@ class MobileHome extends StatelessWidget {
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
-              gradient: isDarkMode
+              gradient: widget.isDarkMode
                   ? const SweepGradient(
                       center: Alignment.center,
                       startAngle: 0.0,
@@ -64,7 +78,7 @@ class MobileHome extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w500,
-                color: isDarkMode ? Colors.white : Colors.black,
+                color: widget.isDarkMode ? Colors.white : Colors.black,
               ),
             ),
           ),
@@ -74,8 +88,8 @@ class MobileHome extends StatelessWidget {
             top: 20,
             right: 20,
             child: ThemeToggle(
-              toggleTheme: toggleTheme,
-              isDarkMode: isDarkMode,
+              toggleTheme: widget.toggleTheme,
+              isDarkMode: widget.isDarkMode,
             ),
           ),
 
@@ -84,7 +98,10 @@ class MobileHome extends StatelessWidget {
             alignment: Alignment.center,
             child: Transform.translate(
               offset: const Offset(0, -80),
-              child: ScrollingText(isDarkMode: isDarkMode),
+              child: ScrollingText(
+                isDarkMode: widget.isDarkMode,
+                clickCount: _clickCount,
+              ),
             ),
           ),
 
@@ -94,7 +111,7 @@ class MobileHome extends StatelessWidget {
             left: 0,
             right: 0,
             child: Center(
-              child: DotMatrixPattern(isDarkMode: isDarkMode),
+              child: DotMatrixPattern(isDarkMode: widget.isDarkMode),
             ),
           ),
 
@@ -103,12 +120,10 @@ class MobileHome extends StatelessWidget {
             bottom: 20,
             left: 20,
             right: 20,
-            // -------------------------------
-            // FIX: Must provide toggleTheme!
-            // -------------------------------
             child: NavBar(
-              isDarkMode: isDarkMode,
-              toggleTheme: toggleTheme, // <-- This fixes the error
+              isDarkMode: widget.isDarkMode,
+              toggleTheme: widget.toggleTheme,
+              onNavigationClick: _incrementClickCount,
             ),
           ),
         ],

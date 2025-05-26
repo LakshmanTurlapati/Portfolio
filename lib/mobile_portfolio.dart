@@ -24,7 +24,7 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
 
   // Define GlobalKeys for each project
   final List<GlobalKey> mobile_projectKeys = [
-    for (var i = 0; i < 6; i++) GlobalKey(),
+    for (var i = 0; i < 17; i++) GlobalKey(),
   ];
 
   // Track the index of the active project
@@ -38,7 +38,7 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
       "name": "Blockchain Smartcontracts",
       "image": "assets/blockchain.jpg",
       "links": {
-        "GitHub": "https://github.com/LakshmanTurlapati/Portfolio",
+        "GitHub": "https://github.com/LakshmanTurlapati/Blockchain",
       }
     },
     {
@@ -73,6 +73,7 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
       "name": "LinkedIn Auto Connect",
       "image": "assets/linkedin.png",
       "links": {
+        "Website": "https://chromewebstore.google.com/detail/linkedin-auto-connect/jomecnphbmfpkcajfhkoebgmbcbakjoa?authuser=1&hl=en&pli=1",
         "GitHub":
             "https://github.com/LakshmanTurlapati/linkedin-autoconnect-extension/tree/main",
       }
@@ -86,6 +87,87 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
         "Design":
             "https://www.figma.com/design/Lj0O8tBvyuGSx3LePBCuO1/C%26D?node-id=0-1&t=QO284B9qHF3brzcH-1"
       }
+    },
+    {
+      "name": "X-Read",
+      "image": "",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/DCTE-Script",
+      },
+      "useIframe": true,
+    },
+    {
+      "name": "Heartline",
+      "image": "assets/heartline.png",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/Heartline",
+      },
+    },
+    {
+      "name": "Lucent",
+      "image": "assets/lucent.png",
+      "links": {
+        "Website": "https://monumental-granita-08d2f5.netlify.app",
+        "GitHub": "https://github.com/LakshmanTurlapati/Lucent",
+      },
+    },
+    {
+      "name": "Parz-AI",
+      "image": "assets/parz_ai.png",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/Parz-AI",
+      },
+    },
+    {
+      "name": "awsxUTD-Hackathon",
+      "image": "assets/hackathon.png",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/awsxUTD-Hackathon",
+      },
+    },
+    {
+      "name": "T2S",
+      "image": "",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/T2S",
+      },
+      "useIframe": true,
+    },
+    {
+      "name": "Star-Trail-Flutter",
+      "image": "assets/startrail.jpg",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/Star-Trail-Flutter",
+      },
+    },
+    {
+      "name": "awsxutd",
+      "image": "assets/awsxutd.png",
+      "links": {
+        "Website":"https://marvelous-sopapillas-cf2910.netlify.app",
+        "GitHub": "https://github.com/LakshmanTurlapati/awsxutd",
+      },
+    },
+    {
+      "name": "Review Gate",
+      "image": "assets/review_gate.webp",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/Review-Gate",
+      },
+    },
+    {
+      "name": "Open-API",
+      "image": "assets/open_api.png",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/open-api",
+      },
+    },
+    {
+      "name": "ArtScii",
+      "image": "assets/artscii.jpg",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/ArtScii",
+      },
     },
   ];
 
@@ -169,22 +251,10 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
-    // Determine number of columns based on screen width
-    int crossAxisCount = 1;
-    double screenWidth = size.width;
-    if (screenWidth >= 600) {
-      crossAxisCount = 2;
-    }
-    if (screenWidth >= 900) {
-      crossAxisCount = 3;
-    }
-
     const double backButtonPadding = 10.0;
     const double gridOuterPadding = 24.0;
-    const double gridSpacing = 44.0;
-    const double gridItemAspectRatio = 1.4; // Width / Height
+    const double itemSpacing = 32.0;
+    const double itemWidth = 320.0; // Fixed width for all items
 
     return Scaffold(
       backgroundColor: widget.isDarkMode
@@ -192,16 +262,12 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
           : const Color(0xFF2A2A2A), // Dark background for light mode
       body: SnowfallEffect(
         isDarkMode: widget.isDarkMode,
-        // ----------------------------------------------
-        // 3) Wrap your scroll view with the snow effect
-        // ----------------------------------------------
         child: SingleChildScrollView(
           key: mobile_scrollViewKey,
           controller: mobile_scrollController,
-          padding:
-              const EdgeInsets.symmetric(horizontal: gridOuterPadding, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: gridOuterPadding, vertical: 20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center, // Center the items
             children: [
               // Header with Back Button
               Padding(
@@ -230,43 +296,39 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
                         ),
                       ),
                     ),
-                    // Optional: Add theme toggle or other actions here
                   ],
                 ),
               ),
               const SizedBox(height: 20),
 
-              // Projects Grid
-              GridView.builder(
-                key: const PageStorageKey<String>('portfolioGridMobile'),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: gridSpacing,
-                  mainAxisSpacing: gridSpacing,
-                  childAspectRatio: gridItemAspectRatio,
-                ),
-                itemCount: projects.length,
-                itemBuilder: (context, index) {
-                  final project = projects[index];
-                  return MobilePortfolioGridItem(
-                    key: mobile_projectKeys[index],
-                    isDarkMode: widget.isDarkMode,
-                    isActive: mobile_activeProjectIndex == index,
-                    onTap: () {
-                      mobile_launchURL(
-                        project["links"]["Website"] as String? ??
-                            project["links"]["GitHub"] as String? ??
-                            "",
-                      );
-                    },
-                    projectName: project["name"] as String,
-                    projectImage: project["image"] as String,
-                    links: Map<String, String>.from(project["links"]),
-                  );
-                },
-              ),
+              // Projects List with Individual Aspect Ratios
+              ...projects.asMap().entries.map((entry) {
+                final index = entry.key;
+                final project = entry.value;
+                return Padding(
+                  padding: EdgeInsets.only(bottom: index == projects.length - 1 ? 0 : itemSpacing),
+                  child: SizedBox(
+                    width: itemWidth,
+                    child: MobilePortfolioGridItem(
+                      key: mobile_projectKeys[index],
+                      isDarkMode: widget.isDarkMode,
+                      isActive: mobile_activeProjectIndex == index,
+                      onTap: () {
+                        mobile_launchURL(
+                          project["links"]["Website"] as String? ??
+                              project["links"]["GitHub"] as String? ??
+                              "",
+                        );
+                      },
+                      projectName: project["name"] as String,
+                      projectImage: project["image"] as String,
+                      links: Map<String, String>.from(project["links"]),
+                      useIframe: project["useIframe"] as bool? ?? false,
+                    ),
+                  ),
+                );
+              }).toList(),
+              
               const SizedBox(height: 20),
 
               // Footer
@@ -309,6 +371,7 @@ class MobilePortfolioGridItem extends StatelessWidget {
   final String projectName;
   final String projectImage;
   final Map<String, String> links;
+  final bool useIframe;
 
   const MobilePortfolioGridItem({
     Key? key,
@@ -318,6 +381,7 @@ class MobilePortfolioGridItem extends StatelessWidget {
     required this.projectName,
     required this.projectImage,
     required this.links,
+    required this.useIframe,
   }) : super(key: key);
 
   Future<void> mobile_launchLink(BuildContext context, String? url) async {
@@ -347,11 +411,9 @@ class MobilePortfolioGridItem extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: isActive ? activeColor : Colors.transparent,
-          border: isActive
-              ? Border.all(
-                  color: borderColor,
-                )
-              : null,
+          border: Border.all(
+            color: isActive ? borderColor : Colors.transparent,
+          ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
@@ -360,92 +422,114 @@ class MobilePortfolioGridItem extends StatelessWidget {
               sigmaX: isActive ? 4.0 : 0.0,
               sigmaY: isActive ? 4.0 : 0.0,
             ),
-            child: Stack(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Project Image
-                Positioned.fill(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left:12.0,right:12,top:12,bottom: 58),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: projectImage.startsWith('http')
-                          ? Image.network(
-                              projectImage,
-                              fit: BoxFit.cover,
-                            )
-                          : Image.asset(
-                              projectImage,
-                              fit: BoxFit.cover,
+                // Project Image with Natural Aspect Ratio
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(left: 8.0, right: 8, top: 8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: useIframe || projectImage.isEmpty
+                        ? Container(
+                            height: 180, // Fixed height for iframe projects
+                            color: isDarkMode
+                                ? Colors.grey[300]
+                                : Colors.grey[800],
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.code,
+                                    size: 40,
+                                    color: isDarkMode
+                                        ? Colors.grey[600]
+                                        : Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Interactive Project',
+                                    style: TextStyle(
+                                      color: isDarkMode
+                                          ? Colors.grey[600]
+                                          : Colors.grey[400],
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                    ),
+                          )
+                        : projectImage.startsWith('http')
+                            ? Image.network(
+                                projectImage,
+                                fit: BoxFit.fitWidth,
+                                width: double.infinity,
+                              )
+                            : Image.asset(
+                                projectImage,
+                                fit: BoxFit.fitWidth,
+                                width: double.infinity,
+                              ),
                   ),
                 ),
-                // Project Name and Links Overlay
-                Positioned(
-                  bottom: 6,
-                  left: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8.0, vertical: 4.0),
-                    decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? Colors.black.withOpacity(0)
-                          : Colors.white.withOpacity(0),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        // Project Name
-                        Expanded(
-                          child: Text(
-                            projectName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color:
-                                  isDarkMode ? Colors.black : Colors.white,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                
+                // Project Name and Links Section
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      // Project Name
+                      Expanded(
+                        child: Text(
+                          projectName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: isDarkMode ? Colors.black : Colors.white,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        // Action Icons
-                        Row(
-                          children: links.entries.map((entry) {
-                            IconData icon;
-                            switch (entry.key) {
-                              case "Website":
-                                icon = FontAwesomeIcons.link;
-                                break;
-                              case "GitHub":
-                                icon = FontAwesomeIcons.codeBranch;
-                                break;
-                              case "Design":
-                                icon = FontAwesomeIcons.figma;
-                                break;
-                              default:
-                                icon = FontAwesomeIcons.link;
-                            }
-                            return Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: IconButton(
-                                icon: FaIcon(
-                                  icon,
-                                  size: 16,
-                                  color:
-                                      isDarkMode ? Colors.black : Colors.white,
-                                ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                onPressed: () {
-                                  mobile_launchLink(context, entry.value);
-                                },
+                      ),
+                      // Action Icons
+                      Row(
+                        children: links.entries.map((entry) {
+                          IconData icon;
+                          switch (entry.key) {
+                            case "Website":
+                              icon = FontAwesomeIcons.link;
+                              break;
+                            case "GitHub":
+                              icon = FontAwesomeIcons.codeBranch;
+                              break;
+                            case "Design":
+                              icon = FontAwesomeIcons.figma;
+                              break;
+                            default:
+                              icon = FontAwesomeIcons.link;
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: IconButton(
+                              icon: FaIcon(
+                                icon,
+                                size: 16,
+                                color: isDarkMode ? Colors.black : Colors.white,
                               ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () {
+                                mobile_launchLink(context, entry.value);
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   ),
                 ),
               ],

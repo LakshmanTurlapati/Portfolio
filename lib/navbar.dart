@@ -10,11 +10,13 @@ import 'circular_reveal_page_route.dart'; // Your custom radial route
 class NavBar extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback toggleTheme;
+  final Function(int) incrementClickCounter;
 
   const NavBar({
     Key? key,
     required this.isDarkMode,
     required this.toggleTheme,
+    required this.incrementClickCounter,
   }) : super(key: key);
 
   @override
@@ -24,7 +26,21 @@ class NavBar extends StatefulWidget {
 class _NavBarState extends State<NavBar> {
   final GlobalKey _portfolioButtonKey = GlobalKey();
 
+  @override
+  void initState() {
+    super.initState();
+    // Force rebuild when returning from navigation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {});
+    });
+  }
+
   void _navigateToPortfolio() {
+    // Increment counter by 2 when portfolio is clicked
+    widget.incrementClickCounter(2);
+    print("Portfolio clicked");
+    setState(() {}); // Trigger rebuild
+    
     // Ensure the widget is rendered before trying to get its position
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final RenderBox? box = _portfolioButtonKey.currentContext?.findRenderObject() as RenderBox?;
@@ -63,6 +79,11 @@ class _NavBarState extends State<NavBar> {
   }
 
   void _navigateToAbout() {
+    // Increment counter by 1 when About Me is clicked
+    widget.incrementClickCounter(1);
+    print("About Me clicked");
+    setState(() {}); // Trigger rebuild
+    
     // Get the position of the NavBar itself
     final RenderBox? box = context.findRenderObject() as RenderBox?;
     if (box != null) {
