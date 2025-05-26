@@ -210,114 +210,166 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                   ),
                   children: [
                     const TextSpan(
-                      text:
-                          'I’m a digital creator with a passion for building scalable solutions that bridge technology and human needs. With expertise in ',
+                      text: 'I\'m a digital creator passionate about building scalable solutions that bridge technology and human needs, and I\'m all about turning ideas into impactful, user-centric applications. My journey, rooted in ',
                     ),
                     TextSpan(
                       text: 'Full-stack',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
-                      text:
-                          ' development and a love for crafting seamless experiences using ',
+                      text: ' development, has taken a thrilling turn towards ',
                     ),
                     TextSpan(
-                      text: 'Flutter, MEAN Stack, and AWS',
+                      text: 'Artificial Intelligence',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
-                      text:
-                          ', I’m all about turning ideas into impactful, user-centric applications.\n\n',
+                      text: ', a field that has utterly captivated me.\n\n',
                     ),
                     const TextSpan(
-                      text:
-                          'My journey started with a Bachelor’s in ',
+                      text: 'This new direction was sparked at ',
                     ),
                     TextSpan(
-                      text: 'Computer Science',
+                      text: 'TAMUHack',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
-                      text:
-                          ', where I led projects like a ',
+                      text: '. Witnessing the sheer power of AI in so many projects was a revelation. It led to an intense period of self-immersion: devouring everything on ',
                     ),
                     TextSpan(
-                      text: 'blockchain',
+                      text: 'LLMs and transformers',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
-                      text:
-                          '-based healthcare system, ',
+                      text: ' (inspired by visionaries like ',
                     ),
                     TextSpan(
-                      text: 'Smart Fabric Using IoT',
+                      text: 'Andrej Karpathy',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
-                      text:
-                          '—a health-monitoring fabric prototype that won ',
+                      text: '), exploring ',
                     ),
                     TextSpan(
-                      text: 'second prize',
+                      text: 'Hugging Face',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
-                      text:
-                          ' at a state-level hackathon hosted by ',
+                      text: ', and even upgrading my MacBook from ',
                     ),
                     TextSpan(
-                      text: 'T-Hub',
+                      text: 'M2 Air to an M3 Max Pro',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
-                      text:
-                          ', the world’s largest incubation center. From developing a real-time booking system on AWS to designing a mobile-first portfolio site with Flutter, my work reflects my drive to innovate and adapt.\n\n',
+                      text: ' (Let me tell you it was not light on the pocket) to fuel my experimenting with large language models locally\n\n',
                     ),
                     const TextSpan(
-                      text:
-                          'Now, as a Master’s student in ',
+                      text: 'Currently, I\'m sharpening my ability to merge tech expertise with strategic leadership as a Master\'s student in ',
                     ),
                     TextSpan(
                       text: 'IT Management',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
-                      text:
-                          ' at ',
+                      text: ' at ',
                     ),
                     TextSpan(
                       text: 'UT Dallas',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
-                      text:
-                          '—my dream school—I’m sharpening my ability to merge tech expertise with strategic leadership. Fun fact: UT Dallas was the only school I applied to because of its top-notch business program and vibrant community!\n\n',
+                      text: '—my dream school! Fun fact: UT Dallas was the only school I applied to because of its top-notch business program and vibrant community! Even with a demanding schedule of five subjects and technical officer roles in the ',
                     ),
                     TextSpan(
-                      text: 'What’s next? ',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const TextSpan(
-                      text:
-                          'I aim to grow as a ',
-                    ),
-                    TextSpan(
-                      text: 'Product Manager',
+                      text: 'AWS, Code.exe, and Product Base',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
-                      text:
-                          ', starting from the trenches of development to learn the ins and outs of building transformative products. As a ',
+                      text: ' clubs, I achieved a ',
+                    ),
+                    TextSpan(
+                      text: '4.0 GPA',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const TextSpan(
+                      text: ' in my recent semester, all while actively developing AI projects. While I once aimed for Product Management, ',
+                    ),
+                    TextSpan(
+                      text: 'AI development',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const TextSpan(
+                      text: ' is now my driving passion. As a ',
                     ),
                     TextSpan(
                       text: '2x AWS-certified',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
-                      text:
-                          ' professional, I’m equipped with the skills and knowledge to lead in cloud-first environments. With a vision to lead and create, I’m here to challenge the status quo, one line of code (or one bold idea) at a time.',
+                      text: ' professional and, I\'m incredibly honored to say, an ',
+                    ),
+                    TextSpan(
+                      text: 'AWS Cloud Captain',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const TextSpan(
+                      text: ' (one of only ~100 selected globally each year), I\'m equipped to innovate in cloud-first, AI-driven environments.\n\n',
+                    ),
+                    const TextSpan(
+                      text: 'I\'ve since created numerous ',
+                    ),
+                    TextSpan(
+                      text: 'multi-agentic workflows',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const TextSpan(
+                      text: ', and the "',
+                    ),
+                    TextSpan(
+                      text: 'Review-Gate',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const TextSpan(
+                      text: '" project for the ',
+                    ),
+                    TextSpan(
+                      text: 'Cursor IDE',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const TextSpan(
+                      text: ', which has garnered over ',
+                    ),
+                    TextSpan(
+                      text: '500+ GitHub stars',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const TextSpan(
+                      text: ' and roughly ',
+                    ),
+                    TextSpan(
+                      text: '100,000+ impressions',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const TextSpan(
+                      text: ' within a week!. This work has not only boosted my LinkedIn presence (around ',
+                    ),
+                    TextSpan(
+                      text: '2,500+ followers',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const TextSpan(
+                      text: ' and significant engagement) but has also opened doors to exciting professional opportunities.\n\n',
+                    ),
+                    const TextSpan(
+                      text: 'I\'m deeply grateful for this journey and believe I\'m in the right place at the right time. My heart is set on ',
+                    ),
+                    TextSpan(
+                      text: 'AI development',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const TextSpan(
+                      text: ', and I\'m excited to keep challenging the status quo, one line of code (or one bold AI idea) at a time.',
                     ),
                   ],
                 ),
@@ -422,10 +474,10 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                     timeline: '2024 - 2026',
                     title: 'University of Texas at Dallas',
                     companyOrInstitution:
-                        'Master’s Degree · Information Technology and Management',
+                        'Master\'s Degree · Information Technology and Management',
                     descriptions: [],
                     skills: [
-                      'GPA: 3.8 / 4.0'
+                      'GPA: 3.9 / 4.0'
                     ],
                     isActive: _activeTimelineIndex == 3,
                     onTap: () => _launchURL('https://www.utdallas.edu/'),
@@ -437,10 +489,10 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                     timeline: '2018 - 2022',
                     title: 'Osmania University',
                     companyOrInstitution:
-                        'Bachelor’s Degree · Computer Science',
+                        'Bachelor\'s Degree · Computer Science',
                     descriptions: [],
                     skills: [
-                      'GPA: 3.0 / 4.0'
+                      'GPA: 3.5 / 4.0'
                     ],
                     isActive: _activeTimelineIndex == 4,
                     onTap: () => _launchURL('https://www.linkedin.com/school/osmania-university/'),
@@ -498,14 +550,14 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
   }
 }
 
-class TimelineEntry extends StatelessWidget {
+class TimelineEntry extends StatefulWidget {
   final bool isDarkMode;
   final String timeline;
   final String title;
   final String companyOrInstitution;
   final List<String> descriptions;
   final List<String> skills;
-  final bool isActive;
+  final bool isActive; // Keep for mobile scroll tracking
   final VoidCallback? onTap;
 
   const TimelineEntry({
@@ -521,42 +573,47 @@ class TimelineEntry extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<TimelineEntry> createState() => _TimelineEntryState();
+}
+
+class _TimelineEntryState extends State<TimelineEntry> {
+  bool isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    // Define active styles
-    Color activeColor = isDarkMode
-        ? Colors.grey.withOpacity(0.1)
+    // Use the same hover color system as desktop
+    Color hoverColor = widget.isDarkMode
+        ? Colors.grey.withOpacity(0.05) 
         : Colors.black.withOpacity(0.05);
 
-    Color borderColor = isDarkMode
-        ? Colors.black.withOpacity(0.3)
-        : Colors.white.withOpacity(0.3);
-
-    double scale = isActive ? 1.05 : 1.0;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedScale(
-        scale: scale,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+    return MouseRegion(
+      cursor: widget.onTap != null
+          ? SystemMouseCursors.click
+          : MouseCursor.defer,
+      onEnter: (_) => setState(() => isHovered = true),
+      onExit: (_) => setState(() => isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: isActive ? activeColor : Colors.transparent,
-            border: isActive
-                ? Border.all(
-                    color: borderColor,
-                  )
-                : null,
+            color: isHovered ? hoverColor : Colors.transparent,
+            border: Border.all(
+              color: isHovered
+                  ? (widget.isDarkMode
+                      ? Colors.black.withOpacity(0.2)
+                      : Colors.white.withOpacity(0.2))
+                  : Colors.transparent,
+            ),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: BackdropFilter(
               filter: ImageFilter.blur(
-                sigmaX: isActive ? 10.0 : 0.0,
-                sigmaY: isActive ? 10.0 : 0.0,
+                sigmaX: isHovered ? 10.0 : 0.0,
+                sigmaY: isHovered ? 10.0 : 0.0,
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -567,11 +624,11 @@ class TimelineEntry extends StatelessWidget {
                     Flexible(
                       flex: 2,
                       child: Text(
-                        timeline,
+                        widget.timeline,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isDarkMode
+                          color: widget.isDarkMode
                               ? Colors.black.withOpacity(0.6)
                               : Colors.white.withOpacity(0.6),
                         ),
@@ -585,35 +642,34 @@ class TimelineEntry extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            title,
+                            widget.title,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color:
-                                  isDarkMode ? Colors.black : Colors.white,
+                              color: widget.isDarkMode ? Colors.black : Colors.white,
                               decoration: TextDecoration.none,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            companyOrInstitution,
+                            widget.companyOrInstitution,
                             style: TextStyle(
                               fontSize: 16,
-                              color: isDarkMode
+                              color: widget.isDarkMode
                                   ? Colors.black87
                                   : Colors.white70,
                             ),
                           ),
                           const SizedBox(height: 10),
                           // Descriptions
-                          ...descriptions.map(
+                          ...widget.descriptions.map(
                             (description) => Padding(
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: Text(
                                 description,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: isDarkMode
+                                  color: widget.isDarkMode
                                       ? Colors.black87
                                       : Colors.white70,
                                 ),
@@ -625,14 +681,14 @@ class TimelineEntry extends StatelessWidget {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: skills.map((skill) {
+                            children: widget.skills.map((skill) {
                               return Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: isDarkMode
+                                  color: widget.isDarkMode
                                       ? const Color(0xFF3A3A3A)
                                       : const Color(0xFFF0F0F0),
                                   borderRadius: BorderRadius.circular(20),
@@ -641,7 +697,7 @@ class TimelineEntry extends StatelessWidget {
                                   skill,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isDarkMode
+                                    color: widget.isDarkMode
                                         ? Colors.white
                                         : Colors.black87,
                                   ),

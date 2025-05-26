@@ -17,6 +17,7 @@ class _ScrollingTextState extends State<ScrollingText> {
     'Software Developer',
     'Full-Stack Developer',
     'Cloud Developer',
+    'AI Developer',
   ];
 
   final String staticTextStart = 'I’m an enthused';
