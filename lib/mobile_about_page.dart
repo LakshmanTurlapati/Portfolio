@@ -581,7 +581,16 @@ class _TimelineEntryState extends State<TimelineEntry> {
 
   @override
   Widget build(BuildContext context) {
-    // Use the same hover color system as desktop
+    // Use the same active color system as mobile portfolio
+    Color activeColor = widget.isDarkMode
+        ? Colors.grey.withOpacity(0.1)
+        : Colors.black.withOpacity(0.05);
+
+    Color activeBorderColor = widget.isDarkMode
+        ? Colors.black.withOpacity(0.3)
+        : Colors.white.withOpacity(0.3);
+
+    // Hover color for additional hover effect
     Color hoverColor = widget.isDarkMode
         ? Colors.grey.withOpacity(0.05) 
         : Colors.black.withOpacity(0.05);
@@ -599,21 +608,27 @@ class _TimelineEntryState extends State<TimelineEntry> {
           curve: Curves.easeInOut,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: isHovered ? hoverColor : Colors.transparent,
+            // Prioritize active state over hover state
+            color: widget.isActive 
+                ? activeColor 
+                : (isHovered ? hoverColor : Colors.transparent),
             border: Border.all(
-              color: isHovered
-                  ? (widget.isDarkMode
-                      ? Colors.black.withOpacity(0.2)
-                      : Colors.white.withOpacity(0.2))
-                  : Colors.transparent,
+              color: widget.isActive
+                  ? activeBorderColor
+                  : (isHovered
+                      ? (widget.isDarkMode
+                          ? Colors.black.withOpacity(0.2)
+                          : Colors.white.withOpacity(0.2))
+                      : Colors.transparent),
             ),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: BackdropFilter(
               filter: ImageFilter.blur(
-                sigmaX: isHovered ? 10.0 : 0.0,
-                sigmaY: isHovered ? 10.0 : 0.0,
+                // Use stronger blur for active state, lighter for hover
+                sigmaX: widget.isActive ? 4.0 : (isHovered ? 10.0 : 0.0),
+                sigmaY: widget.isActive ? 4.0 : (isHovered ? 10.0 : 0.0),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),

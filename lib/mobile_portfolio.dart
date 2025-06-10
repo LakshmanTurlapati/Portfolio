@@ -35,6 +35,13 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
   // -----------------------------------------------------
   final List<Map<String, dynamic>> projects = [
     {
+      "name": "Review Gate",
+      "image": "assets/review_gate.webp",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/Review-Gate",
+      },
+    },
+    {
       "name": "Blockchain Smartcontracts",
       "image": "assets/blockchain.jpg",
       "links": {
@@ -146,13 +153,6 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
       "links": {
         "Website":"https://marvelous-sopapillas-cf2910.netlify.app",
         "GitHub": "https://github.com/LakshmanTurlapati/awsxutd",
-      },
-    },
-    {
-      "name": "Review Gate",
-      "image": "assets/review_gate.webp",
-      "links": {
-        "GitHub": "https://github.com/LakshmanTurlapati/Review-Gate",
       },
     },
     {

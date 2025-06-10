@@ -6,7 +6,7 @@ import 'dart:ui'; // Import for ImageFilter
 
 // Reuse the same API service from chat.dart
 class ChatApiService {
-  static const String baseUrl = 'https://637d-2603-8080-61f0-8b0-552a-d298-9a93-5b2c.ngrok-free.app';
+  static const String baseUrl = 'https://cdbc-129-110-242-24.ngrok-free.app';
   
   // Health check endpoint
   Future<bool> checkHealth() async {
@@ -116,11 +116,10 @@ class _LoadingAnimatedTextState extends State<LoadingAnimatedText> with TickerPr
   late AnimationController _shimmerController;
   
   final List<String> _loadingTexts = [
-    'Thinking...',
-    'Reflecting...',
-    'Analyzing...',
-    'Processing...',
-    'Computing...',
+    "Waking up my private server",
+    "Using Steam Deck as a server",
+    "Almost there, Hold tight!",
+    "Inferencing on my Steam Deck",
   ];
   
   int _currentTextIndex = 0;
@@ -131,7 +130,7 @@ class _LoadingAnimatedTextState extends State<LoadingAnimatedText> with TickerPr
     
     _controllers = List.generate(3, (index) => 
       AnimationController(
-        duration: const Duration(milliseconds: 500),
+        duration: const Duration(milliseconds: 1000),
         vsync: this,
       )
     );
@@ -392,7 +391,7 @@ class _ChatMobilePageState extends State<ChatMobilePage> {
     });
     
     if (!_isApiAvailable) {
-      _addBotMessage("The server is currently down at the moment. It's either being updated or temporarily down for maintenance. Please try again later.");
+      _addBotMessage("The server is currently down, It's either being updated or down for maintenance. Please try again later.");
     }
   }
   
@@ -702,24 +701,6 @@ class _ChatMobilePageState extends State<ChatMobilePage> {
                       ),
                     ),
                     
-                    // Footer text - exact desktop positioning and styling
-                    Container(
-                      padding: const EdgeInsets.only(bottom: 20), // Moved closer to input (was 65)
-                      child: Center(
-                        child: Text(
-                          "Still in experimental phase, can make mistakes",
-                          style: TextStyle(
-                            fontSize: 11, // Exact desktop font size
-                            fontStyle: FontStyle.italic,
-                            // Exact desktop footer text colors
-                            color: widget.isDarkMode 
-                                ? Colors.black.withOpacity(0.5) 
-                                : Colors.white.withOpacity(0.5),
-                          ),
-                        ),
-                      ),
-                    ),
-                    
                     // Suggestion pills above input field
                     if (_messages.isEmpty) // Only show when no messages
                       Container(
@@ -805,10 +786,28 @@ class _ChatMobilePageState extends State<ChatMobilePage> {
                         ),
                       ),
                     
-                    // Input field - exact desktop positioning
+                    // Input field
                     Container(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 30), // Changed from 15 to 12 left/right
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 15), // Reduced bottom padding
                       child: _buildInputField(),
+                    ),
+                    
+                    // Footer text - moved below input field
+                    Container(
+                      padding: const EdgeInsets.only(bottom: 30), // Bottom padding for safe area
+                      child: Center(
+                        child: Text(
+                          "Still in experimental phase, will make mistakes",
+                          style: TextStyle(
+                            fontSize: 11, // Exact desktop font size
+                            fontStyle: FontStyle.italic,
+                            // Exact desktop footer text colors
+                            color: widget.isDarkMode 
+                                ? Colors.black.withOpacity(0.5) 
+                                : Colors.white.withOpacity(0.5),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

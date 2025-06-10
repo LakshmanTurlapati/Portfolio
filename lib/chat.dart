@@ -6,7 +6,7 @@ import 'dart:ui'; // Import for ImageFilter
 
 // API service to handle communication with the backend
 class ChatApiService {
-  static const String baseUrl = 'https://637d-2603-8080-61f0-8b0-552a-d298-9a93-5b2c.ngrok-free.app';
+  static const String baseUrl = 'https://cdbc-129-110-242-24.ngrok-free.app';
   
   // Health check endpoint
   Future<bool> checkHealth() async {
@@ -79,6 +79,7 @@ class ChatHistoryManager {
   static List<ChatMessage> _history = [];
   static final StreamController<List<ChatMessage>> _controller = 
       StreamController<List<ChatMessage>>.broadcast();
+  static bool _suggestionsDismissedThisSession = false;
   
   // Get current history
   static List<ChatMessage> get history => List.unmodifiable(_history);
@@ -86,16 +87,28 @@ class ChatHistoryManager {
   // Stream of history updates
   static Stream<List<ChatMessage>> get historyStream => _controller.stream;
   
+  // Getter for suggestion dismissal state
+  static bool get suggestionsDismissed => _suggestionsDismissedThisSession;
+  
   // Add a message to history
   static void addMessage(ChatMessage message) {
     _history.add(message);
     _controller.add(_history);
   }
   
+  // Method to dismiss suggestions for the session
+  static void dismissSuggestions() {
+    _suggestionsDismissedThisSession = true;
+    // We might want to notify listeners if other parts of the UI
+    // need to react to this change immediately. For now, ChatPopup
+    // will read this on its init.
+  }
+  
   // Clear history
   static void clearHistory() {
     _history.clear();
     _controller.add(_history);
+    _suggestionsDismissedThisSession = false; // Reset on full history clear
   }
 }
 
@@ -532,6 +545,13 @@ class _ChatPopupState extends State<ChatPopup> with SingleTickerProviderStateMix
   bool _isLoading = false;
   bool _isApiAvailable = false;
   StreamSubscription? _historySubscription;
+  // Suggestion pills
+  final List<String> _suggestions = [
+    "Who are you?",
+    "What music do you listen to?",
+  ];
+  late List<bool> _suggestionClicked;
+  bool _showSuggestions = true; // Controls visibility for fade animation
 
   @override
   void initState() {
@@ -563,6 +583,16 @@ class _ChatPopupState extends State<ChatPopup> with SingleTickerProviderStateMix
     
     // Load existing messages
     _messages.addAll(ChatHistoryManager.history);
+    // Initialize suggestion clicked tracking
+    _suggestionClicked = List<bool>.filled(_suggestions.length, false);
+    
+    // Check if suggestions were already dismissed this session
+    if (ChatHistoryManager.suggestionsDismissed) {
+      _showSuggestions = false;
+      for (int i = 0; i < _suggestionClicked.length; i++) {
+        _suggestionClicked[i] = true;
+      }
+    }
     
     // Process the first message if available
     if (_messages.isNotEmpty && _messages.length == 1 && _messages.first.isUser) {
@@ -660,7 +690,7 @@ class _ChatPopupState extends State<ChatPopup> with SingleTickerProviderStateMix
     });
     
     if (!_isApiAvailable) {
-      _addBotMessage("The server is currently down at the moment. It's either being updated or temporarily down for maintenance. Please try again later.");
+      _addBotMessage("The server is currently down, It's either being updated or down for maintenance.");
     }
   }
   
@@ -998,122 +1028,93 @@ class _ChatPopupState extends State<ChatPopup> with SingleTickerProviderStateMix
                           ),
                         ),
                       
-                      // Footer text
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 80, // Just above the input field
-                        child: Opacity(
-                          opacity: chatAreaVisible,
-                          child: Center(
-                            child: Text(
-                              "Still in experimental phase, can make mistakes",
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                                color: widget.isDarkMode 
-                                    ? Colors.black.withOpacity(0.5) 
-                                    : Colors.white.withOpacity(0.5),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      
-                      // Suggestion pills above input field (only when no messages)
-                      if (_messages.isEmpty)
-                        Positioned(
-                          left: 15,
-                          right: 15,
-                          bottom: 65, // Above input field, below footer
-                          child: Opacity(
-                            opacity: chatAreaVisible,
-                            child: Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // First pill
-                                  GestureDetector(
-                                    onTap: () {
-                                      _messageController.text = "Who are you?";
-                                      _handleSendMessage();
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        // Match input field colors
-                                        color: widget.isDarkMode
-                                            ? Colors.white.withOpacity(0.6)
-                                            : Colors.black.withOpacity(0.6),
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: widget.isDarkMode 
-                                              ? Colors.white.withOpacity(0.2)
-                                              : Colors.black.withOpacity(0.2),
-                                          width: 0.5,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        "Who are you?",
-                                        style: TextStyle(
-                                          // Match input text colors
-                                          color: widget.isDarkMode
-                                              ? Colors.grey[800]
-                                              : const Color(0xFF808080),
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // Second pill
-                                  GestureDetector(
-                                    onTap: () {
-                                      _messageController.text = "What music do you listen to?";
-                                      _handleSendMessage();
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        // Match input field colors
-                                        color: widget.isDarkMode
-                                            ? Colors.white.withOpacity(0.6)
-                                            : Colors.black.withOpacity(0.6),
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: widget.isDarkMode 
-                                              ? Colors.white.withOpacity(0.2)
-                                              : Colors.black.withOpacity(0.2),
-                                          width: 0.5,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        "What music do you listen to?",
-                                        style: TextStyle(
-                                          // Match input text colors
-                                          color: widget.isDarkMode
-                                              ? Colors.grey[800]
-                                              : const Color(0xFF808080),
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      
-                      // Input field
+                      // Grouped suggestions, input field, and footer with uniform spacing
                       Positioned(
                         left: 15,
                         right: 15,
-                        bottom: 15,
-                        child: _buildInputField(chatAreaVisible),
+                        bottom: 20, // Uniform bottom spacing
+                        child: Opacity(
+                          opacity: chatAreaVisible,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AnimatedOpacity(
+                                opacity: _showSuggestions ? 1.0 : 0.0,
+                                duration: const Duration(milliseconds: 300),
+                                child: _suggestionClicked.contains(false)
+                                    ? Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: List<Widget>.generate(
+                                          _suggestions.length,
+                                          (index) {
+                                            if (_suggestionClicked[index]) return const SizedBox.shrink();
+                                            return Padding(
+                                              padding: const EdgeInsets.only(right: 8),
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  setState(() {
+                                                    _showSuggestions = false;
+                                                  });
+                                                  Future.delayed(const Duration(milliseconds: 350), () {
+                                                    setState(() {
+                                                      for (int i = 0; i < _suggestionClicked.length; i++) {
+                                                        _suggestionClicked[i] = true;
+                                                      }
+                                                    });
+                                                    ChatHistoryManager.dismissSuggestions(); // Persist dismissal for session
+                                                    _messageController.text = _suggestions[index];
+                                                    _handleSendMessage();
+                                                  });
+                                                },
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                  decoration: BoxDecoration(
+                                                    color: widget.isDarkMode
+                                                        ? Colors.white.withOpacity(0.6)
+                                                        : Colors.black.withOpacity(0.6),
+                                                    borderRadius: BorderRadius.circular(16),
+                                                    border: Border.all(
+                                                      color: widget.isDarkMode
+                                                          ? Colors.white.withOpacity(0.2)
+                                                          : Colors.black.withOpacity(0.2),
+                                                      width: 0.5,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    _suggestions[index],
+                                                    style: TextStyle(
+                                                      color: widget.isDarkMode
+                                                          ? Colors.grey[800]
+                                                          : const Color(0xFF808080),
+                                                      fontSize: 13,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(), // Show nothing if all clicked (or fading)
+                              ),
+                              const SizedBox(height: 15),
+                              _buildInputField(chatAreaVisible),
+                              const SizedBox(height: 15),
+                              Text(
+                                "Still in experimental phase, will make mistakes",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                  color: widget.isDarkMode
+                                      ? Colors.black.withOpacity(0.5)
+                                      : Colors.white.withOpacity(0.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),

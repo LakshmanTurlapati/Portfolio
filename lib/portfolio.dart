@@ -46,6 +46,13 @@ class _PortfolioPageState extends State<PortfolioPage> {
   // -----------------------------------------
   final List<Map<String, dynamic>> desktopProjects = [
     {
+      "name": "Review Gate",
+      "image": "assets/review_gate.webp",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/Review-Gate",
+      },
+    },
+    {
       "name": "Blockchain Smartcontracts",
       "image": "assets/blockchain.jpg",
       "links": {
@@ -153,13 +160,6 @@ class _PortfolioPageState extends State<PortfolioPage> {
       "links": {
         "Website":"https://marvelous-sopapillas-cf2910.netlify.app",
         "GitHub": "https://github.com/LakshmanTurlapati/awsxutd",
-      },
-    },
-    {
-      "name": "Review Gate",
-      "image": "assets/review_gate.webp",
-      "links": {
-        "GitHub": "https://github.com/LakshmanTurlapati/Review-Gate",
       },
     },
     {
@@ -332,8 +332,23 @@ class _PortfolioPageState extends State<PortfolioPage> {
     final double verticalSpacing =
         remainingHeight > 0 ? remainingHeight / 2 : 10.0; // Reduced spacing by 50%
 
-    // Display all projects in randomized order
-    final List<Map<String, dynamic>> displayProjects = List.from(desktopProjects)..shuffle();
+    // Display projects with Review Gate always first, rest in randomized order
+    final List<Map<String, dynamic>> displayProjects = List.from(desktopProjects);
+    
+    // Find Review Gate project and ensure it's first
+    final reviewGateProject = displayProjects.firstWhere(
+      (project) => project["name"] == "Review Gate",
+      orElse: () => {},
+    );
+    
+    // Remove Review Gate from the list and shuffle the rest
+    displayProjects.removeWhere((project) => project["name"] == "Review Gate");
+    displayProjects.shuffle();
+    
+    // Insert Review Gate at the beginning if it was found
+    if (reviewGateProject.isNotEmpty) {
+      displayProjects.insert(0, reviewGateProject);
+    }
 
     return Scaffold(
       backgroundColor:
