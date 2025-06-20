@@ -460,14 +460,14 @@ class _AboutPageState extends State<AboutPage> {
                                   text: ', which has garnered over ',
                                 ),
                                 TextSpan(
-                                  text: '500+ GitHub stars',
+                                  text: '1000+ GitHub stars',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
                                   text: ' and roughly ',
                                 ),
                                 TextSpan(
-                                  text: '100,000+ impressions',
+                                  text: '200,000+ impressions',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
@@ -509,6 +509,23 @@ class _AboutPageState extends State<AboutPage> {
                                       ? Colors.black
                                       : Colors.white,
                                 ),
+                              ),
+                              const SizedBox(height: 20),
+                              TimelineEntry(
+                                isDarkMode: widget.isDarkMode,
+                                timeline: 'June 2025 - Present',
+                                title: 'AI/ML Intern',
+                                companyOrInstitution: 'Mr. Cooper',
+                                descriptions: [
+                                  'Developing AI agents with Google ADK and Vertex AI to automate manual application processes, leveraging NLP and machine learning for efficient, user-friendly solutions.',
+                                ],
+                                skills: [
+                                  'Google ADK',
+                                  'Vertex AI',
+                                  'NLP',
+                                  'GCP'
+                                ],
+                                onTap: () => _launchURL('https://www.linkedin.com/company/mrcoopermortgage/posts/?feedView=all'),
                               ),
                               const SizedBox(height: 20),
                               TimelineEntry(

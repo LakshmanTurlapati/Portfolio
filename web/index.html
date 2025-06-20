@@ -24,6 +24,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="portfolio_v2">
+  <meta name="theme-color" content="#FFFFFF">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
@@ -33,6 +34,16 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script>
+    // Listen for theme changes from Flutter
+    window.addEventListener('flutter-theme-changed', function(e) {
+      const isDarkMode = e.detail.isDarkMode;
+      const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeColorMeta) {
+        themeColorMeta.content = isDarkMode ? '#000000' : '#FFFFFF';
+      }
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

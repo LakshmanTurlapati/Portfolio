@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:html' as html;
 import 'navbar.dart';
 import 'home_text.dart';
 import 'particle_background.dart';
@@ -23,12 +24,56 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   bool isDarkMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Add observer for system theme changes
+    WidgetsBinding.instance.addObserver(this);
+    
+    // Detect system theme preference
+    final brightness = WidgetsBinding.instance.window.platformBrightness;
+    isDarkMode = brightness == Brightness.dark;
+    
+    // Set initial theme color meta tag
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final metaThemeColor = html.document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor != null) {
+        metaThemeColor.setAttribute('content', isDarkMode ? '#000000' : '#FFFFFF');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    // Update theme when system theme changes
+    final brightness = WidgetsBinding.instance.window.platformBrightness;
+    setState(() {
+      isDarkMode = brightness == Brightness.dark;
+      // Update the theme-color meta tag
+      final metaThemeColor = html.document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor != null) {
+        metaThemeColor.setAttribute('content', isDarkMode ? '#000000' : '#FFFFFF');
+      }
+    });
+  }
 
   void toggleTheme() {
     setState(() {
       isDarkMode = !isDarkMode;
+      // Update the theme-color meta tag for Safari
+      final metaThemeColor = html.document.querySelector('meta[name="theme-color"]');
+      if (metaThemeColor != null) {
+        metaThemeColor.setAttribute('content', isDarkMode ? '#000000' : '#FFFFFF');
+      }
     });
   }
 
@@ -41,6 +86,11 @@ class _MyAppState extends State<MyApp> {
         brightness: isDarkMode ? Brightness.dark : Brightness.light,
         textTheme: GoogleFonts.latoTextTheme(),
         primarySwatch: Colors.grey,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.grey,
+          brightness: isDarkMode ? Brightness.dark : Brightness.light,
+        ),
       ),
       home: LayoutBuilder(
         builder: (context, constraints) {

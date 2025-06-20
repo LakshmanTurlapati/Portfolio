@@ -28,6 +28,7 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
     GlobalKey(),
     GlobalKey(),
     GlobalKey(),
+    GlobalKey(),
     // Add more keys if you have more TimelineEntries
   ];
 
@@ -341,14 +342,14 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                       text: ', which has garnered over ',
                     ),
                     TextSpan(
-                      text: '500+ GitHub stars',
+                      text: '1000+ GitHub stars',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
                       text: ' and roughly ',
                     ),
                     TextSpan(
-                      text: '100,000+ impressions',
+                      text: '200,000+ impressions',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const TextSpan(
@@ -395,8 +396,27 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                   TimelineEntry(
                     key: _timelineKeys[0],
                     isDarkMode: widget.isDarkMode,
+                    timeline: 'June 2025 - Present',
+                    title: 'AI/ML Intern',
+                    companyOrInstitution: 'Mr. Cooper',
+                    descriptions: [
+                      'Developing AI agents with Google ADK and Vertex AI to automate manual application processes, leveraging NLP and machine learning for efficient, user-friendly solutions.',
+                    ],
+                    skills: [
+                      'Google ADK',
+                      'Vertex AI',
+                      'NLP',
+                      'GCP'
+                    ],
+                    isActive: _activeTimelineIndex == 0,
+                    onTap: () => _launchURL('https://www.linkedin.com/company/mrcoopermortgage/posts/?feedView=all'),
+                  ),
+                  const SizedBox(height: 20),
+                  TimelineEntry(
+                    key: _timelineKeys[1],
+                    isDarkMode: widget.isDarkMode,
                     timeline: '2022 - 2024',
-                    title: 'Software Developer (Consultant)',
+                    title: 'Software Developer',
                     companyOrInstitution: 'Church & Dwight',
                     descriptions: [
                       'Designed and developed a Service Portal using Figma and Angular on ServiceNow, enhancing UI/UX.',
@@ -408,12 +428,12 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                       'JavaScript',
                       'Flutter'
                     ],
-                    isActive: _activeTimelineIndex == 0,
+                    isActive: _activeTimelineIndex == 1,
                     onTap: () => _launchURL('https://churchdwight.com/'),
                   ),
                   const SizedBox(height: 20),
                   TimelineEntry(
-                    key: _timelineKeys[1],
+                    key: _timelineKeys[2],
                     isDarkMode: widget.isDarkMode,
                     timeline: '2020 - 2021',
                     title: 'Full-Stack Developer (Freelance)',
@@ -428,12 +448,12 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                       'JavaScript',
                       'Figma'
                     ],
-                    isActive: _activeTimelineIndex == 1,
+                    isActive: _activeTimelineIndex == 2,
                     onTap: () => _launchURL('https://www.revvdigital.in/'),
                   ),
                   const SizedBox(height: 20),
                   TimelineEntry(
-                    key: _timelineKeys[2],
+                    key: _timelineKeys[3],
                     isDarkMode: widget.isDarkMode,
                     timeline: 'Jan - Apr 2019',
                     title: 'Machine Learning Intern',
@@ -445,7 +465,7 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                       'Python',
                       'TensorFlow'
                     ],
-                    isActive: _activeTimelineIndex == 2,
+                    isActive: _activeTimelineIndex == 3,
                     onTap: () => _launchURL('https://www.linkedin.com/company/coign-edu-&-it-services-pvt-ltd-/'),
                   ),
                 ],
@@ -469,7 +489,7 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                   ),
                   const SizedBox(height: 20),
                   TimelineEntry(
-                    key: _timelineKeys[3],
+                    key: _timelineKeys[4],
                     isDarkMode: widget.isDarkMode,
                     timeline: '2024 - 2026',
                     title: 'University of Texas at Dallas',
@@ -479,12 +499,12 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                     skills: [
                       'GPA: 3.9 / 4.0'
                     ],
-                    isActive: _activeTimelineIndex == 3,
+                    isActive: _activeTimelineIndex == 4,
                     onTap: () => _launchURL('https://www.utdallas.edu/'),
                   ),
                   const SizedBox(height: 20),
                   TimelineEntry(
-                    key: _timelineKeys[4],
+                    key: _timelineKeys[5],
                     isDarkMode: widget.isDarkMode,
                     timeline: '2018 - 2022',
                     title: 'Osmania University',
@@ -494,7 +514,7 @@ class _MobileAboutPageState extends State<MobileAboutPage> {
                     skills: [
                       'GPA: 3.5 / 4.0'
                     ],
-                    isActive: _activeTimelineIndex == 4,
+                    isActive: _activeTimelineIndex == 5,
                     onTap: () => _launchURL('https://www.linkedin.com/school/osmania-university/'),
                   ),
                 ],
