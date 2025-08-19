@@ -140,12 +140,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
       },
     },
     {
-      "name": "T2S",
-      "image": "",
+      "name": "T2S CLI",
+      "image": "assets/t2s_cli.png",
       "links": {
-        "GitHub": "https://github.com/LakshmanTurlapati/T2S",
+        "GitHub": "https://github.com/LakshmanTurlapati/t2s-cli",
       },
-      "useIframe": true,
     },
     {
       "name": "Star-Trail-Flutter",
@@ -174,6 +173,35 @@ class _PortfolioPageState extends State<PortfolioPage> {
       "image": "assets/artscii.jpg",
       "links": {
         "GitHub": "https://github.com/LakshmanTurlapati/ArtScii",
+      },
+    },
+    {
+      "name": "FSB",
+      "image": "assets/fsb.png",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/FSB",
+      },
+    },
+    {
+      "name": "Asteroids Game",
+      "image": "assets/asteroids.png",
+      "links": {
+        "Website": "https://harmonious-caramel-3c3627.netlify.app",
+        "GitHub": "https://github.com/LakshmanTurlapati/Atari-Astroids-Multiplayer",
+      },
+    },
+    {
+      "name": "ProKeys",
+      "image": "assets/prokeys.png",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/ProKeys",
+      },
+    },
+    {
+      "name": "SmolLM Flutter",
+      "image": "assets/smollm_flutter.png",
+      "links": {
+        "GitHub": "https://github.com/LakshmanTurlapati/SmolLm-Flutter",
       },
     },
   ];

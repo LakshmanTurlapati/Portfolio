@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:html' as html;
+import 'dart:ui';
 import 'navbar.dart';
 import 'home_text.dart';
 import 'particle_background.dart';
@@ -357,8 +358,13 @@ class _HomePageState extends State<HomePage> {
             Positioned.fill(
               child: GestureDetector(
                 onTap: () => _toggleChat(null),
-                child: Container(
-                  color: const Color(0xFF2a2a2a).withOpacity(0.5),
+                child: ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
+                    child: Container(
+                      color: const Color(0xFF2a2a2a).withValues(alpha: 0.3),
+                    ),
+                  ),
                 ),
               ),
             ),
