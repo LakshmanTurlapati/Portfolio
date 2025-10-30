@@ -237,7 +237,17 @@ Use the following structured JSON object as your complete and sole source of kno
       return false;
     }
   }
-  
+
+  // Get a random friendly error message for connectivity issues
+  static String _getRandomErrorMessage() {
+    final messages = [
+      "I might be updating my server right now. Please try again in a moment!",
+      "Server is under maintenance. Please check back shortly!",
+      "Having some technical difficulties. Give me a few minutes and try again!",
+    ];
+    return messages[DateTime.now().millisecondsSinceEpoch % messages.length];
+  }
+
   // Generate response from prompt using Grok-3-mini with conversation context
   Future<String> generateResponse(String prompt, {int maxTokens = 1000, List<ChatMessage>? conversationHistory}) async {
     try {
@@ -289,20 +299,15 @@ Use the following structured JSON object as your complete and sole source of kno
         final data = jsonDecode(response.body);
         // Extract the message content from the OpenAI-compatible response format
         if (data['choices'] != null && data['choices'].isNotEmpty) {
-          return data['choices'][0]['message']['content'] ?? 'No response from Grok';
+          return data['choices'][0]['message']['content'] ?? _getRandomErrorMessage();
         }
-        return 'No response from Grok';
+        return _getRandomErrorMessage();
       } else {
-        // Parse error message if available
-        try {
-          final errorData = jsonDecode(response.body);
-          return 'Error: ${errorData['error']['message'] ?? response.statusCode}';
-        } catch (_) {
-          return 'Error: ${response.statusCode}';
-        }
+        // Return friendly error message instead of technical details
+        return _getRandomErrorMessage();
       }
     } catch (e) {
-      return 'Error connecting to Grok: $e';
+      return _getRandomErrorMessage();
     }
   }
 }
@@ -1057,9 +1062,9 @@ class _ChatPopupState extends State<ChatPopup> with SingleTickerProviderStateMix
     setState(() {
       _isApiAvailable = isAvailable;
     });
-    
+
     if (!_isApiAvailable) {
-      _addBotMessage("Unable to connect to Grok AI. Please check your connection and try again later.");
+      _addBotMessage(ChatApiService._getRandomErrorMessage());
     } else {
       // Check for unprocessed messages after confirming API is available
       _checkForUnprocessedMessages();
@@ -1594,7 +1599,7 @@ class _ChatPopupState extends State<ChatPopup> with SingleTickerProviderStateMix
       final response = await _apiService.generateResponse(
         message,
         conversationHistory: ChatHistoryManager.history.sublist(
-          0, 
+          0,
           ChatHistoryManager.history.length - 1 // Exclude the message we just added
         ),
       );
@@ -1602,7 +1607,7 @@ class _ChatPopupState extends State<ChatPopup> with SingleTickerProviderStateMix
       // Scroll again after response arrives
       _scrollToBottom();
     } catch (e) {
-      _addBotMessage("Sorry, I encountered an error processing your request.");
+      _addBotMessage(ChatApiService._getRandomErrorMessage());
       _scrollToBottom();
     }
     
