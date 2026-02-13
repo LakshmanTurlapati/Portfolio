@@ -2,66 +2,83 @@
 
 ## What This Is
 
-A 1:1 migration of an existing Flutter web portfolio site (audienclature.com) to Next.js with Tailwind CSS. The portfolio showcases projects, experience, education, and includes an AI chat feature powered by xAI Grok API. Every page, animation, and visual effect from the Flutter version must be faithfully reproduced in the Next.js version.
+A Next.js portfolio site (audienclature.com) with Tailwind CSS, featuring an interactive canvas-based background system, rich project detail overlays, AI chat persona, voice mode, and GitHub stats. Originally migrated 1:1 from Flutter, now evolving with a v3 design overhaul adding new visual effects and features.
 
 ## Core Value
 
-Pixel-perfect replication of the existing Flutter portfolio in Next.js -- same look, same feel, same features, nothing lost in translation.
+A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona -- same creative energy as the Flutter version but with modern web capabilities.
+
+## Current Milestone: v3 Portfolio Redesign
+
+**Goal:** Implement the v3 design prototype -- interactive DataGrid backgrounds, project detail overlays, voice mode, GitHub stats, and circular reveal transitions.
+
+**Target features:**
+- Portfolio page with DataGrid canvas background and per-project hover effects
+- Project detail overlay with rich metadata
+- IframeViewer for embedding external links + GitHub repo preview
+- GitHub Stats pill on home page
+- Ask Parz navbar button with ambient orbs
+- particles.js connected-node mesh
+- Circular reveal page transition (Flutter-accurate)
+- Voice mode (speech recognition, TTS, navbar morph)
+- About page spotlight cursor effect
+- Updated project data with detailed writeups
+- Chat persona updates
 
 ## Requirements
 
 ### Validated
 
-- Home page with particle background, snow/fog effects, animated text -- existing
-- Portfolio page with staggered grid layout of projects -- existing
-- About page with bio, experience, education sections -- existing
-- Chat page with xAI Grok API integration -- existing
-- Responsive design with mobile/desktop breakpoints (600px) -- existing
-- Dark/light theme with system preference detection and manual toggle -- existing
-- Circular reveal page transition animations -- existing
-- Custom navigation bar (desktop and mobile variants) -- existing
-- Rotating circular text animation -- existing
-- Dot matrix visual effects -- existing
-- Spotlight effects -- existing
-- External link handling (GitHub, LinkedIn, X/Twitter) -- existing
+- Home page with particle background, animated text, dot matrix -- v1.0
+- Portfolio page with masonry grid layout -- v1.0
+- About page with bio, experience, education sections -- v1.0
+- Chat page with xAI Grok API integration -- v1.0
+- Responsive design with mobile/desktop breakpoints (600px) -- v1.0
+- Dark/light theme with system preference detection -- v1.0
+- Custom navigation bar (desktop and mobile variants) -- v1.0
+- Rotating circular text animation -- v1.0
+- Dot matrix visual effects -- v1.0
+- Spotlight effects -- v1.0
+- External link handling (GitHub, LinkedIn, X/Twitter) -- v1.0
+- AWS Amplify deployment -- v1.0
 
 ### Active
 
-- [ ] Migrate home page to Next.js with all animations (particles, snow, fog, rotating text, dot matrix)
-- [ ] Migrate portfolio page with staggered grid layout
-- [ ] Migrate about page with scrollable sections
-- [ ] Migrate chat page with xAI Grok API via Next.js API route (server-side key)
-- [ ] Migrate responsive layout system (mobile/desktop at 600px breakpoint)
-- [ ] Migrate dark/light theme toggle with system preference detection
-- [ ] Migrate circular reveal page transitions
-- [ ] Migrate navigation bars (desktop and mobile)
-- [ ] Migrate all visual effects (spotlight, click_here, portfolio_button)
-- [ ] Deploy on AWS Amplify
+- [ ] DataGrid canvas background with proximity reveal and hover effects
+- [ ] Project detail overlay with rich metadata
+- [ ] IframeViewer + GitHub repo preview
+- [ ] GitHub Stats pill on home page
+- [ ] Ask Parz button in navbar
+- [ ] particles.js connected-node mesh
+- [ ] Circular reveal page transition fix
+- [ ] Voice mode (VoiceBus, speech recognition, TTS)
+- [ ] About page spotlight cursor effect updates
+- [ ] Updated project data with 21 projects and detail writeups
+- [ ] Chat persona updates (full Parz system prompt)
 
 ### Out of Scope
 
-- New features or pages not in the Flutter version -- migration only
+- New features or pages not in the v3 design prototype -- design-driven only
 - Native mobile apps (Android/iOS) -- web only
 - Backend database or user authentication -- not in current version
-- SEO optimization beyond basic meta tags -- can be added post-migration
+- SEO optimization beyond basic meta tags -- can be added post-v3
 - Internationalization -- not in current version
 
 ## Context
 
-- Current stack: Flutter/Dart with Material Design, hosted as static web files
-- Target stack: Next.js (App Router) with React, Tailwind CSS, TypeScript
-- The Flutter version uses custom canvas-based animations (particles, snow, fog) that will need to be reimplemented using HTML5 Canvas or CSS/JS animations
-- Chat feature currently exposes xAI API key in frontend code -- migration fixes this via Next.js API route
-- Portfolio data is hardcoded in component files as lists of maps -- will become structured data in Next.js
-- Theme state is runtime-only (no persistence) -- same approach in Next.js
-- Deployed at audienclature.com, moving to AWS Amplify
+- Current stack: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4
+- v3 design prototype provided as HTML/React bundle from Claude Design
+- Several v3 components already implemented: DataGrid, ProjectDetail, IframeViewer, GitHub Stats, Ask Parz, particles.js, portfolio page redesign, updated project data
+- Circular reveal transition needs rework -- current overlay-based approach doesn't match Flutter's ClipPath behavior
+- Voice mode is the largest new feature -- requires Web Speech API integration
+- Deployed at audienclature.com on AWS Amplify
 
 ## Constraints
 
 - **Tech stack**: Next.js (App Router), React, TypeScript, Tailwind CSS
-- **Visual fidelity**: Must match Flutter version pixel-for-pixel on all pages
-- **Animations**: All custom animations (particle background, snow, fog, circular reveal, rotating text, dot matrix, spotlight) must be replicated
-- **API security**: xAI Grok API key must be server-side only (Next.js API route)
+- **Design fidelity**: Must match v3 design prototype pixel-for-pixel
+- **Animations**: DataGrid hover effects, circular reveal, voice wave visualization
+- **API security**: xAI Grok API key must be server-side only
 - **Deployment**: AWS Amplify
 - **Responsive**: Same 600px mobile/desktop breakpoint behavior
 
@@ -69,28 +86,31 @@ Pixel-perfect replication of the existing Flutter portfolio in Next.js -- same l
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Next.js App Router | Modern React patterns, server components, API routes | -- Pending |
-| Tailwind CSS | Utility-first, fast development, excellent Next.js integration | -- Pending |
-| TypeScript | Type safety, better DX, catches errors at compile time | -- Pending |
-| API route for chat | Fixes security vulnerability of exposed API key in Flutter frontend | -- Pending |
-| AWS Amplify deployment | User preference for hosting platform | -- Pending |
+| Next.js App Router | Modern React patterns, server components, API routes | ✓ Good |
+| Tailwind CSS | Utility-first, fast development, excellent Next.js integration | ✓ Good |
+| TypeScript | Type safety, better DX, catches errors at compile time | ✓ Good |
+| API route for chat | Fixes security vulnerability of exposed API key | ✓ Good |
+| AWS Amplify deployment | User preference for hosting platform | ✓ Good |
+| particles.js for home bg | Connected-node mesh with grab/push interactivity, theme-aware | -- Pending |
+| DataGrid for portfolio bg | Canvas-based pulsing dots with 10 hover effect types | -- Pending |
+| Overlay-based reveal | Needs rework to match Flutter's ClipPath approach | ⚠️ Revisit |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
-**After each phase transition** (via `/gsd:transition`):
+**After each phase transition** (via `/gsd-transition`):
 1. Requirements invalidated? -> Move to Out of Scope with reason
 2. Requirements validated? -> Move to Validated with phase reference
 3. New requirements emerged? -> Add to Active
 4. Decisions to log? -> Add to Key Decisions
 5. "What This Is" still accurate? -> Update if drifted
 
-**After each milestone** (via `/gsd:complete-milestone`):
+**After each milestone** (via `/gsd-complete-milestone`):
 1. Full review of all sections
 2. Core Value check -- still the right priority?
 3. Audit Out of Scope -- reasons still valid?
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 after initialization*
+*Last updated: 2026-04-23 after milestone v3 started*
