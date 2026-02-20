@@ -83,36 +83,37 @@ All v1 migration requirements completed in milestone v1.0. See git history for d
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PORT-01 | — | Pending |
-| PORT-02 | — | Pending |
-| PORT-03 | — | Pending |
-| PORT-04 | — | Pending |
-| PORT-05 | — | Pending |
-| PORT-06 | — | Pending |
-| PORT-07 | — | Pending |
-| PORT-08 | — | Pending |
-| HOME-01 | — | Pending |
-| HOME-02 | — | Pending |
-| HOME-03 | — | Pending |
-| TRAN-01 | — | Pending |
-| TRAN-02 | — | Pending |
-| VOIC-01 | — | Pending |
-| VOIC-02 | — | Pending |
-| VOIC-03 | — | Pending |
-| VOIC-04 | — | Pending |
-| VOIC-05 | — | Pending |
-| CHAT-01 | — | Pending |
-| CHAT-02 | — | Pending |
-| CHAT-03 | — | Pending |
-| ABUT-01 | — | Pending |
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
+| PORT-01 | Phase 5 | Pending |
+| PORT-02 | Phase 5 | Pending |
+| PORT-03 | Phase 5 | Pending |
+| PORT-04 | Phase 5 | Pending |
+| PORT-05 | Phase 5 | Pending |
+| PORT-06 | Phase 5 | Pending |
+| PORT-07 | Phase 5 | Pending |
+| PORT-08 | Phase 5 | Pending |
+| HOME-01 | Phase 6 | Pending |
+| HOME-02 | Phase 6 | Pending |
+| HOME-03 | Phase 6 | Pending |
+| TRAN-01 | Phase 7 | Pending |
+| TRAN-02 | Phase 7 | Pending |
+| VOIC-01 | Phase 8 | Pending |
+| VOIC-02 | Phase 8 | Pending |
+| VOIC-03 | Phase 8 | Pending |
+| VOIC-04 | Phase 8 | Pending |
+| VOIC-05 | Phase 8 | Pending |
+| CHAT-01 | Phase 9 | Pending |
+| CHAT-02 | Phase 9 | Pending |
+| CHAT-03 | Phase 9 | Pending |
+| ABUT-01 | Phase 9 | Pending |
+| DATA-01 | Phase 5 | Pending |
+| DATA-02 | Phase 5 | Pending |
 
 **Coverage:**
 - v3 requirements: 24 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 24
+- Mapped to phases: 24/24
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-23*
+*Last updated: 2026-04-23 after roadmap creation (Phases 5-9)*
 *Last updated: 2026-04-23 after initial definition*
