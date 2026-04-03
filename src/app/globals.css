@@ -29,6 +29,8 @@
   --color-circular-text: #000000;
   --color-circular-bullet: rgba(0, 0, 0, 0.87);
   --color-arrow-icon: rgba(0, 0, 0, 0.8);
+  --color-page-inverted-bg: #2A2A2A;
+  --color-page-inverted-text: #FFFFFF;
 }
 
 /* Dark mode design tokens */
@@ -51,6 +53,8 @@
   --color-circular-text: #FFFFFF;
   --color-circular-bullet: rgba(255, 255, 255, 0.7);
   --color-arrow-icon: rgba(255, 255, 255, 0.8);
+  --color-page-inverted-bg: #DBDBDB;
+  --color-page-inverted-text: #000000;
 }
 
 /* Background gradient utility classes */
@@ -119,6 +123,12 @@ body {
   animation: spin-slow 8s linear infinite;
 }
 
+
+/* Vertical fade mask for portfolio/about pages */
+.page-vertical-fade-mask {
+  mask-image: linear-gradient(to bottom, transparent 2%, black 8%, black 92%, transparent 98%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 2%, black 8%, black 92%, transparent 98%);
+}
 
 /* Dot matrix horizontal fade mask */
 .dot-matrix-fade-mask {

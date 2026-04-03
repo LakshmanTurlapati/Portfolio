@@ -35,8 +35,8 @@ Requirements for 1:1 migration from Flutter to Next.js.
 ### Pages
 
 - [x] **PAGE-01**: Home page assembles all animations (particles, snow, dot matrix, rotating text, spotlight) with correct layering
-- [ ] **PAGE-02**: Portfolio page displays projects in masonry/staggered grid layout matching Flutter version
-- [ ] **PAGE-03**: Portfolio project cards show image, name, and links matching Flutter data
+- [x] **PAGE-02**: Portfolio page displays projects in masonry/staggered grid layout matching Flutter version
+- [x] **PAGE-03**: Portfolio project cards show image, name, and links matching Flutter data
 - [ ] **PAGE-04**: About page displays bio section matching Flutter version content
 - [ ] **PAGE-05**: About page displays experience section with timeline/cards matching Flutter version
 - [ ] **PAGE-06**: About page displays education section matching Flutter version
@@ -108,8 +108,8 @@ Deferred to future. Not in current migration scope.
 | ANIM-06 | Phase 2 | Complete |
 | ANIM-07 | Phase 2 | Complete |
 | PAGE-01 | Phase 2 | Complete |
-| PAGE-02 | Phase 3 | Pending |
-| PAGE-03 | Phase 3 | Pending |
+| PAGE-02 | Phase 3 | Complete |
+| PAGE-03 | Phase 3 | Complete |
 | PAGE-04 | Phase 3 | Pending |
 | PAGE-05 | Phase 3 | Pending |
 | PAGE-06 | Phase 3 | Pending |
@@ -135,4 +135,4 @@ Deferred to future. Not in current migration scope.
 
 ---
 *Requirements defined: 2026-04-02*
-*Last updated: 2026-04-03 after Phase 2 completion*
+*Last updated: 2026-04-03 after Phase 3 Plan 01 completion*
