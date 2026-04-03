@@ -12,7 +12,30 @@ const lato = Lato({
 });
 
 export const metadata: Metadata = {
-  title: 'Portfolio v2',
+  title: "Turlapati's",
+  description: 'Welcome to my portfolio!',
+  metadataBase: new URL('https://audienclature.com'),
+  openGraph: {
+    title: "Turlapati's",
+    description: 'Welcome to my portfolio!',
+    url: 'https://audienclature.com',
+    siteName: "Turlapati's Portfolio",
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: "Turlapati's",
+    description: 'Welcome to my portfolio!',
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/icons/portfolio.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black',
+    title: "Turlapati's",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

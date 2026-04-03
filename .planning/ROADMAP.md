@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: App Shell and Navigation** - Bootable Next.js app with theme, responsive layout, fonts, and fully working navigation
 - [x] **Phase 2: Home Page and Canvas Animations** - All canvas animations (particles, snow, dot matrix, spotlight, rotating text) composed into a complete home page
-- [x] **Phase 3: Content Pages and Chat** - Portfolio, About, and Chat pages with full content and xAI Grok API integration
+- [ ] **Phase 3: Content Pages and Chat** - Portfolio, About, and Chat pages with full content and xAI Grok API integration
 - [ ] **Phase 4: Page Transitions and Deployment** - Circular reveal transitions between all pages and production deployment on AWS Amplify
 
 ## Phase Details
@@ -83,11 +83,11 @@ Plans:
   1. Navigating between any two pages triggers a circular reveal transition that originates from the clicked navigation element's position
   2. Circular reveal transition works correctly for both forward and backward navigation (including browser back button)
   3. Application builds, deploys, and serves correctly on AWS Amplify at the production domain with environment variables accessible to API routes
-**Plans**: 2 plans
+**Plans:** 2 plans
 
 Plans:
-- [x] 04-01-PLAN.md -- Circular reveal transitions and AWS Amplify deployment configuration
-- [ ] 04-02-PLAN.md -- TBD (remaining deployment tasks if any)
+- [ ] 04-01-PLAN.md -- Circular reveal page transitions with clip-path animation
+- [x] 04-02-PLAN.md -- AWS Amplify deployment configuration with env var injection
 
 ## Progress
 

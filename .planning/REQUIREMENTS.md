@@ -54,9 +54,9 @@ Requirements for 1:1 migration from Flutter to Next.js.
 
 ### Page Transitions
 
-- [x] **TRANS-01**: Circular reveal transition animates when navigating between pages
-- [x] **TRANS-02**: Reveal animation originates from the clicked navigation element's position
-- [x] **TRANS-03**: Transition works in both forward and backward navigation
+- [ ] **TRANS-01**: Circular reveal transition animates when navigating between pages
+- [ ] **TRANS-02**: Reveal animation originates from the clicked navigation element's position
+- [ ] **TRANS-03**: Transition works in both forward and backward navigation
 
 ### Deployment
 
@@ -121,9 +121,9 @@ Deferred to future. Not in current migration scope.
 | CHAT-04 | Phase 3 | Complete |
 | CHAT-05 | Phase 3 | Complete |
 | CHAT-06 | Phase 3 | Complete |
-| TRANS-01 | Phase 4 | Complete |
-| TRANS-02 | Phase 4 | Complete |
-| TRANS-03 | Phase 4 | Complete |
+| TRANS-01 | Phase 4 | Pending |
+| TRANS-02 | Phase 4 | Pending |
+| TRANS-03 | Phase 4 | Pending |
 | DEPLOY-01 | Phase 4 | Complete |
 | DEPLOY-02 | Phase 4 | Complete |
 | DEPLOY-03 | Phase 4 | Complete |
@@ -135,4 +135,4 @@ Deferred to future. Not in current migration scope.
 
 ---
 *Requirements defined: 2026-04-02*
-*Last updated: 2026-04-03 after Phase 4 Plan 01 completion*
+*Last updated: 2026-04-03 after Phase 4 Plan 02 completion*
