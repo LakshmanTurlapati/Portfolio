@@ -23,7 +23,7 @@ function DashedSeparator() {
   );
 }
 
-function MoonButton({ isDark, onClick }: { isDark: boolean; onClick: () => void }) {
+function MoonButton({ onClick }: { onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   const size = hovered ? 26 : 24;
 
@@ -78,7 +78,6 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
 
       {/* Moon button */}
       <MoonButton
-        isDark={isDark}
         onClick={() => {
           if (!isDark) setTheme('dark');
         }}

@@ -23,7 +23,10 @@ function computeRays(rayLength: number) {
   }));
 }
 
-export function SunIcon({ active, className }: SunIconProps) {
+export function SunIcon({ active: _active, className }: SunIconProps) {
+  // active prop is part of the interface for semantic clarity (light mode = active)
+  // but color is handled by CSS variable --color-sun which auto-switches per theme
+  void _active;
   const [hovered, setHovered] = useState(false);
 
   const rayLength = hovered ? 6 : 4;
