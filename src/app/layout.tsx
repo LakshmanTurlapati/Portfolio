@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Lato } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
+import { TransitionProvider } from '@/providers/transition-provider';
 import './globals.css';
 
 const lato = Lato({
@@ -19,7 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={lato.variable} suppressHydrationWarning>
       <body className="font-[family-name:var(--font-lato)] bg-[var(--color-bg)] text-[var(--color-text)]">
         <ThemeProvider>
-          {children}
+          <TransitionProvider>
+            {children}
+          </TransitionProvider>
         </ThemeProvider>
       </body>
     </html>
