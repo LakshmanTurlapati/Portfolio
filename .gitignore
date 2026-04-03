@@ -47,6 +47,8 @@ app.*.map.json
 # Environment variables and API keys
 lib/env.dart
 .env
+.env.local
+.env*.local
 *.env
 
 # Next.js
