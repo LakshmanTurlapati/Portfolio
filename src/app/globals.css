@@ -119,8 +119,6 @@ body {
   animation: spin-slow 8s linear infinite;
 }
 
-/* Scroll roller vertical mask for text roller */
-}
 
 /* Dot matrix horizontal fade mask */
 .dot-matrix-fade-mask {
