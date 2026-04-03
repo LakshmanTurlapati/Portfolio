@@ -48,6 +48,11 @@
   background: conic-gradient(from 0deg, #000000 0%, rgba(16,16,16,0.9) 20%, rgba(26,26,26,0.8) 40%, rgba(32,32,32,0.7) 60%, rgba(16,16,16,0.9) 80%, #000000 100%);
 }
 
+/* Author name hover text shadow */
+.author-text-shadow:hover {
+  text-shadow: 2px 2px 4px var(--color-author-text-shadow);
+}
+
 /* Base body styles */
 body {
   font-family: var(--font-lato), sans-serif;
