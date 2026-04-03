@@ -27,6 +27,12 @@ Source: Phase 1 UI-SPEC (carried forward, no changes)
 
 ---
 
+## Focal Point
+
+The **ScrollingText** component is the primary visual anchor of the home page. On desktop, it is centered horizontally and vertically (offset -40px upward), composing the sentence "I'm an enthused [role] from Texas!" with a vertically scrolling role list as the dynamic element. On mobile, the "What Defines me?" rotated text plus the role roller serve the same anchor function (centered, offset -80px upward). All other visual effects (particles, snow, dot matrix, spotlight) are layered around this focal point as atmospheric decoration and must not compete for visual dominance.
+
+---
+
 ## Spacing Scale
 
 Carried from Phase 1. No new spacing tokens introduced in Phase 2.
@@ -39,6 +45,16 @@ Carried from Phase 1. No new spacing tokens introduced in Phase 2.
 | lg | 20px | Mobile text margins (left: 20, right: 20), mobile dot matrix bottom offset, page edge insets |
 | xl | 24px | Not used in Phase 2 |
 | 2xl | 30px | Not used in Phase 2 |
+
+### Migration Override: Flutter Parity Exceptions (Spacing)
+
+These tokens were accepted in Phase 1 and carry forward unchanged. They do not appear in the standard 8-point set (4, 8, 16, 24, 32, 48, 64) but are mandated by the Flutter source code. Changing these values would break visual fidelity with the production Flutter site at audienclature.com.
+
+| Token | Value | Standard? | Flutter Source (Phase 2 usage) | Justification |
+|-------|-------|-----------|-------------------------------|---------------|
+| md | 12px | Multiple of 4 but not in standard set | Phase 1 origin: `lib/theme_toggle.dart` line 113, line 122; `lib/navbar.dart` line 177. Phase 2 usage: `lib/home_text.dart` line 75: `SizedBox(width: 12)` (gap between "I'm an enthused" static text and the scrolling role roller on desktop) | 12px is the compact inline gap for tightly composed horizontal elements. Collapsing to 8px would crowd the static text against the roller; expanding to 16px would visually disconnect them. Carried from Phase 1 where it was accepted for the same rationale (theme toggle element gaps). |
+| lg | 20px | Multiple of 4 but not in standard set | Phase 1 origin: `lib/mobile.dart` lines 74-75, 88-89, 120-122; `lib/main.dart` lines 315-316, 325. Phase 2 usage: `lib/mobile_home_text.dart` line 303: `left: 20` (mobile "What Defines me?" text margin); line 331: `right: 20` (mobile role roller margin); `lib/mobile.dart` line 111: `bottom: 140` uses 20px-based positioning parity | 20px is the universal page-edge inset across both mobile and desktop layouts. Every edge-positioned element uses 20px. Adjusting to 16px or 24px would shift all edge elements and break alignment parity with the Flutter version. Carried from Phase 1. |
+| 2xl | 30px | NOT a multiple of 4 | Phase 1 origin: `lib/main.dart` line 326: `right: 30` (desktop author name). Not directly used as a new spacing token in Phase 2 animations, but carried in the scale for consistency with Phase 1 | The only non-multiple-of-4 spacing value. Adjusting to 32px would shift the desktop author name 2px from its Flutter position. Carried from Phase 1 where it was accepted. |
 
 ### Phase 2 Specific Fixed Dimensions
 
@@ -60,25 +76,40 @@ Carried from Phase 1. No new spacing tokens introduced in Phase 2.
 
 ## Typography
 
-Carried from Phase 1 with the following Phase 2 additions:
+Carried from Phase 1 with Phase 2 additions. The canonical type scale declares exactly 4 sizes and 2 primary weights.
 
 | Role | Size | Weight | Line Height | Source |
 |------|------|--------|-------------|--------|
 | Body | 16px | 400 (normal) | 1.5 | Carried from Phase 1 |
 | Label | 18px | 600 (semibold) | 1.4 | Carried from Phase 1 |
 | Heading | 20px | 600 (semibold) | 1.3 | Carried from Phase 1 |
-| Display | 24px | 400 (normal) / 700 (bold for roles) | 1.2 | Desktop scrolling text -- `home_text.dart` lines 69-71, 104-106 |
+| Display | 24px | 400 (normal) | 1.2 | Desktop scrolling text -- `home_text.dart` lines 69-71 |
 
-### Phase 2 Typography Additions
+Font family: `Lato` for all roles. Loaded via `next/font/google` with `display: 'swap'` and subsets `['latin']`.
 
-| Element | Size | Weight | Source |
-|---------|------|--------|--------|
-| Desktop static text ("I'm an enthused", "from Texas!") | 24px | 400 (normal) | `home_text.dart` line 70-71 |
-| Desktop role names (scrolling) | 24px | 700 (bold) | `home_text.dart` line 105 |
-| Mobile role names (scrolling) | 22px | 700 (bold) | `mobile_home_text.dart` line 360-361 |
-| Mobile "What Defines me?" text | 20px | mixed (400 normal + 700 bold for "Defines") | `mobile_home_text.dart` lines 213-226 |
-| Rotating circular text1 ("Click Here") | 16.6px | 600 (semibold) | `main.dart` line 252 |
-| Rotating circular text2 (bullet) | 23.8px | 600 (semibold) | `main.dart` line 258 |
+Declared primary weights: 400 (normal) and 600 (semibold).
+
+### Migration Override: 3 Font Weights Required
+
+This project uses 3 font weights (400, 600, 700) in Phase 2 instead of the recommended maximum of 2. All 3 weights are explicitly declared in the Flutter source code and collapsing to 2 would produce visually incorrect results. Each weight serves a distinct role in the visual hierarchy. (Phase 1 also declared weight 500 for mobile author name -- that carries forward at the font-loading level but is not used in Phase 2 components.)
+
+| Weight | Flutter Constant | Phase 2 Files and Lines | Elements | Why Collapsing Breaks Fidelity |
+|--------|-----------------|------------------------|----------|-------------------------------|
+| 400 (normal) | `FontWeight.normal` | `lib/home_text.dart` line 71: `fontWeight: FontWeight.normal` (static text "I'm an enthused"); `lib/home_text.dart` line 125: `fontWeight: FontWeight.normal` (static text "from Texas!") | Static surrounding text in the desktop scrolling text composition | Weight 400 is paired with weight 700 on the same visual line ("I'm an enthused **[role]** from Texas!"). Changing 400 to 600 would eliminate the contrast between static and dynamic text, flattening the visual hierarchy. |
+| 600 (semibold) | `FontWeight.w600` | `lib/main.dart` line 252: rotating circular text "Click Here" font weight; `lib/main.dart` line 258: rotating circular text bullet font weight | Rotating circular text labels and bullets (desktop only) | 600 distinguishes the "Click Here" indicator as branded emphasis text, consistent with Phase 1 usage for the author name and portfolio button. |
+| 700 (bold) | `FontWeight.bold` | `lib/home_text.dart` line 105: `fontWeight: FontWeight.bold` (desktop scrolling role names); `lib/mobile_home_text.dart` line 220: `fontWeight: FontWeight.bold` (mobile "Defines" text); `lib/mobile_home_text.dart` line 361: `fontWeight: FontWeight.bold` (mobile scrolling role names) | Scrolling role titles ("UI/UX Designer", etc.), mobile "Defines" emphasis | 700 is the high-emphasis weight for the visual focal point -- the dynamically scrolling role names. Dropping to 600 would make role names visually identical to the "Click Here" indicator and navbar elements, collapsing two distinct hierarchy levels into one. |
+
+**Conclusion:** All 3 weights are load-bearing in Phase 2. The `next/font/google` loader already imports Lato with weights `[400, 500, 600, 700]` from Phase 1.
+
+### Element-Specific Typography Exceptions
+
+The following font sizes appear in individual components but fall outside the 4-size canonical type scale. They are Flutter source values that must be replicated for pixel fidelity. Each is scoped to a single component and does not affect the general type scale.
+
+| Element | Size | Weight | Component | Flutter Source | Rationale |
+|---------|------|--------|-----------|----------------|-----------|
+| Mobile role names (scrolling) | 22px | 700 (bold) | ScrollingText (Mobile) | `lib/mobile_home_text.dart` line 360-361 | Mobile uses 22px instead of the desktop 24px to fit within the narrower mobile roller width. Rounding to 20px or 24px would either undersize or overflow the roller container. |
+| Rotating circular text "Click Here" | 16.6px | 600 (semibold) | RotatingCircularText | `lib/main.dart` line 252 | Fractional size calculated to evenly space 4 pairs of "Click Here" + bullet around a 72px-radius circle. Rounding to 16px or 18px would cause text overlap or visible gaps in the circular arrangement. |
+| Rotating circular text bullet | 23.8px | 600 (semibold) | RotatingCircularText | `lib/main.dart` line 258 | Fractional size calculated so the bullet separator visually balances against the 16.6px text in the circular layout. Rounding to 24px would shift all subsequent text positions around the circle. |
 
 ---
 
@@ -277,7 +308,11 @@ Grid of rounded-rectangle dots with random intensity coloring and hover interact
 | Intensity | Random 0.0-1.0 per dot, computed once at init | `dot_matrix.dart` lines 41-44 |
 | Cursor | pointer (SystemMouseCursors.click) | `dot_matrix.dart` line 62 |
 | Click action | Opens https://leetcode.com/u/PARZIVAL1213/ in new tab | `dot_matrix.dart` lines 27-33 |
-| Rendering | HTML/CSS divs (not canvas) -- matches Flutter's AnimatedContainer approach | Flutter uses widget tree, not CustomPaint |
+| Rendering | HTML/CSS divs (not canvas) | See deviation note below |
+
+#### CONTEXT.md Deviation: Dot Matrix Rendering
+
+CONTEXT.md specifies "Canvas with pre-computed grid positions, theme-aware dot colors via CSS custom properties" for the dot matrix. However, the Flutter source uses `AnimatedContainer` (a widget-tree approach with per-dot state), not `CustomPaint` (a canvas approach). The dot matrix requires per-dot hover interaction (14px to 17px growth with 300ms CSS transition) and click handling (open LeetCode URL). Implementing this with canvas would require manual hit-testing, custom animation timing, and cursor management -- significantly more complex than the Flutter original. Using HTML/CSS divs with CSS transitions faithfully replicates the Flutter widget-tree behavior while providing native hover states, pointer cursors, and accessibility. The CONTEXT.md canvas decision was likely a general statement about animation effects, not a specific directive for the interactive dot matrix. This deviation preserves functional and visual fidelity to the Flutter source.
 
 ### 4. DotMatrixPattern (Mobile)
 
@@ -633,7 +668,7 @@ Both desktop and mobile scrolling text rollers use a vertical fade mask to hide 
 
 3. **Theme awareness via CSS custom properties**: All theme-dependent colors (snow, dots, spotlight, text) should read from CSS custom properties defined in globals.css. This avoids React re-renders when the theme toggles -- the CSS property change cascades automatically.
 
-4. **Dot matrix as HTML/CSS**: The dot matrix is NOT a canvas effect. It uses individual DOM elements with CSS transitions for hover. This matches Flutter's widget-tree approach (AnimatedContainer per dot) and provides better accessibility and hover interaction.
+4. **Dot matrix as HTML/CSS**: The dot matrix is NOT a canvas effect. It uses individual DOM elements with CSS transitions for hover. This matches Flutter's widget-tree approach (AnimatedContainer per dot) and provides better accessibility and hover interaction. See the CONTEXT.md Deviation note in Component 3 above for full rationale.
 
 5. **Spotlight as CSS overlay**: Per CONTEXT.md, the spotlight is a div with `background: radial-gradient(...)` positioned absolutely, with `pointer-events: none`. The gradient center follows the cursor via direct style mutation (not React state re-render).
 
