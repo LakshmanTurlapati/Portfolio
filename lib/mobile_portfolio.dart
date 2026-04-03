@@ -35,10 +35,26 @@ class _MobilePortfolioPageState extends State<MobilePortfolioPage> {
   // -----------------------------------------------------
   final List<Map<String, dynamic>> projects = [
     {
+      "name": "Software 3.0",
+      "image": "assets/s3.png",
+      "links": {
+        "Website": "https://www.software-3.com",
+        "GitHub": "https://github.com/LakshmanTurlapati/Software-3.0",
+      },
+    },
+    {
       "name": "Review Gate",
       "image": "assets/review_gate.webp",
       "links": {
         "GitHub": "https://github.com/LakshmanTurlapati/Review-Gate",
+      },
+    },
+    {
+      "name": "EatSight",
+      "image": "assets/estsight.png",
+      "links": {
+        "Website": "https://eatsight.fly.dev",
+        "GitHub": "https://github.com/LakshmanTurlapati/EatSight",
       },
     },
     {

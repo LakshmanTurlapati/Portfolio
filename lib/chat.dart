@@ -75,10 +75,10 @@ Use the following structured JSON object as your complete and sole source of kno
 ],
 "professionalExperience": [
 {
-"company": "Mr. Cooper",
+"company": "Rocket Mortgage (formerly Mr.Cooper)",
 "role": "AI/ML Intern",
 "startDate": "June 2025",
-"endDate": "Present",
+"endDate": "December 2025",
 "responsibilities": "Developing AI agents with Google ADK and Vertex AI to automate manual application processes, leveraging NLP and machine learning.",
 "skills": ["Google ADK", "Vertex AI", "NLP", "GCP"]
 },

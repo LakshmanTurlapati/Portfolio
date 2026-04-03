@@ -89,7 +89,7 @@ class SpotlightPainter extends CustomPainter {
       ..shader = RadialGradient(
         colors: [
           isDarkMode
-              ? Colors.black.withOpacity(0.075) 
+              ? Colors.black.withOpacity(0.09) 
               : Colors.white.withOpacity(0.1),
           Colors.transparent, // Fully fades out
         ],

@@ -46,10 +46,26 @@ class _PortfolioPageState extends State<PortfolioPage> {
   // -----------------------------------------
   final List<Map<String, dynamic>> desktopProjects = [
     {
+      "name": "Software 3.0",
+      "image": "assets/s3.png",
+      "links": {
+        "Website": "https://www.software-3.com",
+        "GitHub": "https://github.com/LakshmanTurlapati/Software-3.0",
+      },
+    },
+    {
       "name": "Review Gate",
       "image": "assets/review_gate.webp",
       "links": {
         "GitHub": "https://github.com/LakshmanTurlapati/Review-Gate",
+      },
+    },
+    {
+      "name": "EatSight",
+      "image": "assets/estsight.png",
+      "links": {
+        "Website": "https://eatsight.fly.dev",
+        "GitHub": "https://github.com/LakshmanTurlapati/EatSight",
       },
     },
     {
@@ -360,22 +376,30 @@ class _PortfolioPageState extends State<PortfolioPage> {
     final double verticalSpacing =
         remainingHeight > 0 ? remainingHeight / 2 : 10.0; // Reduced spacing by 50%
 
-    // Display projects with Review Gate always first, rest in randomized order
+    // Display projects with Software 3.0 first, Review Gate second, rest randomized
     final List<Map<String, dynamic>> displayProjects = List.from(desktopProjects);
-    
-    // Find Review Gate project and ensure it's first
+
+    // Find pinned projects
+    final software3Project = displayProjects.firstWhere(
+      (project) => project["name"] == "Software 3.0",
+      orElse: () => {},
+    );
     final reviewGateProject = displayProjects.firstWhere(
       (project) => project["name"] == "Review Gate",
       orElse: () => {},
     );
-    
-    // Remove Review Gate from the list and shuffle the rest
-    displayProjects.removeWhere((project) => project["name"] == "Review Gate");
+
+    // Remove pinned projects from the list and shuffle the rest
+    displayProjects.removeWhere((project) =>
+      project["name"] == "Software 3.0" || project["name"] == "Review Gate");
     displayProjects.shuffle();
-    
-    // Insert Review Gate at the beginning if it was found
+
+    // Insert pinned projects at the beginning
     if (reviewGateProject.isNotEmpty) {
       displayProjects.insert(0, reviewGateProject);
+    }
+    if (software3Project.isNotEmpty) {
+      displayProjects.insert(0, software3Project);
     }
 
     return Scaffold(

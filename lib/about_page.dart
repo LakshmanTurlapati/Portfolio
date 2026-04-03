@@ -374,45 +374,41 @@ class _AboutPageState extends State<AboutPage> {
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
-                                  text: ', and even upgrading my MacBook from ',
-                                ),
-                                TextSpan(
-                                  text: 'M2 Air to an M3 Max Pro',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  text: ', and even upgrading my hardware (Let me tell you it was not light on the pocket) to fuel my experimenting with large language models locally.\n\n',
                                 ),
                                 const TextSpan(
-                                  text: ' (Let me tell you it was not light on the pocket) to fuel my experimenting with large language models locally\n\n',
-                                ),
-                                const TextSpan(
-                                  text: 'Currently, I\'m sharpening my ability to merge tech expertise with strategic leadership as a Master\'s student in ',
+                                  text: 'I\'ve recently culminated my journey merging tech expertise with strategic leadership as a Master\'s graduate in ',
                                 ),
                                 TextSpan(
                                   text: 'IT Management',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
-                                  text: ' at ',
+                                  text: ' from ',
                                 ),
                                 TextSpan(
                                   text: 'UT Dallas',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
-                                  text: '—my dream school! Fun fact: UT Dallas was the only school I applied to because of its top-notch business program and vibrant community! Even with a demanding schedule of five subjects and technical officer roles in the ',
+                                  text: '. Fun fact: UT Dallas was the only school I applied to because of its top-notch business program and vibrant community!\n\n',
+                                ),
+                                const TextSpan(
+                                  text: 'Even with a demanding schedule of five subjects and technical officer roles in multiple clubs, I graduated earning recognition as a ',
                                 ),
                                 TextSpan(
-                                  text: 'AWS, Code.exe, and Product Base',
+                                  text: 'Dean\'s Impact Scholar',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
-                                  text: ' clubs, I achieved a ',
+                                  text: ' and member of the ',
                                 ),
                                 TextSpan(
-                                  text: '4.0 GPA',
+                                  text: 'Beta Gamma Sigma Honors Society',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
-                                  text: ' in my recent semester, all while actively developing AI projects. While I once aimed for Product Management, ',
+                                  text: '. While I once aimed for Product Management, ',
                                 ),
                                 TextSpan(
                                   text: 'AI development',
@@ -433,7 +429,7 @@ class _AboutPageState extends State<AboutPage> {
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
-                                  text: ' (one of only ~100 selected globally each year), I\'m equipped to innovate in cloud-first, AI-driven environments.\n\n',
+                                  text: ' (one of only ~100 selected globally each year).\n\n',
                                 ),
                                 const TextSpan(
                                   text: 'I\'ve since created numerous ',
@@ -460,7 +456,7 @@ class _AboutPageState extends State<AboutPage> {
                                   text: ', which has garnered over ',
                                 ),
                                 TextSpan(
-                                  text: '1000+ GitHub stars',
+                                  text: '1500+ GitHub stars',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
@@ -471,14 +467,14 @@ class _AboutPageState extends State<AboutPage> {
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
-                                  text: ' within a week!. This work has not only boosted my LinkedIn presence (around ',
+                                  text: ' within a week! This work not only boosted my LinkedIn presence but has led to my current role working on production AI systems at ',
                                 ),
                                 TextSpan(
-                                  text: '2,500+ followers',
+                                  text: 'Rocket Mortgage',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
-                                  text: ' and significant engagement) but has also opened doors to exciting professional opportunities.\n\n',
+                                  text: ' (formerly Mr.Cooper).\n\n',
                                 ),
                                 const TextSpan(
                                   text: 'I\'m deeply grateful for this journey and believe I\'m in the right place at the right time. My heart is set on ',
@@ -488,7 +484,7 @@ class _AboutPageState extends State<AboutPage> {
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(
-                                  text: ', and I\'m excited to keep challenging the status quo, one line of code (or one bold AI idea) at a time.',
+                                  text: ', and I\'m excited to keep challenging the status quo, one line of code or one bold idea at a time.',
                                 ),
                               ],
                             ),
@@ -513,9 +509,9 @@ class _AboutPageState extends State<AboutPage> {
                               const SizedBox(height: 20),
                               TimelineEntry(
                                 isDarkMode: widget.isDarkMode,
-                                timeline: 'June 2025 - Present',
+                                timeline: 'June 2025 - December 2025',
                                 title: 'AI/ML Intern',
-                                companyOrInstitution: 'Mr. Cooper',
+                                companyOrInstitution: 'Rocket Mortgage (formerly Mr.Cooper)',
                                 descriptions: [
                                   'Developing AI agents with Google ADK and Vertex AI to automate manual application processes, leveraging NLP and machine learning for efficient, user-friendly solutions.',
                                 ],
