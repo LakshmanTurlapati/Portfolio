@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { FaArrowLeft, FaGithub, FaLinkedin, FaXTwitter } from 'react-icons/fa6';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { SpotlightEffect } from '@/components/spotlight';
@@ -9,6 +8,7 @@ import { TimelineEntry } from '@/components/timeline-entry';
 import { bioSegments } from '@/data/bio';
 import { experienceData } from '@/data/experience';
 import { educationData } from '@/data/education';
+import { useTransition } from '@/providers/transition-provider';
 
 type SectionId = 'about' | 'experience' | 'academics';
 
@@ -58,7 +58,7 @@ function BioText() {
   );
 }
 
-function BackButton({ onClick }: { onClick: () => void }) {
+function BackButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   return (
     <button
       onClick={onClick}
@@ -100,7 +100,7 @@ function FooterText() {
 }
 
 export default function AboutPage() {
-  const router = useRouter();
+  const { navigateWithReveal } = useTransition();
   const isDesktop = useMediaQuery('(min-width: 600px)');
   const [activeSection, setActiveSection] = useState<SectionId>('about');
 
@@ -158,9 +158,15 @@ export default function AboutPage() {
     }
   }, []);
 
-  const handleBack = () => {
-    router.back();
-  };
+  const handleBack = useCallback(
+    (e: React.MouseEvent) => {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const originX = rect.left + rect.width / 2;
+      const originY = rect.top + rect.height / 2;
+      navigateWithReveal('/', originX, originY);
+    },
+    [navigateWithReveal]
+  );
 
   // Desktop layout
   if (isDesktop) {

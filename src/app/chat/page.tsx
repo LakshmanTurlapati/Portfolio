@@ -2,11 +2,11 @@
 
 import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { useRouter } from 'next/navigation';
 import { FaArrowUp, FaArrowLeft } from 'react-icons/fa6';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { sanitizeText } from '@/lib/sanitize-text';
 import { linkifyText, type LinkPart } from '@/lib/linkify';
+import { useTransition } from '@/providers/transition-provider';
 
 // Suggestion chips data
 const smallQuestions = ['Who are you?', 'Your age?', 'Where from?'];
@@ -63,7 +63,7 @@ function RenderLinkedText({ text }: { text: string }) {
 }
 
 export default function ChatPage() {
-  const router = useRouter();
+  const { navigateWithReveal } = useTransition();
   const isDesktop = useMediaQuery('(min-width: 600px)');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -138,7 +138,12 @@ export default function ChatPage() {
     >
       {/* Back button */}
       <button
-        onClick={() => router.push('/')}
+        onClick={(e) => {
+          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          const originX = rect.left + rect.width / 2;
+          const originY = rect.top + rect.height / 2;
+          navigateWithReveal('/', originX, originY);
+        }}
         className="absolute top-6 left-6 z-20 w-12 h-12 rounded-xl flex items-center justify-center transition-opacity hover:opacity-80"
         style={{
           backgroundColor: 'var(--color-text)',

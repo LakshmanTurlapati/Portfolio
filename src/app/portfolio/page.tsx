@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useCallback } from 'react';
 import { FaArrowLeft } from 'react-icons/fa6';
 import { pinnedProjects, shuffleableProjects } from '@/data/projects';
 import { PortfolioCard } from '@/components/portfolio-card';
 import { SnowfallEffect } from '@/components/snowfall';
+import { useTransition } from '@/providers/transition-provider';
 
 // Fisher-Yates shuffle
 function shuffle<T>(array: T[]): T[] {
@@ -18,12 +18,22 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 export default function PortfolioPage() {
-  const router = useRouter();
+  const { navigateWithReveal } = useTransition();
 
   // Shuffle once on mount, pinned projects always first
   const displayProjects = useMemo(
     () => [...pinnedProjects, ...shuffle(shuffleableProjects)],
     []
+  );
+
+  const handleBack = useCallback(
+    (e: React.MouseEvent) => {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const originX = rect.left + rect.width / 2;
+      const originY = rect.top + rect.height / 2;
+      navigateWithReveal('/', originX, originY);
+    },
+    [navigateWithReveal]
   );
 
   return (
@@ -35,7 +45,7 @@ export default function PortfolioPage() {
       <button
         className="fixed top-6 left-6 w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer z-20"
         style={{ backgroundColor: 'var(--color-page-inverted-text)' }}
-        onClick={() => router.back()}
+        onClick={handleBack}
       >
         <FaArrowLeft
           className="w-5 h-5"

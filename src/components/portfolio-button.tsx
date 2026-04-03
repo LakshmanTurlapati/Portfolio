@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/cn';
+import { useTransition } from '@/providers/transition-provider';
 
 interface PortfolioButtonProps {
   variant: 'desktop' | 'mobile';
@@ -14,6 +14,7 @@ interface PortfolioButtonProps {
 export function PortfolioButton({ variant, isDark, className }: PortfolioButtonProps) {
   const glowRef = useRef<HTMLDivElement>(null);
   const isDesktop = variant === 'desktop';
+  const { navigateWithReveal } = useTransition();
 
   // Animated gradient glow with 3 rotating box-shadows
   useEffect(() => {
@@ -41,6 +42,18 @@ export function PortfolioButton({ variant, isDark, className }: PortfolioButtonP
     return () => cancelAnimationFrame(frameId);
   }, []);
 
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      // Use the center of the button element as origin for the reveal
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const originX = rect.left + rect.width / 2;
+      const originY = rect.top + rect.height / 2;
+      navigateWithReveal('/portfolio', originX, originY);
+    },
+    [navigateWithReveal]
+  );
+
   if (isDesktop) {
     return (
       <div
@@ -50,9 +63,9 @@ export function PortfolioButton({ variant, isDark, className }: PortfolioButtonP
           className
         )}
       >
-        <Link
-          href="/portfolio"
-          className="flex items-center justify-center w-[95%] h-[80%] rounded-[20px] no-underline"
+        <button
+          onClick={handleClick}
+          className="flex items-center justify-center w-[95%] h-[80%] rounded-[20px] no-underline cursor-pointer border-none"
           style={{ backgroundColor: 'var(--color-portfolio-btn-bg)' }}
         >
           <span
@@ -61,7 +74,7 @@ export function PortfolioButton({ variant, isDark, className }: PortfolioButtonP
           >
             Portfolio
           </span>
-        </Link>
+        </button>
       </div>
     );
   }
@@ -75,9 +88,9 @@ export function PortfolioButton({ variant, isDark, className }: PortfolioButtonP
         className
       )}
     >
-      <Link
-        href="/portfolio"
-        className="flex items-center justify-center w-[90%] h-[80%] rounded-[20px] no-underline"
+      <button
+        onClick={handleClick}
+        className="flex items-center justify-center w-[90%] h-[80%] rounded-[20px] no-underline cursor-pointer border-none"
         style={{ backgroundColor: 'var(--color-portfolio-btn-bg)' }}
       >
         <Image
@@ -88,7 +101,7 @@ export function PortfolioButton({ variant, isDark, className }: PortfolioButtonP
           className="scale-[1.4]"
           priority
         />
-      </Link>
+      </button>
     </div>
   );
 }
