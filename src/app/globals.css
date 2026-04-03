@@ -29,6 +29,7 @@
   --color-circular-text: #000000;
   --color-circular-bullet: rgba(0, 0, 0, 0.87);
   --color-arrow-icon: rgba(0, 0, 0, 0.8);
+  /* Phase 3 inverted page tokens (about, portfolio) */
   --color-page-inverted-bg: #2A2A2A;
   --color-page-inverted-text: #FFFFFF;
 }
@@ -134,6 +135,17 @@ body {
 .dot-matrix-fade-mask {
   mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+/* Timeline skill pill colors */
+.timeline-skill-pill {
+  background-color: #F0F0F0;
+  color: #1A1A1A;
+}
+
+.dark .timeline-skill-pill {
+  background-color: #3A3A3A;
+  color: #FFFFFF;
 }
 
 /* Dot matrix hover effect */

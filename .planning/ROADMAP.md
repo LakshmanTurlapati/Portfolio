@@ -69,9 +69,15 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
+<<<<<<< HEAD
 - [x] 03-01-PLAN.md -- Portfolio page with masonry grid, project data, asset images, and snowfall overlay
 - [ ] 03-02-PLAN.md -- About page with bio, experience timeline, education, sidebar navigation, and spotlight overlay
 - [x] 03-03-PLAN.md -- Chat page with xAI Grok API integration, streaming responses, and message UI
+=======
+- [ ] 03-01-PLAN.md -- Portfolio page with masonry grid, project data, asset images, and snowfall overlay
+- [x] 03-02-PLAN.md -- About page with bio, experience timeline, education, sidebar navigation, and spotlight overlay
+- [ ] 03-03-PLAN.md -- Chat page with xAI Grok API integration, streaming responses, and message UI
+>>>>>>> worktree-agent-a49800e3
 
 **UI hint**: yes
 
@@ -95,5 +101,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. App Shell and Navigation | 3/3 | All plans complete | 2026-04-03 |
 | 2. Home Page and Canvas Animations | 4/4 | All plans complete | 2026-04-03 |
+<<<<<<< HEAD
 | 3. Content Pages and Chat | 1/3 | Executing | - |
+=======
+| 3. Content Pages and Chat | 1/3 | In progress | - |
+>>>>>>> worktree-agent-a49800e3
 | 4. Page Transitions and Deployment | 0/TBD | Not started | - |
