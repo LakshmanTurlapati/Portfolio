@@ -66,7 +66,13 @@ Plans:
   3. User can send a message in the chat and receive a streaming response from xAI Grok, with conversation history preserved during the session
   4. Chat API key is not exposed in the client bundle -- API calls go through a Next.js server-side route
   5. Error states in chat display user-friendly messages; links in chat responses are automatically detected and clickable
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md -- Portfolio page with masonry grid, project data, asset images, and snowfall overlay
+- [ ] 03-02-PLAN.md -- About page with bio, experience timeline, education, sidebar navigation, and spotlight overlay
+- [ ] 03-03-PLAN.md -- Chat page with xAI Grok API integration, streaming responses, and message UI
+
 **UI hint**: yes
 
 ### Phase 4: Page Transitions and Deployment
@@ -89,5 +95,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. App Shell and Navigation | 3/3 | All plans complete | 2026-04-03 |
 | 2. Home Page and Canvas Animations | 4/4 | All plans complete | 2026-04-03 |
-| 3. Content Pages and Chat | 0/TBD | Not started | - |
+| 3. Content Pages and Chat | 0/3 | Planned | - |
 | 4. Page Transitions and Deployment | 0/TBD | Not started | - |
