@@ -49,8 +49,8 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [x] 02-01-PLAN.md -- useCanvas hook, CSS custom properties, particle background, and snowfall canvas effects
-- [ ] 02-02-PLAN.md -- Dot matrix grid, rotating circular text SVG, and spotlight CSS overlay
+- [ ] 02-01-PLAN.md -- useCanvas hook, CSS custom properties, particle background, and snowfall canvas effects
+- [x] 02-02-PLAN.md -- Dot matrix grid, rotating circular text SVG, and spotlight CSS overlay
 - [ ] 02-03-PLAN.md -- Scrolling text focal point with desktop and mobile variants
 - [ ] 02-04-PLAN.md -- Home page assembly wiring all effects with z-index layering
 

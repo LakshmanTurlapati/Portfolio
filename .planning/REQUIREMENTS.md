@@ -24,13 +24,13 @@ Requirements for 1:1 migration from Flutter to Next.js.
 
 ### Canvas Animations
 
-- [x] **ANIM-01**: Particle background renders on home page with smooth 60fps animation
-- [x] **ANIM-02**: Snowfall effect renders with realistic particle physics matching Flutter version
-- [ ] **ANIM-03**: Dot matrix effect renders matching Flutter version visual appearance
-- [ ] **ANIM-04**: Rotating circular text animates smoothly using SVG textPath
-- [ ] **ANIM-05**: Spotlight effect follows cursor/touch matching Flutter version behavior
+- [ ] **ANIM-01**: Particle background renders on home page with smooth 60fps animation
+- [ ] **ANIM-02**: Snowfall effect renders with realistic particle physics matching Flutter version
+- [x] **ANIM-03**: Dot matrix effect renders matching Flutter version visual appearance
+- [x] **ANIM-04**: Rotating circular text animates smoothly using SVG textPath
+- [x] **ANIM-05**: Spotlight effect follows cursor/touch matching Flutter version behavior
 - [x] **ANIM-06**: All canvas animations clean up properly on component unmount (no memory leaks)
-- [x] **ANIM-07**: Canvas animations perform at 60fps on mobile devices without jank
+- [ ] **ANIM-07**: Canvas animations perform at 60fps on mobile devices without jank
 
 ### Pages
 
@@ -100,13 +100,13 @@ Deferred to future. Not in current migration scope.
 | NAV-02 | Phase 1 | Complete |
 | NAV-03 | Phase 1 | Complete |
 | NAV-04 | Phase 1 | Complete |
-| ANIM-01 | Phase 2 | Complete |
-| ANIM-02 | Phase 2 | Complete |
-| ANIM-03 | Phase 2 | Pending |
-| ANIM-04 | Phase 2 | Pending |
-| ANIM-05 | Phase 2 | Pending |
+| ANIM-01 | Phase 2 | Pending |
+| ANIM-02 | Phase 2 | Pending |
+| ANIM-03 | Phase 2 | Complete |
+| ANIM-04 | Phase 2 | Complete |
+| ANIM-05 | Phase 2 | Complete |
 | ANIM-06 | Phase 2 | Complete |
-| ANIM-07 | Phase 2 | Complete |
+| ANIM-07 | Phase 2 | Pending |
 | PAGE-01 | Phase 2 | Pending |
 | PAGE-02 | Phase 3 | Pending |
 | PAGE-03 | Phase 3 | Pending |
