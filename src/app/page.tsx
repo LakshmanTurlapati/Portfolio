@@ -1,26 +1,38 @@
+import { DesktopNavbar } from '@/components/desktop-navbar';
+import { MobileNavbar } from '@/components/mobile-navbar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { AuthorName } from '@/components/author-name';
 
 export default function Home() {
   return (
     <main className="bg-gradient-main min-h-screen relative overflow-hidden">
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-xl">Home</p>
+      {/* Desktop navbar: visible >= 600px */}
+      <div className="hidden sm:block">
+        <DesktopNavbar />
       </div>
 
-      {/* Desktop: theme toggle bottom-left, author name bottom-right */}
-      <div className="hidden sm:block fixed bottom-5 left-5">
+      {/* Mobile navbar: visible < 600px */}
+      <div className="sm:hidden">
+        <MobileNavbar />
+      </div>
+
+      {/* Desktop: theme toggle bottom-left */}
+      <div className="hidden sm:block fixed bottom-5 left-5 z-40">
         <ThemeToggle />
       </div>
-      <div className="hidden sm:block fixed bottom-5 right-[30px]">
+
+      {/* Desktop: author name bottom-right */}
+      <div className="hidden sm:block fixed bottom-5 right-[30px] z-40">
         <AuthorName variant="desktop" />
       </div>
 
-      {/* Mobile: author name top-left, theme toggle top-right */}
-      <div className="sm:hidden fixed top-5 left-5">
+      {/* Mobile: author name top-left */}
+      <div className="sm:hidden fixed top-5 left-5 z-40">
         <AuthorName variant="mobile" />
       </div>
-      <div className="sm:hidden fixed top-5 right-5">
+
+      {/* Mobile: theme toggle top-right */}
+      <div className="sm:hidden fixed top-5 right-5 z-40">
         <ThemeToggle />
       </div>
     </main>
