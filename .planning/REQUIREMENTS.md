@@ -35,23 +35,13 @@ Requirements for 1:1 migration from Flutter to Next.js.
 ### Pages
 
 - [x] **PAGE-01**: Home page assembles all animations (particles, snow, dot matrix, rotating text, spotlight) with correct layering
-<<<<<<< HEAD
 - [x] **PAGE-02**: Portfolio page displays projects in masonry/staggered grid layout matching Flutter version
 - [x] **PAGE-03**: Portfolio project cards show image, name, and links matching Flutter data
-- [ ] **PAGE-04**: About page displays bio section matching Flutter version content
-- [ ] **PAGE-05**: About page displays experience section with timeline/cards matching Flutter version
-- [ ] **PAGE-06**: About page displays education section matching Flutter version
-- [ ] **PAGE-07**: About page sections are scrollable with section navigation
-- [x] **PAGE-08**: Chat page displays message interface matching Flutter version layout
-=======
-- [ ] **PAGE-02**: Portfolio page displays projects in masonry/staggered grid layout matching Flutter version
-- [ ] **PAGE-03**: Portfolio project cards show image, name, and links matching Flutter data
 - [x] **PAGE-04**: About page displays bio section matching Flutter version content
 - [x] **PAGE-05**: About page displays experience section with timeline/cards matching Flutter version
 - [x] **PAGE-06**: About page displays education section matching Flutter version
 - [x] **PAGE-07**: About page sections are scrollable with section navigation
-- [ ] **PAGE-08**: Chat page displays message interface matching Flutter version layout
->>>>>>> worktree-agent-a49800e3
+- [x] **PAGE-08**: Chat page displays message interface matching Flutter version layout
 
 ### Chat
 
@@ -70,9 +60,9 @@ Requirements for 1:1 migration from Flutter to Next.js.
 
 ### Deployment
 
-- [ ] **DEPLOY-01**: Application builds and deploys successfully on AWS Amplify
-- [ ] **DEPLOY-02**: Environment variables (xAI API key) are accessible to API routes at runtime
-- [ ] **DEPLOY-03**: Application serves correctly at production domain
+- [x] **DEPLOY-01**: Application builds and deploys successfully on AWS Amplify
+- [x] **DEPLOY-02**: Environment variables (xAI API key) are accessible to API routes at runtime
+- [x] **DEPLOY-03**: Application serves correctly at production domain
 
 ## v2 Requirements
 
@@ -118,13 +108,12 @@ Deferred to future. Not in current migration scope.
 | ANIM-06 | Phase 2 | Complete |
 | ANIM-07 | Phase 2 | Complete |
 | PAGE-01 | Phase 2 | Complete |
-<<<<<<< HEAD
 | PAGE-02 | Phase 3 | Complete |
 | PAGE-03 | Phase 3 | Complete |
-| PAGE-04 | Phase 3 | Pending |
-| PAGE-05 | Phase 3 | Pending |
-| PAGE-06 | Phase 3 | Pending |
-| PAGE-07 | Phase 3 | Pending |
+| PAGE-04 | Phase 3 | Complete |
+| PAGE-05 | Phase 3 | Complete |
+| PAGE-06 | Phase 3 | Complete |
+| PAGE-07 | Phase 3 | Complete |
 | PAGE-08 | Phase 3 | Complete |
 | CHAT-01 | Phase 3 | Complete |
 | CHAT-02 | Phase 3 | Complete |
@@ -132,27 +121,12 @@ Deferred to future. Not in current migration scope.
 | CHAT-04 | Phase 3 | Complete |
 | CHAT-05 | Phase 3 | Complete |
 | CHAT-06 | Phase 3 | Complete |
-=======
-| PAGE-02 | Phase 3 | Pending |
-| PAGE-03 | Phase 3 | Pending |
-| PAGE-04 | Phase 3 | Complete |
-| PAGE-05 | Phase 3 | Complete |
-| PAGE-06 | Phase 3 | Complete |
-| PAGE-07 | Phase 3 | Complete |
-| PAGE-08 | Phase 3 | Pending |
-| CHAT-01 | Phase 3 | Pending |
-| CHAT-02 | Phase 3 | Pending |
-| CHAT-03 | Phase 3 | Pending |
-| CHAT-04 | Phase 3 | Pending |
-| CHAT-05 | Phase 3 | Pending |
-| CHAT-06 | Phase 3 | Pending |
->>>>>>> worktree-agent-a49800e3
 | TRANS-01 | Phase 4 | Pending |
 | TRANS-02 | Phase 4 | Pending |
 | TRANS-03 | Phase 4 | Pending |
-| DEPLOY-01 | Phase 4 | Pending |
-| DEPLOY-02 | Phase 4 | Pending |
-| DEPLOY-03 | Phase 4 | Pending |
+| DEPLOY-01 | Phase 4 | Complete |
+| DEPLOY-02 | Phase 4 | Complete |
+| DEPLOY-03 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 36 total
@@ -161,8 +135,4 @@ Deferred to future. Not in current migration scope.
 
 ---
 *Requirements defined: 2026-04-02*
-<<<<<<< HEAD
-*Last updated: 2026-04-03 after Phase 3 Plan 01 completion*
-=======
-*Last updated: 2026-04-03 after Phase 3 Plan 02 completion*
->>>>>>> worktree-agent-a49800e3
+*Last updated: 2026-04-03 after Phase 4 Plan 02 completion*

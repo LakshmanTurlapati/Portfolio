@@ -69,15 +69,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-<<<<<<< HEAD
 - [x] 03-01-PLAN.md -- Portfolio page with masonry grid, project data, asset images, and snowfall overlay
-- [ ] 03-02-PLAN.md -- About page with bio, experience timeline, education, sidebar navigation, and spotlight overlay
-- [x] 03-03-PLAN.md -- Chat page with xAI Grok API integration, streaming responses, and message UI
-=======
-- [ ] 03-01-PLAN.md -- Portfolio page with masonry grid, project data, asset images, and snowfall overlay
 - [x] 03-02-PLAN.md -- About page with bio, experience timeline, education, sidebar navigation, and spotlight overlay
-- [ ] 03-03-PLAN.md -- Chat page with xAI Grok API integration, streaming responses, and message UI
->>>>>>> worktree-agent-a49800e3
+- [x] 03-03-PLAN.md -- Chat page with xAI Grok API integration, streaming responses, and message UI
 
 **UI hint**: yes
 
@@ -89,7 +83,11 @@ Plans:
   1. Navigating between any two pages triggers a circular reveal transition that originates from the clicked navigation element's position
   2. Circular reveal transition works correctly for both forward and backward navigation (including browser back button)
   3. Application builds, deploys, and serves correctly on AWS Amplify at the production domain with environment variables accessible to API routes
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md -- Circular reveal page transitions with clip-path animation
+- [x] 04-02-PLAN.md -- AWS Amplify deployment configuration with env var injection
 
 ## Progress
 
@@ -101,9 +99,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. App Shell and Navigation | 3/3 | All plans complete | 2026-04-03 |
 | 2. Home Page and Canvas Animations | 4/4 | All plans complete | 2026-04-03 |
-<<<<<<< HEAD
-| 3. Content Pages and Chat | 1/3 | Executing | - |
-=======
-| 3. Content Pages and Chat | 1/3 | In progress | - |
->>>>>>> worktree-agent-a49800e3
-| 4. Page Transitions and Deployment | 0/TBD | Not started | - |
+| 3. Content Pages and Chat | 3/3 | All plans complete | 2026-04-03 |
+| 4. Page Transitions and Deployment | 1/2 | In progress | - |
