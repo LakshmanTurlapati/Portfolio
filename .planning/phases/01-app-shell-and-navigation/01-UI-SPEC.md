@@ -38,7 +38,7 @@ Declared values (must be multiples of 4):
 | md | 12px | Theme toggle element gaps (Flutter SizedBox(width: 12)) |
 | lg | 20px | Page edge insets: bottom/left/right positioning, mobile name/toggle offset |
 | xl | 24px | Navbar border-radius approximation base |
-| 2xl | 30px | Desktop navbar top offset (Positioned top:10 + spacing) |
+| 2xl | 30px | Desktop author name right offset (Positioned right: 30) |
 
 Exceptions:
 - Desktop navbar width: 630px (fixed, not from scale) -- Flutter `navbar.dart` line 123-124
@@ -47,6 +47,16 @@ Exceptions:
 - Desktop portfolio button width: 200px (fixed) -- Flutter `navbar.dart` line 145
 - Navbar border-radius: 25px -- Flutter `navbar.dart` line 137
 - Portfolio button inner border-radius: 20px -- Flutter `portfolio_button.dart` line 103
+
+### Migration Override: Non-Standard Spacing Tokens
+
+This project is a 1:1 pixel-faithful migration from Flutter. The following spacing tokens do not appear in the standard 8-point set (4, 8, 16, 24, 32, 48, 64) but are mandated by the Flutter source code. Changing these values would break visual fidelity with the production Flutter site at audienclature.com.
+
+| Token | Value | Standard? | Flutter Source | Justification |
+|-------|-------|-----------|----------------|---------------|
+| md | 12px | Multiple of 4 but not in standard set | `lib/theme_toggle.dart` line 113: `const SizedBox(width: 12)` (gap between sun and dashed separator); line 122: `const SizedBox(width: 12)` (gap between dashed separator and moon); `lib/navbar.dart` line 177: `right: 12` (social icons right padding) | The theme toggle is a tightly composed sun--separator--moon row. Collapsing 12px to 8px would crowd the elements; expanding to 16px would visually disconnect them. The Flutter design intentionally uses 12px for compact-but-readable gaps in small inline controls. |
+| lg | 20px | Multiple of 4 but not in standard set | `lib/mobile.dart` line 74: `top: 20` (mobile author name); line 75: `left: 20` (mobile author name); line 88: `top: 20` (mobile theme toggle); line 89: `right: 20` (mobile theme toggle); line 120: `bottom: 20` (mobile navbar); line 121: `left: 20` (mobile navbar); line 122: `right: 20` (mobile navbar); `lib/main.dart` line 315: `bottom: 20` (desktop theme toggle); line 316: `left: 20` (desktop theme toggle); line 325: `bottom: 20` (desktop author name) | 20px is the universal page-edge inset used throughout both mobile and desktop layouts. Adjusting to 16px or 24px would shift every edge-positioned element and break alignment parity with the Flutter version. |
+| 2xl | 30px | NOT a multiple of 4 | `lib/main.dart` line 326: `right: 30` (desktop author name right offset from viewport edge) | This is the only non-multiple-of-4 spacing value in the entire Phase 1 scope. In the Flutter source, the desktop author name "Lakshman Turlapati" is positioned at `Positioned(bottom: 20, right: 30, ...)`. Adjusting to 32px would shift the author name 2px leftward from its Flutter position, breaking pixel fidelity. Since this is a migration with visual match as the core constraint, the original 30px must be preserved. |
 
 ---
 
@@ -61,7 +71,20 @@ Exceptions:
 
 Font family: `Lato` for all roles. Loaded via `next/font/google` with `display: 'swap'` and subsets `['latin']`.
 
-Declared weights: 400 (normal) and 600 (semibold). Exception: 700 (bold) used only in "About Me" navbar label and scrolling role text. 500 (medium) used only for mobile author name.
+Declared primary weights: 400 (normal) and 600 (semibold).
+
+### Migration Override: 4 Font Weights Required
+
+This project uses 4 font weights (400, 500, 600, 700) instead of the recommended maximum of 2. All 4 weights are explicitly declared in the Flutter source code and collapsing to 2 would produce visually incorrect results. Each weight serves a distinct role, and the Flutter design uses specific weight values to create a deliberate visual hierarchy.
+
+| Weight | Flutter Constant | Files and Lines | Elements | Why Collapsing Breaks Fidelity |
+|--------|-----------------|-----------------|----------|-------------------------------|
+| 400 (normal) | `FontWeight.normal` | `lib/home_text.dart` line 71: `fontWeight: FontWeight.normal` (static text "I'm an enthused"); `lib/home_text.dart` line 125: `fontWeight: FontWeight.normal` (static text "from Texas!") | Static surrounding text in the desktop scrolling text composition | Weight 400 is paired with weight 700 on the same line ("I'm an enthused **[role]** from Texas!"). Changing 400 to 600 would eliminate the contrast between static and dynamic text, flattening the visual hierarchy. |
+| 500 (medium) | `FontWeight.w500` | `lib/mobile.dart` line 80: `fontWeight: FontWeight.w500` | Mobile author name "Lakshman Turlapati" (top-left corner) | Desktop uses 600 for the same text (`main.dart` line 339). Mobile intentionally uses 500 to appear slightly lighter on smaller screens, avoiding visual heaviness. Using 600 on mobile would make mobile and desktop author names identical weight, which contradicts the Flutter design's deliberate platform differentiation. Using 400 would make it too light. |
+| 600 (semibold) | `FontWeight.w600` | `lib/main.dart` line 339: `fontWeight: FontWeight.w600` (desktop author name); `lib/portfolio_button.dart` line 121: `fontWeight: FontWeight.w600` (Portfolio button label) | Desktop author name, Portfolio button text | 600 is the primary emphasis weight. It distinguishes interactive/branded elements from body text (400) and role text (700). |
+| 700 (bold) | `FontWeight.bold` | `lib/navbar.dart` line 166: `fontWeight: FontWeight.bold` (desktop "About Me" text); `lib/mobile_navbar.dart` line 146: `fontWeight: FontWeight.bold` (mobile "About Me" text); `lib/home_text.dart` line 105: `fontWeight: FontWeight.bold` (desktop scrolling role names); `lib/mobile_home_text.dart` line 220: `fontWeight: FontWeight.bold` (mobile "Defines" text); `lib/mobile_home_text.dart` line 361: `fontWeight: FontWeight.bold` (mobile scrolling role names) | "About Me" navbar link, scrolling role titles ("UI/UX Designer", "Product Developer", etc.), mobile "Defines" text | 700 is used for high-emphasis interactive text ("About Me") and the rotating role names that are the visual focal point of the home page. Dropping to 600 would make these elements indistinguishable from the Portfolio button and author name, collapsing two distinct hierarchy levels into one. |
+
+**Conclusion:** All 4 weights are load-bearing in the Flutter design's visual hierarchy. The `next/font/google` loader must import Lato with weights `[400, 500, 600, 700]`.
 
 ---
 
@@ -355,13 +378,15 @@ Note: No empty states, error states, or destructive actions exist in Phase 1. Th
 
 ## Social Links
 
-| Platform | Icon | URL |
-|----------|------|-----|
-| GitHub | FontAwesome `faGithub` | https://github.com/LakshmanTurlapati |
-| LinkedIn | FontAwesome `faLinkedin` | https://www.linkedin.com/in/lakshman-turlapati-3091aa191/ |
-| X/Twitter | FontAwesome `faXTwitter` | https://x.com/parzival1213 |
+| Platform | Icon | URL | Accessible Label |
+|----------|------|-----|-------------------|
+| GitHub | FontAwesome `faGithub` | https://github.com/LakshmanTurlapati | `aria-label="GitHub profile"` |
+| LinkedIn | FontAwesome `faLinkedin` | https://www.linkedin.com/in/lakshman-turlapati-3091aa191/ | `aria-label="LinkedIn profile"` |
+| X/Twitter | FontAwesome `faXTwitter` | https://x.com/parzival1213 | `aria-label="X (Twitter) profile"` |
 
 All social links open in a new tab (`target="_blank"`, `rel="noopener noreferrer"`).
+
+Note: Social link buttons are icon-only with no visible text label. Each button MUST include an `aria-label` attribute as specified above so screen readers can announce the link destination.
 
 ---
 
@@ -423,6 +448,16 @@ Each placeholder page must:
 | Registry | Blocks Used | Safety Gate |
 |----------|-------------|-------------|
 | No registries | N/A | N/A -- no shadcn, no third-party registries |
+
+---
+
+## REQUIREMENTS.md Discrepancy: NAV-02
+
+REQUIREMENTS.md NAV-02 states: "Mobile navbar displays with hamburger menu and navigation drawer."
+
+However, the Flutter source code (`lib/mobile_navbar.dart`, `lib/mobile.dart` lines 118-128) implements mobile navigation as a **bottom navbar** (a fixed-position bar at the bottom of the viewport with inline Portfolio button, "About Me" text, and social icons), NOT a hamburger menu with a navigation drawer.
+
+This UI-SPEC follows the **Flutter source code** (bottom navbar), not the REQUIREMENTS.md description (hamburger menu), because this is a 1:1 migration where the Flutter source is the authoritative visual reference. The REQUIREMENTS.md entry for NAV-02 should be updated to: "Mobile navbar displays as a fixed bottom bar with Portfolio button, About Me link, and social icons."
 
 ---
 
