@@ -46,7 +46,14 @@ Plans:
   2. All canvas animations run at 60fps on both desktop and mobile without jank or dropped frames
   3. Spotlight effect follows cursor on desktop and touch on mobile, matching Flutter's interpolation behavior
   4. Navigating away from the home page and returning does not leak memory -- animations clean up on unmount and reinitialize correctly
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 02-01-PLAN.md -- useCanvas hook, CSS custom properties, particle background, and snowfall canvas effects
+- [ ] 02-02-PLAN.md -- Dot matrix grid, rotating circular text SVG, and spotlight CSS overlay
+- [ ] 02-03-PLAN.md -- Scrolling text focal point with desktop and mobile variants
+- [ ] 02-04-PLAN.md -- Home page assembly wiring all effects with z-index layering
+
 **UI hint**: yes
 
 ### Phase 3: Content Pages and Chat
@@ -81,6 +88,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. App Shell and Navigation | 3/3 | All plans complete | 2026-04-03 |
-| 2. Home Page and Canvas Animations | 0/TBD | Not started | - |
+| 2. Home Page and Canvas Animations | 0/4 | Planning complete | - |
 | 3. Content Pages and Chat | 0/TBD | Not started | - |
 | 4. Page Transitions and Deployment | 0/TBD | Not started | - |
