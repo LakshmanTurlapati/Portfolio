@@ -15,8 +15,8 @@ export async function POST(req: Request) {
     const result = streamText({
       model: xai('grok-3-mini'),
       system: systemPrompt,
-      messages: convertToModelMessages(messages),
-      maxTokens: 1000,
+      messages: await convertToModelMessages(messages),
+      maxOutputTokens: 1000,
       temperature: 0.7,
     });
 
