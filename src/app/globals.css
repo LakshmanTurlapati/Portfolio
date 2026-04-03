@@ -68,6 +68,41 @@
   text-shadow: 2px 2px 4px var(--color-author-text-shadow);
 }
 
+/* Vertical fade mask for role roller */
+.scroll-roller-mask {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50%, transparent 100%);
+}
+
+/* Arrow bounce animation for mobile */
+@keyframes arrow-bounce {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(12px);
+  }
+}
+
+.animate-arrow-bounce {
+  animation: arrow-bounce 1000ms ease-in-out infinite;
+}
+
+/* Wave shimmer animation for mobile text */
+@keyframes wave-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-wave-shimmer {
+  background-size: 200% 100%;
+  animation: wave-shimmer 2s linear infinite;
+}
+
 /* Base body styles */
 body {
   font-family: var(--font-lato), sans-serif;
@@ -85,9 +120,6 @@ body {
 }
 
 /* Scroll roller vertical mask for text roller */
-.scroll-roller-mask {
-  mask-image: linear-gradient(to bottom, transparent 0%, black 50%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50%, transparent 100%);
 }
 
 /* Dot matrix horizontal fade mask */
