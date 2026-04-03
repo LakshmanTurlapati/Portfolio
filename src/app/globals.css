@@ -21,6 +21,14 @@
   --color-portfolio-btn-bg: #FFFFFF;
   --color-portfolio-btn-text: #000000;
   --color-author-text-shadow: rgba(0, 0, 0, 0.38);
+  /* Phase 2 animation tokens */
+  --color-snow: rgba(255, 255, 255, 1);
+  --color-dot-start: #E0E0E0;
+  --color-dot-end: #424242;
+  --color-spotlight: rgba(255, 255, 255, 0.1);
+  --color-circular-text: #000000;
+  --color-circular-bullet: rgba(0, 0, 0, 0.87);
+  --color-arrow-icon: rgba(0, 0, 0, 0.8);
 }
 
 /* Dark mode design tokens */
@@ -36,6 +44,13 @@
   --color-portfolio-btn-bg: #000000;
   --color-portfolio-btn-text: #FFFFFF;
   --color-author-text-shadow: rgba(0, 0, 0, 0.54);
+  --color-snow: rgba(0, 0, 0, 1);
+  --color-dot-start: #B0B0B0;
+  --color-dot-end: #1A1A1A;
+  --color-spotlight: rgba(0, 0, 0, 0.09);
+  --color-circular-text: #FFFFFF;
+  --color-circular-bullet: rgba(255, 255, 255, 0.7);
+  --color-arrow-icon: rgba(255, 255, 255, 0.8);
 }
 
 /* Background gradient utility classes */
@@ -58,4 +73,31 @@ body {
   font-family: var(--font-lato), sans-serif;
   background-color: var(--color-bg);
   color: var(--color-text);
+}
+
+/* Slow spin animation for rotating circular text */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* Scroll roller vertical mask for text roller */
+.scroll-roller-mask {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50%, transparent 100%);
+}
+
+/* Dot matrix horizontal fade mask */
+.dot-matrix-fade-mask {
+  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+/* Dot matrix hover effect */
+.dot-matrix-dot:hover {
+  width: 17px !important;
+  height: 17px !important;
 }
