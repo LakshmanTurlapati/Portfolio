@@ -17,10 +17,10 @@ Requirements for 1:1 migration from Flutter to Next.js.
 
 ### Navigation
 
-- [ ] **NAV-01**: Desktop navbar displays page links (Home, Portfolio, About, Chat) and social icons (GitHub, LinkedIn, X/Twitter)
-- [ ] **NAV-02**: Mobile navbar displays with hamburger menu and navigation drawer
-- [ ] **NAV-03**: Navigation links route to correct pages
-- [ ] **NAV-04**: Social icon links open in new tab to correct external URLs
+- [x] **NAV-01**: Desktop navbar displays page links (Home, Portfolio, About, Chat) and social icons (GitHub, LinkedIn, X/Twitter)
+- [x] **NAV-02**: Mobile navbar displays with hamburger menu and navigation drawer
+- [x] **NAV-03**: Navigation links route to correct pages
+- [x] **NAV-04**: Social icon links open in new tab to correct external URLs
 
 ### Canvas Animations
 
@@ -96,10 +96,10 @@ Deferred to future. Not in current migration scope.
 | FOUN-03 | Phase 1 | Complete |
 | FOUN-04 | Phase 1 | Complete |
 | FOUN-05 | Phase 1 | Complete |
-| NAV-01 | Phase 1 | Pending |
-| NAV-02 | Phase 1 | Pending |
-| NAV-03 | Phase 1 | Pending |
-| NAV-04 | Phase 1 | Pending |
+| NAV-01 | Phase 1 | Complete |
+| NAV-02 | Phase 1 | Complete |
+| NAV-03 | Phase 1 | Complete |
+| NAV-04 | Phase 1 | Complete |
 | ANIM-01 | Phase 2 | Pending |
 | ANIM-02 | Phase 2 | Pending |
 | ANIM-03 | Phase 2 | Pending |
