@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+/* Dark mode via class strategy (for next-themes) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Custom breakpoint matching Flutter's 600px */
+@theme {
+  --breakpoint-sm: 37.5rem; /* 600px / 16 = 37.5rem */
+}
+
+/* Light mode design tokens (default) */
+:root {
+  --color-bg: #FFFFFF;
+  --color-text: #000000;
+  --color-navbar-bg: rgba(0, 0, 0, 0.8);
+  --color-navbar-text: #9E9E9E;
+  --color-social-icon: #808080;
+  --color-sun: #000000;
+  --color-moon: rgba(0, 0, 0, 0.26);
+  --color-separator: rgba(0, 0, 0, 0.26);
+  --color-portfolio-btn-bg: #FFFFFF;
+  --color-portfolio-btn-text: #000000;
+  --color-author-text-shadow: rgba(0, 0, 0, 0.38);
+}
+
+/* Dark mode design tokens */
+.dark {
+  --color-bg: #000000;
+  --color-text: #FFFFFF;
+  --color-navbar-bg: rgba(255, 255, 255, 0.8);
+  --color-navbar-text: #424242;
+  --color-social-icon: #424242;
+  --color-sun: #757575;
+  --color-moon: #E0E0E0;
+  --color-separator: #9E9E9E;
+  --color-portfolio-btn-bg: #000000;
+  --color-portfolio-btn-text: #FFFFFF;
+  --color-author-text-shadow: rgba(0, 0, 0, 0.54);
+}
+
+/* Background gradient utility classes */
+.bg-gradient-main {
+  background: linear-gradient(to right, #FFFFFF 5%, #D0D0D0 40%, #D0D0D0 60%, #FFFFFF 95%);
+  transition: background 300ms ease;
+}
+
+.dark .bg-gradient-main {
+  background: conic-gradient(from 0deg, #000000 0%, rgba(16,16,16,0.9) 20%, rgba(26,26,26,0.8) 40%, rgba(32,32,32,0.7) 60%, rgba(16,16,16,0.9) 80%, #000000 100%);
+}
+
+/* Base body styles */
+body {
+  font-family: var(--font-lato), sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
