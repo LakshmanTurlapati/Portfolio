@@ -96,37 +96,37 @@ Deferred to future. Not in current migration scope.
 | FOUN-03 | Phase 1 | Pending |
 | FOUN-04 | Phase 1 | Pending |
 | FOUN-05 | Phase 1 | Pending |
-| NAV-01 | Phase 2 | Pending |
-| NAV-02 | Phase 2 | Pending |
-| NAV-03 | Phase 2 | Pending |
-| NAV-04 | Phase 2 | Pending |
-| ANIM-01 | Phase 3 | Pending |
-| ANIM-02 | Phase 3 | Pending |
-| ANIM-03 | Phase 3 | Pending |
-| ANIM-04 | Phase 3 | Pending |
-| ANIM-05 | Phase 3 | Pending |
-| ANIM-06 | Phase 3 | Pending |
-| ANIM-07 | Phase 3 | Pending |
-| PAGE-01 | Phase 3 | Pending |
-| PAGE-02 | Phase 4 | Pending |
-| PAGE-03 | Phase 4 | Pending |
-| PAGE-04 | Phase 4 | Pending |
-| PAGE-05 | Phase 4 | Pending |
-| PAGE-06 | Phase 4 | Pending |
-| PAGE-07 | Phase 4 | Pending |
-| PAGE-08 | Phase 4 | Pending |
-| CHAT-01 | Phase 4 | Pending |
-| CHAT-02 | Phase 4 | Pending |
-| CHAT-03 | Phase 4 | Pending |
-| CHAT-04 | Phase 4 | Pending |
-| CHAT-05 | Phase 4 | Pending |
-| CHAT-06 | Phase 4 | Pending |
-| TRANS-01 | Phase 5 | Pending |
-| TRANS-02 | Phase 5 | Pending |
-| TRANS-03 | Phase 5 | Pending |
-| DEPLOY-01 | Phase 5 | Pending |
-| DEPLOY-02 | Phase 5 | Pending |
-| DEPLOY-03 | Phase 5 | Pending |
+| NAV-01 | Phase 1 | Pending |
+| NAV-02 | Phase 1 | Pending |
+| NAV-03 | Phase 1 | Pending |
+| NAV-04 | Phase 1 | Pending |
+| ANIM-01 | Phase 2 | Pending |
+| ANIM-02 | Phase 2 | Pending |
+| ANIM-03 | Phase 2 | Pending |
+| ANIM-04 | Phase 2 | Pending |
+| ANIM-05 | Phase 2 | Pending |
+| ANIM-06 | Phase 2 | Pending |
+| ANIM-07 | Phase 2 | Pending |
+| PAGE-01 | Phase 2 | Pending |
+| PAGE-02 | Phase 3 | Pending |
+| PAGE-03 | Phase 3 | Pending |
+| PAGE-04 | Phase 3 | Pending |
+| PAGE-05 | Phase 3 | Pending |
+| PAGE-06 | Phase 3 | Pending |
+| PAGE-07 | Phase 3 | Pending |
+| PAGE-08 | Phase 3 | Pending |
+| CHAT-01 | Phase 3 | Pending |
+| CHAT-02 | Phase 3 | Pending |
+| CHAT-03 | Phase 3 | Pending |
+| CHAT-04 | Phase 3 | Pending |
+| CHAT-05 | Phase 3 | Pending |
+| CHAT-06 | Phase 3 | Pending |
+| TRANS-01 | Phase 4 | Pending |
+| TRANS-02 | Phase 4 | Pending |
+| TRANS-03 | Phase 4 | Pending |
+| DEPLOY-01 | Phase 4 | Pending |
+| DEPLOY-02 | Phase 4 | Pending |
+| DEPLOY-03 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 36 total
@@ -135,4 +135,4 @@ Deferred to future. Not in current migration scope.
 
 ---
 *Requirements defined: 2026-04-02*
-*Last updated: 2026-04-02 after initial definition*
+*Last updated: 2026-04-02 after roadmap creation (coarse 4-phase structure)*
