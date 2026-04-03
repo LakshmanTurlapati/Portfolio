@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md -- Initialize Next.js 15 project with Tailwind v4, theme provider, fonts, and utilities
-- [ ] 01-02-PLAN.md -- Build theme toggle (sun/separator/moon) and author name components
+- [x] 01-02-PLAN.md -- Build theme toggle (sun/separator/moon) and author name components
 - [ ] 01-03-PLAN.md -- Build navigation bars, placeholder pages, and assemble home page
 
 **UI hint**: yes

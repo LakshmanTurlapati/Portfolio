@@ -11,8 +11,8 @@ Requirements for 1:1 migration from Flutter to Next.js.
 
 - [x] **FOUN-01**: Project initialized with Next.js 15.5.x, TypeScript, and Tailwind CSS v4
 - [x] **FOUN-02**: Dark/light theme toggles correctly with system preference detection on load
-- [ ] **FOUN-03**: Theme toggle button switches theme at runtime without page reload
-- [ ] **FOUN-04**: Responsive layout renders mobile variant below 600px and desktop variant at/above 600px
+- [x] **FOUN-03**: Theme toggle button switches theme at runtime without page reload
+- [x] **FOUN-04**: Responsive layout renders mobile variant below 600px and desktop variant at/above 600px
 - [x] **FOUN-05**: Google Fonts (Lato) loaded via next/font with no layout shift
 
 ### Navigation
@@ -93,8 +93,8 @@ Deferred to future. Not in current migration scope.
 |-------------|-------|--------|
 | FOUN-01 | Phase 1 | Complete |
 | FOUN-02 | Phase 1 | Complete |
-| FOUN-03 | Phase 1 | Pending |
-| FOUN-04 | Phase 1 | Pending |
+| FOUN-03 | Phase 1 | Complete |
+| FOUN-04 | Phase 1 | Complete |
 | FOUN-05 | Phase 1 | Complete |
 | NAV-01 | Phase 1 | Pending |
 | NAV-02 | Phase 1 | Pending |
