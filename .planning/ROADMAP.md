@@ -26,9 +26,15 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Success Criteria** (what must be TRUE):
   1. App loads with correct Lato font, no layout shift, and detects system theme preference on first visit
   2. User can toggle between dark and light theme without page reload, and theme colors apply consistently across all placeholder pages
-  3. Desktop navbar shows Home/Portfolio/About/Chat links and social icons; mobile navbar shows hamburger menu with navigation drawer -- both switch at 600px breakpoint
+  3. Desktop navbar shows Portfolio button, About Me link, and social icons; mobile navbar shows bottom bar with same elements -- both switch at 600px breakpoint
   4. Clicking any navigation link routes to the correct page; social icons open GitHub/LinkedIn/X in new tabs
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md -- Initialize Next.js 15 project with Tailwind v4, theme provider, fonts, and utilities
+- [ ] 01-02-PLAN.md -- Build theme toggle (sun/separator/moon) and author name components
+- [ ] 01-03-PLAN.md -- Build navigation bars, placeholder pages, and assemble home page
+
 **UI hint**: yes
 
 ### Phase 2: Home Page and Canvas Animations
@@ -74,7 +80,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. App Shell and Navigation | 0/TBD | Not started | - |
+| 1. App Shell and Navigation | 0/3 | Planning complete | - |
 | 2. Home Page and Canvas Animations | 0/TBD | Not started | - |
 | 3. Content Pages and Chat | 0/TBD | Not started | - |
 | 4. Page Transitions and Deployment | 0/TBD | Not started | - |
