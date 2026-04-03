@@ -12,8 +12,8 @@ This roadmap migrates the existing Flutter portfolio at audienclature.com to Nex
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: App Shell and Navigation** - Bootable Next.js app with theme, responsive layout, fonts, and fully working navigation
-- [ ] **Phase 2: Home Page and Canvas Animations** - All canvas animations (particles, snow, dot matrix, spotlight, rotating text) composed into a complete home page
+- [x] **Phase 1: App Shell and Navigation** - Bootable Next.js app with theme, responsive layout, fonts, and fully working navigation
+- [x] **Phase 2: Home Page and Canvas Animations** - All canvas animations (particles, snow, dot matrix, spotlight, rotating text) composed into a complete home page
 - [ ] **Phase 3: Content Pages and Chat** - Portfolio, About, and Chat pages with full content and xAI Grok API integration
 - [ ] **Phase 4: Page Transitions and Deployment** - Circular reveal transitions between all pages and production deployment on AWS Amplify
 
@@ -49,10 +49,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- useCanvas hook, CSS custom properties, particle background, and snowfall canvas effects
+- [x] 02-01-PLAN.md -- useCanvas hook, CSS custom properties, particle background, and snowfall canvas effects
 - [x] 02-02-PLAN.md -- Dot matrix grid, rotating circular text SVG, and spotlight CSS overlay
-- [ ] 02-03-PLAN.md -- Scrolling text focal point with desktop and mobile variants
-- [ ] 02-04-PLAN.md -- Home page assembly wiring all effects with z-index layering
+- [x] 02-03-PLAN.md -- Scrolling text focal point with desktop and mobile variants
+- [x] 02-04-PLAN.md -- Home page assembly wiring all effects with z-index layering
 
 **UI hint**: yes
 
@@ -88,6 +88,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. App Shell and Navigation | 3/3 | All plans complete | 2026-04-03 |
-| 2. Home Page and Canvas Animations | 1/4 | Executing | - |
+| 2. Home Page and Canvas Animations | 4/4 | All plans complete | 2026-04-03 |
 | 3. Content Pages and Chat | 0/TBD | Not started | - |
 | 4. Page Transitions and Deployment | 0/TBD | Not started | - |
