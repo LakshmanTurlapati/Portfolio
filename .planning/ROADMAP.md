@@ -112,7 +112,7 @@ Phases execute in numeric order: 29
 | 26. Mobile UX Pass                          | v4.2 | 3/3 | Complete    | 2026-04-26 |
 | 27. FSB Overlay Polish                      | v4.2 | 3/3 | Complete    | 2026-04-27 |
 | 28. Chat UI Redesign                        | v4.2 | 3/3 | Complete    | 2026-04-27 |
-| 29. Legacy V2 Chat-Only Boundary            | v4.3 | 1/1 | Complete   | 2026-04-29 |
+| 29. Legacy V2 Chat-Only Boundary            | v4.3 | 1/1 | Complete    | 2026-04-29 |
 
 ## Requirement Coverage
 

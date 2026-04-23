@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v4.3
 milestone_name: Legacy V2 Chat-Only Boundary
-status: complete
-stopped_at: Completed 29-01-PLAN.md
-last_updated: "2026-04-29T20:48:36.902Z"
-last_activity: 2026-04-29 -- Phase 29 plan complete
+status: completed
+stopped_at: Phase 29 complete; human UAT deferred
+last_updated: "2026-04-29T20:57:58.735Z"
+last_activity: 2026-04-29
 progress:
   total_phases: 1
   completed_phases: 1
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 Phase: 29 — Legacy V2 Chat-Only Boundary
 Plan: 01 — Voice-only site-control boundary
 Status: Complete
-Last activity: 2026-04-29 -- Phase 29 plan complete
+Last activity: 2026-04-29 -- Phase 29 complete; human UAT deferred
 
 ```
 v4.3 Progress: [██████████] 100% (1/1 phases complete, 1/1 plans complete)
@@ -38,7 +38,7 @@ v4.3 Progress: [██████████] 100% (1/1 phases complete, 1/1 p
 
 **Velocity:**
 
-- Total plans completed: 28 across v4.1 (phases 16-24)
+- Total plans completed: 29 across v4.1 (phases 16-24)
 - Average duration: tracked during execution
 - Total execution time: tracked during execution
 
@@ -53,6 +53,7 @@ v4.3 Progress: [██████████] 100% (1/1 phases complete, 1/1 p
 | 27 | 3 | -- | -- |
 | 28 | 3 | -- | -- |
 | Phase 29-legacy-v2-chat-only-boundary P01 | 4 min | 3 tasks | 5 files |
+| 29 | 1 | - | - |
 
 ## Accumulated Context
 
