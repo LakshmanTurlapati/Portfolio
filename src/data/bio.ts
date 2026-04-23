@@ -4,7 +4,10 @@ export interface BioSegment {
 }
 
 export const bioSegments: BioSegment[] = [
-  { text: "build stuff that actually works. Real systems where AI isn't just doing demos. It's getting shit done.\n\nStarted in " },
+  { text: "Build", bold: true },
+  { text: " stuff that actually works. Real systems where AI isn't just doing demos. It's getting " },
+  { text: "shit", bold: true },
+  { text: " done.\n\nStarted in " },
   { text: "full stack", bold: true },
   { text: ", then " },
   { text: "TAMUHack", bold: true },
