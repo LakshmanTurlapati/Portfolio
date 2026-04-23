@@ -9,18 +9,18 @@ Requirements for the Legacy V2 text-chat boundary. Each maps to roadmap phases.
 
 ### Text Chat Boundary
 
-- [ ] **CHAT-01**: User can ask normal persona, portfolio, project, and broad-topic questions in Legacy V2 text chat and receive conversational answers without triggering site navigation or site-control side effects.
-- [ ] **CHAT-02**: User who asks Legacy V2 text chat to navigate, open a project viewer, scroll the site, toggle theme, run a tour, control the browser shell, or use other advanced controls receives a concise response that says text chat cannot do that and points them to voice mode for advanced features.
-- [ ] **CHAT-03**: Legacy V2 chat popup and the full `/chat` page send text-chat requests without enabling site-control tools.
-- [ ] **CHAT-04**: Legacy V2 chat popup and the full `/chat` page do not execute accidental tool-call parts from assistant messages.
+- [x] **CHAT-01**: User can ask normal persona, portfolio, project, and broad-topic questions in Legacy V2 text chat and receive conversational answers without triggering site navigation or site-control side effects.
+- [x] **CHAT-02**: User who asks Legacy V2 text chat to navigate, open a project viewer, scroll the site, toggle theme, run a tour, control the browser shell, or use other advanced controls receives a concise response that says text chat cannot do that and points them to voice mode for advanced features.
+- [x] **CHAT-03**: Legacy V2 chat popup and the full `/chat` page send text-chat requests without enabling site-control tools.
+- [x] **CHAT-04**: Legacy V2 chat popup and the full `/chat` page do not execute accidental tool-call parts from assistant messages.
 
 ### Voice Control Preservation
 
-- [ ] **VOICE-01**: Voice mode still supports the existing advanced site-control tools, including navigation, project opening, about-section scrolling, project-preview scrolling, browser close/external open, theme toggling, switch-to-text, and end-call behavior.
+- [x] **VOICE-01**: Voice mode still supports the existing advanced site-control tools, including navigation, project opening, about-section scrolling, project-preview scrolling, browser close/external open, theme toggling, switch-to-text, and end-call behavior.
 
 ### Regression Coverage
 
-- [ ] **TEST-01**: Automated tests prove the server prompt/tool routing, text-chat transport bodies, client-side no-tool execution path, and voice tool access boundary.
+- [x] **TEST-01**: Automated tests prove the server prompt/tool routing, text-chat transport bodies, client-side no-tool execution path, and voice tool access boundary.
 
 ## Future Requirements
 
@@ -52,12 +52,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CHAT-01 | Phase 29 | Pending |
-| CHAT-02 | Phase 29 | Pending |
-| CHAT-03 | Phase 29 | Pending |
-| CHAT-04 | Phase 29 | Pending |
-| VOICE-01 | Phase 29 | Pending |
-| TEST-01 | Phase 29 | Pending |
+| CHAT-01 | Phase 29 | Complete |
+| CHAT-02 | Phase 29 | Complete |
+| CHAT-03 | Phase 29 | Complete |
+| CHAT-04 | Phase 29 | Complete |
+| VOICE-01 | Phase 29 | Complete |
+| TEST-01 | Phase 29 | Complete |
 
 **Coverage:**
 - v4.3 requirements: 6 total

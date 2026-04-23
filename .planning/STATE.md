@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.3
 milestone_name: Legacy V2 Chat-Only Boundary
-status: executing
-stopped_at: Phase 29 planned and ready to execute
-last_updated: "2026-04-29T20:42:52.618Z"
-last_activity: 2026-04-29 -- Phase 29 planning complete
+status: complete
+stopped_at: Completed 29-01-PLAN.md
+last_updated: "2026-04-29T20:48:36.902Z"
+last_activity: 2026-04-29 -- Phase 29 plan complete
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 1
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 100
 ---
 
 # Project State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 ## Current Position
 
 Phase: 29 — Legacy V2 Chat-Only Boundary
-Plan: —
-Status: Ready to execute
-Last activity: 2026-04-29 -- Phase 29 planning complete
+Plan: 01 — Voice-only site-control boundary
+Status: Complete
+Last activity: 2026-04-29 -- Phase 29 plan complete
 
 ```
-v4.3 Progress: [--------------------] 0% (0/1 phases complete, 0/1 plans complete)
+v4.3 Progress: [██████████] 100% (1/1 phases complete, 1/1 plans complete)
 ```
 
 ## Performance Metrics
@@ -52,6 +52,7 @@ v4.3 Progress: [--------------------] 0% (0/1 phases complete, 0/1 plans complet
 | 26 | 3 | -- | -- |
 | 27 | 3 | -- | -- |
 | 28 | 3 | -- | -- |
+| Phase 29-legacy-v2-chat-only-boundary P01 | 4 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,8 @@ v4.3 Progress: [--------------------] 0% (0/1 phases complete, 0/1 plans complet
 - [post-v4.2-chat-design]: Track remaining popup motion work as CHAT-ANIM-01, a future requirement that must not reopen the visual design decision.
 - [post-v4.2-overlay]: Project/right overlay work targets `IframeViewer`'s preview-control overlay (`fsb-preview-control-overlay`), not the obsolete right-side ProjectDetail panel. The global `FsbControlOverlay` remains the Parz action-caption surface.
 - [v4.3-scope]: Legacy V2 text chat is conversation-only. Navigation, project opening, shell scrolling, theme toggling, tours, browser control, and other tool-driven site control belong to voice mode.
+- [Phase 29-legacy-v2-chat-only-boundary]: Text chat site-control tools are now server-authoritatively gated on isVoice: true; stale enableSiteControl input is accepted only as ignored legacy input.
+- [Phase 29-legacy-v2-chat-only-boundary]: Legacy V2 popup and /chat use default useChat transport and contain no client-side SiteControl/tool dispatch path.
 
 ### v4.2 Carry-forward Investigation (file:line evidence, verified 2026-04-26 against `e2a1383`)
 
@@ -85,23 +88,24 @@ v4.3 Progress: [--------------------] 0% (0/1 phases complete, 0/1 plans complet
 
 ### Pending Todos
 
-- Plan and execute Phase 29: Legacy V2 Chat-Only Boundary.
+- Address deferred persona current-work parity issue recorded in `.planning/phases/29-legacy-v2-chat-only-boundary/deferred-items.md`.
 - API-03 remains future work and gated on a reachable Amplify/custom-domain production URL.
 - CHAT-ANIM-01 remains future work: refine DART chat popup transitions and animations without changing the final visual design baseline.
 - Manual browser/device UAT from v4.2 is retained as post-milestone QA in per-phase `HUMAN-UAT.md` files, not as a milestone blocker.
 
 ### Blockers/Concerns
 
-- No milestone blockers remain.
+- No Phase 29 chat-boundary blockers remain.
+- Combined plan Vitest still has an out-of-scope persona parity failure in `tests/parz-contracts.test.ts`; boundary-specific `tests/voice-barge-in.test.ts` passes.
 - Live Amplify/custom-domain API smoke testing is future work until `audienclature.com` or the actual Amplify URL becomes publicly reachable.
 
 ## Session Continuity
 
-Last session: v4.3 milestone kickoff
-Stopped at: v4.3 roadmap ready for Phase 29
-Resume file: --
+Last session: 2026-04-29T20:48:36.899Z
+Stopped at: Completed 29-01-PLAN.md
+Resume file: None
 
-**Next:** Plan Phase 29: Legacy V2 Chat-Only Boundary.
+**Next:** Phase 29 complete; ready for verify-work or milestone completion.
 
 **Completed Milestone:** v4.2 Carry-forward Polish & Hardening -- 4 phases, 14 plans -- 2026-04-27
 **Completed Phase:** 28 (Chat UI Redesign) -- 3 plans -- 2026-04-27

@@ -7,7 +7,7 @@
 - [x] **v4.0 Voice Mode Production** — Phases 12-15 (shipped 2026-04-26, see `milestones/v4.0-ROADMAP.md`)
 - [x] **v4.1 Parz Persona, Portfolio Context, and Site Control Refresh** — Phases 16-24 (shipped 2026-04-26, see `milestones/v4.1-ROADMAP.md`)
 - [x] **v4.2 Carry-forward Polish & Hardening** — Phases 25-28 (shipped 2026-04-27, see `milestones/v4.2-ROADMAP.md`)
-- [ ] **v4.3 Legacy V2 Chat-Only Boundary** — Phase 29 (active)
+- [x] **v4.3 Legacy V2 Chat-Only Boundary** — Phase 29 (completed 2026-04-29)
 
 ## Phases
 
@@ -65,16 +65,16 @@ Full archive: [`milestones/v4.2-ROADMAP.md`](milestones/v4.2-ROADMAP.md)
 
 ### Phase 29: Legacy V2 Chat-Only Boundary
 
-**Status:** Pending
+**Status:** Complete
 
 **Goal:** Make Legacy V2 text chat answer normally while preventing navigation, project-opening, theme, browser, tour, and other site-control tool execution; preserve those advanced features in voice mode.
 
 **Requirements:** CHAT-01, CHAT-02, CHAT-03, CHAT-04, VOICE-01, TEST-01
 
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 29-01-PLAN.md -- Voice-only site-control boundary for `/api/chat`, Legacy V2 text clients, and regression coverage
+- [x] 29-01-PLAN.md -- Voice-only site-control boundary for `/api/chat`, Legacy V2 text clients, and regression coverage
 
 **Scope:**
 
@@ -112,17 +112,17 @@ Phases execute in numeric order: 29
 | 26. Mobile UX Pass                          | v4.2 | 3/3 | Complete    | 2026-04-26 |
 | 27. FSB Overlay Polish                      | v4.2 | 3/3 | Complete    | 2026-04-27 |
 | 28. Chat UI Redesign                        | v4.2 | 3/3 | Complete    | 2026-04-27 |
-| 29. Legacy V2 Chat-Only Boundary            | v4.3 | 0/1 | Pending     | —          |
+| 29. Legacy V2 Chat-Only Boundary            | v4.3 | 1/1 | Complete   | 2026-04-29 |
 
 ## Requirement Coverage
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CHAT-01 | Phase 29 | Pending |
-| CHAT-02 | Phase 29 | Pending |
-| CHAT-03 | Phase 29 | Pending |
-| CHAT-04 | Phase 29 | Pending |
-| VOICE-01 | Phase 29 | Pending |
-| TEST-01 | Phase 29 | Pending |
+| CHAT-01 | Phase 29 | Complete |
+| CHAT-02 | Phase 29 | Complete |
+| CHAT-03 | Phase 29 | Complete |
+| CHAT-04 | Phase 29 | Complete |
+| VOICE-01 | Phase 29 | Complete |
+| TEST-01 | Phase 29 | Complete |
 
 **Coverage:** 6/6 requirements mapped.
