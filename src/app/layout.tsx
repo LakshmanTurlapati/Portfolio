@@ -7,6 +7,7 @@ import { VoiceSessionProvider } from '@/providers/voice-session-provider';
 import { SiteControlProvider } from '@/providers/site-control-provider';
 import { VoiceOverlay } from '@/components/voice-overlay';
 import { VoiceGlow } from '@/components/voice-glow';
+import { MobileHomeContinuityLayer } from '@/components/mobile-home-continuity-layer';
 import './globals.css';
 
 const lato = Lato({
@@ -69,6 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <VoiceBusProvider>
               <SiteControlProvider>
                 <VoiceSessionProvider>
+                  <MobileHomeContinuityLayer />
                   {children}
                   <VoiceOverlay />
                   <VoiceGlow />

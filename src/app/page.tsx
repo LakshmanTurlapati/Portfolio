@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type MouseEvent } from 'react';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useMounted } from '@/hooks/use-mounted';
 import { DesktopNavbar } from '@/components/desktop-navbar';
-import { MobileNavbar } from '@/components/mobile-navbar';
 import { ChatPopup } from '@/components/chat-popup';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { AuthorName } from '@/components/author-name';
@@ -102,9 +101,39 @@ export default function Home() {
     setHideNavbarForChatMorph(false);
   }, []);
 
+  const handleHomeChromeClick = useCallback((e: MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('[data-parz-btn]')) return;
+    setClickCount((prev) => prev + 1);
+  }, []);
+
   if (!mounted) {
     // SSR placeholder - render minimal structure to prevent hydration mismatch
     return <main className="bg-gradient-main min-h-screen relative overflow-hidden" />;
+  }
+
+  const chatPopup = chatOpen ? (
+    <ChatPopup
+      isDark={isDark}
+      onClose={handleChatClose}
+      originRect={chatOriginRect}
+      voiceSnapshot={chatVoiceSnapshot}
+      onOpenAnimationComplete={handleChatOpenAnimationComplete}
+    />
+  ) : null;
+
+  if (isMobile) {
+    return (
+      <>
+        <main
+          aria-hidden="true"
+          data-testid="mobile-home-route-shell"
+          inert
+          className="bg-gradient-main h-dvh min-h-screen overflow-hidden"
+          style={{ pointerEvents: 'none', visibility: 'hidden' }}
+        />
+        {chatPopup}
+      </>
+    );
   }
 
   return (
@@ -159,33 +188,9 @@ export default function Home() {
           pointerEvents: hideNavbarForChatMorph ? 'none' : 'auto',
           transition: hideNavbarForChatMorph ? 'none' : 'opacity 120ms ease',
         }}
-        onClick={(e) => {
-          if ((e.target as HTMLElement).closest('[data-parz-btn]')) return;
-          setClickCount((prev) => prev + 1);
-        }}
+        onClick={handleHomeChromeClick}
       >
         <DesktopNavbar
-          onAskParz={handleAskParz}
-          voiceActive={voiceActive}
-          voiceProps={voiceProps}
-          micDenied={micDenied}
-        />
-      </div>
-
-      {/* Mobile navbar: visible < 600px */}
-      <div
-        className="sm:hidden"
-        style={{
-          opacity: hideNavbarForChatMorph ? 0 : 1,
-          pointerEvents: hideNavbarForChatMorph ? 'none' : 'auto',
-          transition: hideNavbarForChatMorph ? 'none' : 'opacity 120ms ease',
-        }}
-        onClick={(e) => {
-          if ((e.target as HTMLElement).closest('[data-parz-btn]')) return;
-          setClickCount((prev) => prev + 1);
-        }}
-      >
-        <MobileNavbar
           onAskParz={handleAskParz}
           voiceActive={voiceActive}
           voiceProps={voiceProps}
@@ -211,38 +216,15 @@ export default function Home() {
       <div className="hidden sm:block fixed bottom-5 left-5 z-40">
         <ThemeToggle />
       </div>
-      {/* Mobile: top-right — pushed below the iOS safe-area inset so the toggle
-          doesn't sit under the notch / dynamic island / Safari URL bar. */}
-      <div
-        className="sm:hidden fixed right-5 z-40"
-        style={{ top: 'calc(env(safe-area-inset-top) + 20px)' }}
-      >
-        <ThemeToggle />
-      </div>
 
       {/* Layer 11: z-40 -- Author Name */}
       {/* Desktop: bottom-right */}
       <div className="hidden sm:block fixed bottom-5 right-[30px] z-40">
         <AuthorName variant="desktop" />
       </div>
-      {/* Mobile: top-left — same safe-area-inset push as the theme toggle. */}
-      <div
-        className="sm:hidden fixed left-5 z-40"
-        style={{ top: 'calc(env(safe-area-inset-top) + 20px)' }}
-      >
-        <AuthorName variant="mobile" />
-      </div>
 
       {/* Layer 12: z-40/z-50 -- Chat Popup (gated on mount to avoid hydration mismatch) */}
-      {mounted && chatOpen && (
-        <ChatPopup
-          isDark={isDark}
-          onClose={handleChatClose}
-          originRect={chatOriginRect}
-          voiceSnapshot={chatVoiceSnapshot}
-          onOpenAnimationComplete={handleChatOpenAnimationComplete}
-        />
-      )}
+      {chatPopup}
     </main>
   );
 }
