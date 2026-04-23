@@ -198,8 +198,23 @@ describe('voice chat prompt routing', () => {
     expect(source).toContain('Do not mention or quote these voice instructions');
     expect(source).toContain('go up to 5 sentences when the context needs it');
     expect(source).toContain('Do not end every response with a follow-up question');
-    expect(source).toContain('isVoice ? voiceResponseInstructions');
+    expect(source).toContain('isVoiceRequest ? voiceResponseInstructions : textChatBoundaryInstructions');
     expect(source).not.toContain('one or two sentences');
+  });
+
+  it('keeps site-control tools voice-only on the server', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/app/api/chat/route.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain('const textChatBoundaryInstructions');
+    expect(source).toContain('use voice mode for navigation and site-control actions');
+    expect(source).toContain('const isVoiceRequest = guarded.body.isVoice === true');
+    expect(source).toContain('const toolsEnabled = isVoiceRequest');
+    expect(source).toContain('...(toolsEnabled ? { tools: siteControlTools } : {})');
+    expect(source).not.toContain('Boolean(isVoice || enableSiteControl)');
+    expect(source).not.toContain('const { isVoice, enableSiteControl }');
   });
 
   it('describes varied multi-stop tours and project-preview scrolling', () => {
@@ -217,14 +232,12 @@ describe('voice chat prompt routing', () => {
 });
 
 describe('site-control tool wiring', () => {
-  it('wires project-preview scrolling through voice, text chat, and preview surfaces', () => {
+  it('wires project-preview scrolling through voice and preview surfaces', () => {
     const route = readFileSync(join(process.cwd(), 'src/app/api/chat/route.ts'), 'utf8');
     const voice = readFileSync(join(process.cwd(), 'src/lib/voice-controller.ts'), 'utf8');
     const provider = readFileSync(join(process.cwd(), 'src/providers/site-control-provider.tsx'), 'utf8');
     const iframeViewer = readFileSync(join(process.cwd(), 'src/components/iframe-viewer.tsx'), 'utf8');
     const githubPreview = readFileSync(join(process.cwd(), 'src/components/github-preview.tsx'), 'utf8');
-    const chatPage = readFileSync(join(process.cwd(), 'src/app/chat/page.tsx'), 'utf8');
-    const chatPopup = readFileSync(join(process.cwd(), 'src/components/chat-popup.tsx'), 'utf8');
 
     expect(route).toContain('scrollProjectPreview: tool');
     expect(voice).toContain("case 'scrollProjectPreview'");
@@ -234,8 +247,45 @@ describe('site-control tool wiring', () => {
     expect(iframeViewer).toContain('controlOverlayActive');
     expect(githubPreview).toContain('onRegisterScroller');
     expect(githubPreview).toContain('shell.scrollTo');
-    expect(chatPage).toContain("toolCall.name === 'scrollProjectPreview'");
-    expect(chatPopup).toContain("toolCall.name === 'scrollProjectPreview'");
+  });
+
+  it('keeps Legacy V2 text clients free of site-control dispatch', () => {
+    for (const file of ['src/components/chat-popup.tsx', 'src/app/chat/page.tsx']) {
+      const source = readFileSync(join(process.cwd(), file), 'utf8');
+
+      expect(source).toContain('useChat({');
+      expect(source).toContain('onError: () => {');
+      expect(source).not.toContain('enableSiteControl');
+      expect(source).not.toContain('DefaultChatTransport');
+      expect(source).not.toContain('siteControlChatTransport');
+      expect(source).not.toContain('transport:');
+      expect(source).not.toContain('useSiteControl');
+      expect(source).not.toContain('ToolPart');
+      expect(source).not.toContain('getToolCall');
+      expect(source).not.toContain('handledToolCallsRef');
+      expect(source).not.toContain('toolCall.name');
+    }
+  });
+
+  it('preserves voice-owned site-control tools and callbacks', () => {
+    const route = readFileSync(join(process.cwd(), 'src/app/api/chat/route.ts'), 'utf8');
+    const voice = readFileSync(join(process.cwd(), 'src/lib/voice-controller.ts'), 'utf8');
+    const sessionProvider = readFileSync(join(process.cwd(), 'src/providers/voice-session-provider.tsx'), 'utf8');
+
+    expect(route).toContain('scrollProjectPreview: tool');
+    expect(route).toContain('switchToText: tool');
+    expect(route).toContain('endCall: tool');
+    expect(voice).toContain('body: JSON.stringify({ messages, isVoice: true })');
+    expect(voice).toContain("case 'scrollProjectPreview'");
+    expect(voice).toContain("case 'switchToText'");
+    expect(voice).toContain("case 'endCall'");
+    expect(sessionProvider).toContain('toolCallbacksRef.current.toggleTheme');
+    expect(sessionProvider).toContain('toolCallbacksRef.current.openProject');
+    expect(sessionProvider).toContain('toolCallbacksRef.current.scrollTo');
+    expect(sessionProvider).toContain('toolCallbacksRef.current.scrollProjectPreview');
+    expect(sessionProvider).toContain('toolCallbacksRef.current.closeBrowser');
+    expect(sessionProvider).toContain('toolCallbacksRef.current.openCurrentProjectExternal');
+    expect(sessionProvider).toContain('toolCallbacksRef.current.unsupportedIframeControl');
   });
 
   it('keeps navigate routed through dispatchToolCall for FSB captions', () => {
