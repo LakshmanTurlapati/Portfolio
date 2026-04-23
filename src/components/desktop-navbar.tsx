@@ -40,7 +40,6 @@ export function DesktopNavbar({ onAskParz, voiceActive, voiceProps, micDenied }:
   const handleAboutClick = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      // Use the center of the navbar as origin (matching Flutter behavior)
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const originX = rect.left + rect.width / 2;
       const originY = rect.top + rect.height / 2;

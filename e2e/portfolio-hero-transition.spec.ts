@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
 type RecordedAnimation = {
-  keyframes: { clipPath?: string[] };
-  options: { pseudoElement?: string };
+  keyframes: Record<string, unknown>;
+  options: { fill?: string; pseudoElement?: string };
 };
 
 declare global {
@@ -21,6 +21,7 @@ async function installAnimationRecorder(page: Page) {
       window.__portfolioTransitionAnimations.push({
         keyframes: JSON.parse(JSON.stringify(keyframes)),
         options: {
+          fill: typeof animationOptions?.fill === 'string' ? animationOptions.fill : undefined,
           pseudoElement: animationOptions?.pseudoElement,
         },
       });
@@ -36,6 +37,17 @@ async function clearAnimationRecorder(page: Page) {
   });
 }
 
+async function expectMobileHomeRouteShell(page: Page) {
+  await expect(page.getByTestId('mobile-home-route-shell')).toBeAttached();
+  await expect(page.getByTestId('mobile-home-continuity-layer')).toHaveAttribute('data-route', 'home');
+
+  const metrics = await page.evaluate(() => ({
+    bodyHeight: document.body.getBoundingClientRect().height,
+    viewportHeight: window.innerHeight,
+  }));
+  expect(metrics.bodyHeight).toBeGreaterThanOrEqual(metrics.viewportHeight - 1);
+}
+
 async function expectRootExpandAnimation(page: Page) {
   await expect
     .poll(async () =>
@@ -47,7 +59,11 @@ async function expectRootExpandAnimation(page: Page) {
           }
 
           const [start, end] = clipPath;
-          return start.includes('circle(0px') && !end.includes('circle(0px');
+          return (
+            animation.options.fill === 'both' &&
+            start.includes('circle(0px') &&
+            !end.includes('circle(0px')
+          );
         });
       }),
     )
@@ -70,6 +86,17 @@ async function expectNoOldRootCollapse(page: Page) {
   ).toBe(false);
 }
 
+async function expectNoRootScaleAnimation(page: Page) {
+  expect(
+    await page.evaluate(() =>
+      (window.__portfolioTransitionAnimations ?? []).some((animation) => {
+        if (!animation.options.pseudoElement?.startsWith('::view-transition-')) return false;
+        return /scale(?:3d|X|Y)?\(/i.test(JSON.stringify(animation.keyframes));
+      }),
+    ),
+  ).toBe(false);
+}
+
 test('portfolio overlay morph preserves the original circular reveal', async ({ page }) => {
   await installAnimationRecorder(page);
   await page.goto('/');
@@ -83,6 +110,7 @@ test('portfolio overlay morph preserves the original circular reveal', async ({ 
   await expect(page).toHaveURL(/\/portfolio$/);
   await expectRootExpandAnimation(page);
   await expectNoOldRootCollapse(page);
+  await expectNoRootScaleAnimation(page);
   await expect(page.locator('[data-portfolio-morph-overlay="true"]')).toHaveCount(0);
 
   await clearAnimationRecorder(page);
@@ -91,7 +119,63 @@ test('portfolio overlay morph preserves the original circular reveal', async ({ 
   await expect(page).toHaveURL(/\/$/);
   await expectRootExpandAnimation(page);
   await expectNoOldRootCollapse(page);
+  await expectNoRootScaleAnimation(page);
   await expect(page.locator('[data-portfolio-morph-overlay="true"]')).toHaveCount(0);
+});
+
+test('about and home navigation use the circular reveal without root scale', async ({ page }) => {
+  await installAnimationRecorder(page);
+  await page.goto('/');
+
+  const hasViewTransition = await page.evaluate(() => 'startViewTransition' in document);
+  test.skip(!hasViewTransition, 'View Transitions API is required for the root reveal assertion.');
+
+  for (const viewport of [
+    { width: 1280, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+
+    if (viewport.width < 600) await expectMobileHomeRouteShell(page);
+
+    await clearAnimationRecorder(page);
+    await page.getByRole('button', { name: 'About Me' }).click();
+    await expect(page).toHaveURL(/\/about$/);
+    await expectRootExpandAnimation(page);
+    await expectNoOldRootCollapse(page);
+    await expectNoRootScaleAnimation(page);
+
+    await clearAnimationRecorder(page);
+    await page.getByRole('button', { name: 'Back to home' }).first().click();
+    await expect(page).toHaveURL(/\/$/);
+    await expectRootExpandAnimation(page);
+    await expectNoOldRootCollapse(page);
+    await expectNoRootScaleAnimation(page);
+
+    if (viewport.width < 600) await expectMobileHomeRouteShell(page);
+  }
+});
+
+test('about circular reveal avoids root scale under zoom stress', async ({ page }) => {
+  await installAnimationRecorder(page);
+  await page.setViewportSize({ width: 1024, height: 720 });
+  await page.goto('/');
+
+  const hasViewTransition = await page.evaluate(() => 'startViewTransition' in document);
+  test.skip(!hasViewTransition, 'View Transitions API is required for the root reveal assertion.');
+
+  const session = await page.context().newCDPSession(page);
+  await session.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1.25 });
+
+  await clearAnimationRecorder(page);
+  await page.getByRole('button', { name: 'About Me' }).click();
+  await expect(page).toHaveURL(/\/about$/);
+  await expectRootExpandAnimation(page);
+  await expectNoOldRootCollapse(page);
+  await expectNoRootScaleAnimation(page);
+
+  await session.detach();
 });
 
 test('mobile portfolio navigation keeps the reveal without the overlay morph', async ({ page }) => {
@@ -107,6 +191,7 @@ test('mobile portfolio navigation keeps the reveal without the overlay morph', a
   await expect(page.locator('[data-portfolio-morph-overlay="true"]')).toHaveCount(0);
   await expect(page).toHaveURL(/\/portfolio$/);
   await expectRootExpandAnimation(page);
+  await expectNoRootScaleAnimation(page);
 });
 
 test('desktop portfolio grid does not fade the first row', async ({ page }) => {
@@ -124,6 +209,6 @@ test('desktop portfolio grid does not fade the first row', async ({ page }) => {
     };
   });
 
-  expect(mask.maskImage).toBe('none');
-  expect(mask.webkitMaskImage).toBe('none');
+  expect(['', 'none']).toContain(mask.maskImage);
+  expect(['', 'none']).toContain(mask.webkitMaskImage);
 });

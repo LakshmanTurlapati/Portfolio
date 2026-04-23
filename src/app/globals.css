@@ -251,6 +251,12 @@ body {
   display: block;
 }
 
+::view-transition-group(root),
+::view-transition-image-pair(root) {
+  animation: none;
+  transform: none;
+}
+
 /* Allow clip-path to compose correctly without isolation interference */
 ::view-transition-image-pair(root) {
   isolation: auto;

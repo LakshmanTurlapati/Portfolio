@@ -65,7 +65,7 @@ function BackButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center rounded-xl transition-all duration-200 active:scale-95"
+      className="flex items-center justify-center rounded-xl transition-opacity duration-200"
       style={{
         width: '48px',
         height: '48px',
@@ -257,6 +257,7 @@ export default function AboutPage() {
 
   const handleBack = useCallback(
     (e: React.MouseEvent) => {
+      e.preventDefault();
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const originX = rect.left + rect.width / 2;
       const originY = rect.top + rect.height / 2;

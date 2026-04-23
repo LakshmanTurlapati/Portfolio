@@ -17,13 +17,51 @@ describe('portfolio overlay morph contract', () => {
 
     expect(transitionProvider).toContain("pseudoElement: '::view-transition-new(root)'");
     expect(transitionProvider).toContain('`circle(0px at ${originX}px ${originY}px)`');
+    expect(transitionProvider).toContain("fill: 'both'");
+    expect(transitionProvider).toContain('navigatePlain');
     expect(transitionProvider).not.toContain('NavigateWithRevealOptions');
     expect(transitionProvider).not.toContain('sharedElement');
     expect(transitionProvider).not.toContain('revealDirection');
     expect(transitionProvider).not.toContain('portfolioButtonHero');
 
+    expect(css).toContain('::view-transition-group(root)');
+    expect(css).toContain('::view-transition-image-pair(root)');
+    expect(css).toContain('animation: none');
+    expect(css).toContain('transform: none');
     expect(css).not.toContain('view-transition-name: portfolio-button-hero');
     expect(css).not.toContain('::view-transition-group(portfolio-button-hero)');
+  });
+
+  it('routes about and home navigation through the circular reveal path', () => {
+    const transitionProvider = source('src/providers/transition-provider.tsx');
+    const desktopNavbar = source('src/components/desktop-navbar.tsx');
+    const mobileNavbar = source('src/components/mobile-navbar.tsx');
+    const aboutPage = source('src/app/about/page.tsx');
+    const homePage = source('src/app/page.tsx');
+    const siteControl = source('src/providers/site-control-provider.tsx');
+    const voiceSession = source('src/providers/voice-session-provider.tsx');
+    const plainStart = transitionProvider.indexOf('const navigatePlain');
+    const plainEnd = transitionProvider.indexOf('const navigateWithSlide');
+    const plainBlock = transitionProvider.slice(plainStart, plainEnd);
+
+    expect(transitionProvider).toContain("navigatePlain: (path: string) => void");
+    expect(plainBlock).toContain('router.push(path)');
+    expect(plainBlock).toContain('emitPageReady(path)');
+    expect(plainBlock).not.toContain('gsap.to(overlay');
+    expect(plainBlock).not.toContain('clipPath');
+    expect(transitionProvider).toContain('data-testid="route-reveal-overlay"');
+    expect(transitionProvider).not.toContain('data-testid="plain-route-overlay"');
+    expect(plainBlock).not.toContain('startViewTransition');
+    expect(plainBlock).not.toContain('document.documentElement.animate');
+
+    expect(desktopNavbar).toContain("navigateWithReveal('/about'");
+    expect(mobileNavbar).toContain("navigateWithReveal('/about'");
+    expect(aboutPage).toContain("navigateWithReveal('/'");
+    expect(homePage).toContain('data-testid="mobile-home-route-shell"');
+    expect(siteControl).toContain('navigateWithReveal(path, window.innerWidth / 2, window.innerHeight / 2)');
+    expect(siteControl).toContain('navigateWithReveal(PAGE_PATHS.about');
+    expect(siteControl).not.toContain('navigatePlain');
+    expect(voiceSession).toContain("navigatePlain('/')");
   });
 
   it('uses a separate desktop overlay morph instead of native View Transition groups', () => {
