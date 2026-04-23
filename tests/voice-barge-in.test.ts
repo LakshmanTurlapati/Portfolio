@@ -313,7 +313,9 @@ describe('site-control tool wiring', () => {
     expect(voicePanel).toContain('presentation?: boolean');
     expect(chatPopup).toContain('const MORPH_DURATION_MS = 560');
     expect(chatPopup).toContain('const CONTENT_DELAY_MS = MORPH_DURATION_MS');
-    expect(chatPopup).toContain("const legacyPanelSurface = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'");
+    expect(chatPopup).toContain("import { getLegacyChatTheme } from '@/lib/chat-theme'");
+    expect(chatPopup).toContain('const legacyTheme = getLegacyChatTheme(isDark)');
+    expect(chatPopup).toContain('const legacyPanelSurface = legacyTheme.surface');
     expect(chatPopup).toContain("const shellBackground = morphEnabled && !contentReady ? 'var(--color-navbar-bg)' : legacyPanelSurface");
     expect(chatPopup).toContain('Legacy V2 Chat interface (Features may be limited)');
     expect(chatPopup).not.toContain('data-chat-voice-preview="true"');

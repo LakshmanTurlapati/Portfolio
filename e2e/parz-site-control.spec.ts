@@ -150,7 +150,12 @@ function expectBlankMorphFrames(morphStart: MorphCapture) {
   }
 }
 
-async function expectLegacyChatPanelSurface(page: Page, expectedBackground: string, expectedColor: string) {
+async function expectLegacyChatPanelSurface(
+  page: Page,
+  expectedBackground: string,
+  expectedColor: string,
+  expectedBorderRadius = '15px',
+) {
   await expect(page.locator('[data-chat-popup-subtitle="true"]')).toHaveText(
     'Legacy V2 Chat interface (Features may be limited)',
   );
@@ -169,7 +174,7 @@ async function expectLegacyChatPanelSurface(page: Page, expectedBackground: stri
     .toEqual({
       background: expectedBackground,
       color: expectedColor,
-      borderRadius: '15px',
+      borderRadius: expectedBorderRadius,
     });
 }
 
@@ -308,27 +313,25 @@ test('switching from voice mode to text chat does not show the FSB overlay', asy
   await expect(page.locator('.fsb-control-viewport-glow')).toHaveCount(0);
 });
 
-test('mobile voice-to-text morph starts from the visible dock', async ({ page }) => {
+test('mobile chevron opens default Parz chat and toggles to legacy chat', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.setViewportSize({ width: 390, height: 844 });
   await mockSpeechTokenFailure(page);
   await page.goto('/');
 
-  await page.locator('button[aria-label="Activate Parz voice mode"]:visible').click();
-  await page.waitForTimeout(650);
-  await expect(page.locator('button[title="Switch to text chat"]:visible')).toBeVisible();
+  await expect(page.locator('button[aria-label="Activate Parz voice mode"]:visible')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Open chat' }).click();
+  await expect(page).toHaveURL(/\/chat$/);
+  await expect(page.getByTestId('mobile-parz-chat')).toBeVisible();
+  await expect(page.getByTestId('mobile-parz-voice-stage')).toHaveCSS('border-radius', '0px');
+  await expect(page.getByTestId('toggle-to-legacy-chat')).toBeVisible();
 
-  const morphStart = await captureSwitchToTextMorphStart(page);
-  expect(morphStart.frames.length).toBeGreaterThan(0);
-  expect(morphStart.frames[0].source).toBe('voice');
-  expect(morphStart.frames[0].state).toBe('origin');
-  expectRectNear(morphStart.frames[0].rect, morphStart.originRect);
-  expectBlankMorphFrames(morphStart);
+  await page.getByTestId('toggle-to-legacy-chat').click();
 
   const chatCard = page.locator('[data-chat-popup-card]');
   await expect(page.getByRole('dialog', { name: 'Parz' })).toBeVisible();
-  await expect(chatCard).toHaveAttribute('data-chat-morph-state', 'content');
-  await expectLegacyChatPanelSurface(page, 'rgba(0, 0, 0, 0.6)', 'rgb(255, 255, 255)');
+  await expect(chatCard).toHaveAttribute('data-chat-morph-state', 'static');
+  await expectLegacyChatPanelSurface(page, 'rgba(0, 0, 0, 0.6)', 'rgb(255, 255, 255)', '0px');
   await expect(page.locator('.fsb-control-overlay')).toHaveCount(0);
   await expect(page.locator('.fsb-control-viewport-glow')).toHaveCount(0);
 });
