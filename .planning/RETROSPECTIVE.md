@@ -11,25 +11,29 @@
 
 - Voice Wave 2 hardening for page-ready text handoff, Scribe stall fallback, SpeechSynthesis timeout recovery, callback deregistration, and throwing tool callbacks.
 - Mobile UX fixes for particle density, iOS chat keyboard behavior, and canonical project viewing through IframeViewer.
-- FSB overlay captions and mobile overlay treatment.
-- Chat popup redesign with explicit UI spec, motion/reduced-motion support, and accessibility semantics.
+- FSB overlay captions and mobile overlay treatment, with the project/right preview overlay corrected to the IframeViewer preview-control surface.
+- DART-refined chat popup visual baseline with explicit UI spec coverage, reduced-motion support, and accessibility semantics.
 - Live GitHub stats and contribution matrix wired to actual GitHub profile activity on the Fly deployment.
 
 ### What Worked
 
 - The milestone audit caught cross-phase integration details before closure, including the navigate caption gap.
 - Keeping IframeViewer as the canonical project viewer avoided reviving the old right-side ProjectDetail path.
+- Separating the global FSB action overlay from IframeViewer's preview overlay corrected the old "right overlay" assumption before future work compounds it.
 - The shared `/api/github-stats` payload now prevents the stats pill and matrix from drifting.
 
 ### What Was Inefficient
 
 - Planning docs drifted after phases completed: STATE.md still said Phase 25 was executing even after all phases and the milestone audit had passed.
 - Several manual UAT items remained listed as active blockers even though the milestone definition of done accepted them as post-milestone QA.
+- The first chat popup GSD spec overfit the old 420px bottom-right layout, while the user later chose the DART-refined centered popup as the final design direction.
 
 ### Patterns Established
 
 - Treat manual real-device/screen-reader checks as durable QA plans when the code-level milestone is otherwise complete.
 - Keep one shared data source for related UI surfaces; the GitHub stats pill and matrix now consume the same activity payload.
+- Record design-source decisions explicitly: DART chat popup is final visually; animation refinements are future work, not a design reopening.
+- Name overlay surfaces precisely: `FsbControlOverlay` for Parz action captions, `IframeViewer` preview-control overlay for project/right preview control.
 - Close GSD auto-chain state explicitly when a milestone is done.
 
 ### Key Lessons
@@ -37,6 +41,7 @@
 1. Completion docs need the same rigor as implementation docs; stale state files confuse the next session.
 2. Orphan detection should happen before UI work lands, especially after a previous milestone changed the canonical surface.
 3. Deployment verification should target the actual production surface; for this repo, Fly is the active target unless custom domains are explicitly moved.
+4. When user design intent supersedes an earlier UI spec, update GSD immediately so future agents do not optimize the wrong layout.
 
 ---
 

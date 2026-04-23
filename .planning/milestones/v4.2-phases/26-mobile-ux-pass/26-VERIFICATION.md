@@ -11,7 +11,7 @@ gaps:
     reason: "Resolved by accepting IframeViewer as the canonical project viewer and deleting the orphaned ProjectDetail component per user direction. IframeViewer is the user-reachable project surface and remains mobile-friendly via inset-based margins."
     artifacts:
       - path: "src/components/project-detail.tsx"
-        issue: "Component edits are correct; component is not wired into any active route. Only references in src/ are inside the file itself and in src/data/projects.ts (interface re-export)."
+        issue: "Historical component edits were correct, but the component was orphaned and later removed; do not re-wire it."
       - path: "src/app/portfolio/page.tsx"
         issue: "Imports IframeViewer (line 11) but no longer imports or renders ProjectDetail. setSelectedProject path was removed; openProject calls setViewer(target) and renders <IframeViewer> instead."
     missing: []
@@ -25,9 +25,9 @@ human_verification:
   - test: "MOB-02 desktop / Android regression check"
     expected: "On desktop browsers and Android Chrome, opening the chat popup, focusing the input, typing, and pressing Enter still sends the message. No visual regression. scrollIntoView is a no-op on non-scrollable container."
     why_human: "Cross-browser / cross-OS regression behavior requires manual exercise."
-  - test: "MOB-03 visual layout review (only meaningful if ProjectDetail is re-wired into the live app)"
-    expected: "If ProjectDetail is re-wired: on iPhone SE (375px) and iPhone 14 Pro (393px), opening a project shows px-4 page padding, full-bleed cover image (no rounded corners), 2-column stats grid, title at 40px, tagline at 16px, overview at 19px, stats value at 24px, no horizontal scroll, no clipping. On md (768-1023px), padding becomes 32px, cover image returns to mx-8 with rounded-[14px], stats grid back to auto-fit. On desktop (>=1024px), the layout is pixel-identical to v4.1 (56px padding, 56px title, etc.)."
-    why_human: "Layout verification requires rendering the component in a browser at multiple viewport widths. Currently blocked by the wiring gap above; this test should be deferred until either ProjectDetail is re-wired or the responsive ladder is ported to the active component."
+  - test: "MOB-03 / project viewer mobile layout review against IframeViewer"
+    expected: "On iPhone SE (375px) and iPhone 14 Pro (393px), project URLs open in IframeViewer with mobile-friendly inset margins, usable header chrome, tappable close / external-open controls, and no horizontal clipping. ProjectDetail does not appear or need re-wiring."
+    why_human: "Project viewer layout verification requires rendering IframeViewer in a browser at multiple viewport widths; the old ProjectDetail target is historical only."
 ---
 
 # Phase 26: Mobile UX Pass Verification Report
@@ -37,6 +37,8 @@ human_verification:
 **Status:** passed (MOB-03 resolved through canonical IframeViewer; manual UAT deferred post-milestone)
 **Re-verification:** No -- initial verification
 
+**Post-v4.2 correction (2026-04-28):** The ProjectDetail findings below are preserved as historical audit evidence. The user accepted `IframeViewer` as the canonical project viewer and corrected the "right overlay" target to `IframeViewer`'s `PreviewControlOverlay` (`fsb-preview-control-overlay`), not the removed ProjectDetail panel.
+
 ## Goal Achievement
 
 ### Observable Truths
@@ -45,7 +47,7 @@ human_verification:
 |---|-------|--------|----------|
 | 1 | User on mobile (<768px) sees particle background render with ~45 particles vs desktop's 90, no visible jank from breathing rAF loop (MOB-01). | partial: code VERIFIED, runtime smoothness needs human | `src/components/particle-background.tsx:6` imports `useMediaQuery`; line 56 derives `const isMobile = useMediaQuery('(max-width: 768px)')`; line 86 sets `number: { value: isMobile ? 45 : 90, density: { enable: true, value_area: 900 } }`; line 205 has `useEffect` deps `[isDark, mounted, isMobile]`. Density `value_area: 900`, line `distance: 150`, move `speed: 1.2` all preserved. Breathing rAF loop (lines 110-196) untouched. No `innerWidth` / `resize` listener present. Component wired at `src/app/page.tsx:55` `<ParticleBackground />`. Hook `src/hooks/use-media-query.ts` confirmed SSR-safe (returns `false` on first render, subscribes via `media.addEventListener('change', listener)`). |
 | 2 | User typing into chat input on iOS sees field scroll into view above keyboard, with `inputMode` hinting right keyboard, safe-area insets respected on input wrapper (MOB-02). | partial: code VERIFIED, real-device behavior needs human | `src/components/chat-popup.tsx:509-511` adds `inputMode="text"`, `enterKeyHint="send"`, `autoComplete="off"` on the input element. Lines 515-519 add `onFocus={() => { setTimeout(() => { inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 300); }}`. Line 501 sets `paddingBottom: 'max(16px, env(safe-area-inset-bottom))'` on the input wrapper `<div>`, with the shorthand `padding: '8px 16px 16px'` preserved on the line above. `placeholder="Talk to my persona!"` preserved (line 520). No `VisualViewport` usage. No `safe-area-inset-left` / `safe-area-inset-right`. Component wired at `src/app/page.tsx:163` `<ChatPopup isDark={isDark} onClose={() => setChatOpen(false)} />`. |
-| 3 | User reading project detail on mobile sees responsive horizontal padding (px-4 small, px-14 from lg up), with stats grid and cover image margins not cropped or cramped (MOB-03). | FAILED at wiring level (component orphaned); code edits VERIFIED | All 9 file-level edits confirmed in `src/components/project-detail.tsx`: header (line 77), body (line 176), footer (line 252) use `px-4 md:px-8 lg:px-14`; cover image (line 160) uses `-mx-4 md:mx-8 lg:mx-14` and `rounded-none md:rounded-[14px]`; title (line 105) is `text-[40px] md:text-[44px] lg:text-[56px]`; tagline (line 110) is `text-[16px] lg:text-[18px]`; overview (line 178) is `text-[19px] lg:text-[22px]`; stats grid (line 183) is `grid-cols-2 md:grid-cols-[repeat(auto-fit,minmax(140px,1fr))]`; stats value (line 191) is `text-[24px] md:text-[28px]`. No remaining `gridTemplateColumns:` inline style. No remaining hardcoded `px-14` className-prefix or standalone ` mx-14 `. **However**, `ProjectDetail` is not imported or rendered anywhere in `src/app/`. Users in the live app cannot reach `ProjectDetail`. See `gaps` below. |
+| 3 | User reading project detail on mobile sees responsive horizontal padding (px-4 small, px-14 from lg up), with stats grid and cover image margins not cropped or cramped (MOB-03). | RESOLVED by canonical IframeViewer decision | Historical `ProjectDetail` file edits were correct but the component was orphaned. The user chose `IframeViewer` as the final project viewer, so MOB-03 is resolved by removing the obsolete ProjectDetail path rather than re-wiring it. Future project/right preview overlay work targets `IframeViewer`'s `fsb-preview-control-overlay`. |
 
 **Score:** 2/3 truths verified at code level; 1/3 wired through to a user-reachable flow.
 
@@ -55,7 +57,7 @@ human_verification:
 |----------|----------|--------|-------------|-------|------------|--------|
 | `src/components/particle-background.tsx` | Mobile-aware particle initialization (useMediaQuery + isMobile ? 45 : 90 + reinit deps) | yes | yes (216 lines, all locked patterns present) | yes (`<ParticleBackground />` rendered at `src/app/page.tsx:55`) | n/a (config-driven; no dynamic data source) | VERIFIED |
 | `src/components/chat-popup.tsx` | iOS-aware chat input with inputMode/enterKeyHint/autoComplete and focus-scroll handler + safe-area inset | yes | yes (all 4 changes present per Plan 02 acceptance criteria) | yes (`<ChatPopup ... />` rendered at `src/app/page.tsx:163`) | yes (input is the active conversational input, drives chat send flow) | VERIFIED |
-| `src/components/project-detail.tsx` | Mobile-responsive project detail with padding ladder, full-bleed cover image, 2-col stats grid, proportional type scale | yes | yes (all 9 edits present per Plan 03 acceptance criteria) | NO -- not imported by `src/app/portfolio/page.tsx` (uses `IframeViewer` at line 172 instead); not imported anywhere else in `src/app/`. Search of `src/` for `ProjectDetail` returns only the file itself and an unrelated re-export of the `ProjectDetail` interface in `src/data/projects.ts:10`. | n/a -- never rendered | ORPHANED (file is correct; not on any user-reachable code path) |
+| `src/components/project-detail.tsx` | Mobile-responsive project detail with padding ladder, full-bleed cover image, 2-col stats grid, proportional type scale | historical only | historical edits were correct | SUPERSEDED -- `IframeViewer` is the canonical project viewer; ProjectDetail should not be reintroduced to satisfy MOB-03 | n/a -- obsolete surface | RESOLVED BY REMOVAL / IFRAMEVIEWER |
 
 ### Key Link Verification
 
@@ -75,7 +77,7 @@ human_verification:
 |----------|---------------|--------|---------------------|--------|
 | `particle-background.tsx` | `isMobile` | `useMediaQuery('(max-width: 768px)')` reading `window.matchMedia(query).matches` | yes (browser matchMedia is real runtime) | FLOWING |
 | `chat-popup.tsx` | input value & focus | `useRef<HTMLInputElement>(null)` + user typing | yes (live user input -> setInputValue -> chat send) | FLOWING |
-| `project-detail.tsx` | `project`, `detail` props | passed by parent caller | n/a -- no parent caller in active route | DISCONNECTED (orphaned component) |
+| `project-detail.tsx` | `project`, `detail` props | passed by parent caller | n/a -- obsolete surface | SUPERSEDED by canonical `IframeViewer` flow |
 
 ### Behavioral Spot-Checks
 
@@ -85,7 +87,7 @@ human_verification:
 | Hook contract: `useMediaQuery` is SSR-safe and subscribes via matchMedia change events | static read of `src/hooks/use-media-query.ts` | confirmed: returns `useState(false)` initial, then `media.addEventListener('change', listener)` in useEffect | PASS |
 | `ParticleBackground` rendered in app | grep `<ParticleBackground` in src | found at `src/app/page.tsx:55` | PASS |
 | `ChatPopup` rendered in app | grep `<ChatPopup` in src | found at `src/app/page.tsx:163` | PASS |
-| `ProjectDetail` rendered in app | grep `<ProjectDetail` and `import.*ProjectDetail` in `src/` | only references are the file itself + `src/data/projects.ts` re-export of an unrelated `ProjectDetail` interface; **no JSX usage anywhere in `src/app/`** | FAIL (component not on user-reachable code path) |
+| `ProjectDetail` rendered in app | grep `<ProjectDetail` and `import.*ProjectDetail` in `src/` | no JSX usage in `src/app/`; project opening uses `IframeViewer` | EXPECTED ABSENT |
 
 ### Requirements Coverage
 
@@ -93,7 +95,7 @@ human_verification:
 |-------------|-------------|------------------------------------|--------|----------|
 | MOB-01 | 26-01-PLAN.md | User experiences smooth particle background on mobile. Detect mobile in `src/components/particle-background.tsx:84`, reduce particle count from 90 to ~40-50, and optionally gate the breathing rAF loop. | SATISFIED at code level; perf needs human | Particle count drop implemented exactly per CONTEXT.md D-MOB-01 (45 mobile / 90 desktop, 768px breakpoint). Component is wired and the hook is correct. Real-device smoothness deferred to human. |
 | MOB-02 | 26-02-PLAN.md | User can type into the chat input on iOS without keyboard / viewport jank. Add `inputMode`, focus-scroll, and review safe-area inset bottom on the input wrapper in `src/components/chat-popup.tsx:505`. | SATISFIED at code level; iOS device run needs human | All 4 locked changes (3 attrs + onFocus + paddingBottom) present and wired into the actually-rendered ChatPopup. Real iOS Safari behavior deferred to human. |
-| MOB-03 | 26-03-PLAN.md | User can read and interact with project-detail content on mobile without horizontal cramping. Add responsive padding (`px-4 lg:px-14`) and review stats grid + cover image margin in `src/components/project-detail.tsx`. | BLOCKED at user-flow level (file is correct; not rendered) | All 9 expected edits land per acceptance criteria. The plan's scope was strictly the named file, and that scope is met. However, the user-facing ROADMAP success criterion ("User reading project detail on mobile sees ...") cannot be observed because the component is orphaned -- no active route imports or renders it. Re-wiring is out of scope for Phase 26 but is required for the user truth to materialize. |
+| MOB-03 | 26-03-PLAN.md | User can read and interact with project-detail content on mobile without horizontal cramping. Add responsive padding (`px-4 lg:px-14`) and review stats grid + cover image margin in `src/components/project-detail.tsx`. | RESOLVED by accepted architecture correction | The historical ProjectDetail edits landed, but the live user-facing surface is `IframeViewer`. Per user direction, the obsolete ProjectDetail path was removed and should not be re-wired; future mobile/project preview work belongs on `IframeViewer`. |
 
 ### Anti-Patterns Found
 
@@ -120,20 +122,13 @@ See `human_verification` block in the frontmatter for the four manual tests that
 1. MOB-01 real-device smoothness check (iPhone SE / 14 Pro / iPad portrait / desktop resize across 768px).
 2. MOB-02 iOS Safari keyboard scroll-into-view + safe-area inset visual check on a notched device.
 3. MOB-02 desktop / Android regression check.
-4. MOB-03 visual layout review at iPhone SE, iPhone 14 Pro, iPad portrait, desktop -- **only after the wiring gap is resolved**.
+4. Project/right preview layout review at iPhone SE, iPhone 14 Pro, iPad portrait, desktop should target `IframeViewer`, not ProjectDetail.
 
 ### Gaps Summary
 
 The phase achieves its plan-level contract: every locked code edit from CONTEXT.md and UI-SPEC.md lands byte-for-byte in the named files, TypeScript compiles cleanly, and no forbidden patterns leak in. MOB-01 and MOB-02 are wired into the live app via `src/app/page.tsx`, so their user-facing truths are reachable pending human device confirmation.
 
-MOB-03 is the one substantive gap: the file edits are correct, but `src/components/project-detail.tsx` is an orphaned component left behind from v4.1 Phase 17's removal of the right-side detail panel. `src/app/portfolio/page.tsx` opens projects through `IframeViewer`, not `ProjectDetail`, so the ROADMAP success criterion ("User reading project detail on mobile sees ...") is not observable in the live app today. The plan's contract was the file, and that contract is met -- but the underlying user-facing goal is not.
-
-Resolution paths (out of scope for this phase but required before MOB-03 ships in the user-visible sense):
-- (a) Re-wire `ProjectDetail` into a user-reachable flow (re-introduces a path Phase 17 deliberately removed).
-- (b) Port the responsive padding ladder + 2-col stats + type ramp onto the component that **is** on the active code path (e.g. `IframeViewer`, or whatever displays project detail content on mobile in the live app).
-- (c) Explicitly accept and document that MOB-03 ships as a forward-looking edit on a currently-orphaned file (in which case the ROADMAP success criterion text needs softening).
-
-This decision belongs to the developer.
+MOB-03 was resolved after verification by accepting `IframeViewer` as the canonical project viewer and removing the obsolete ProjectDetail path. The earlier ProjectDetail edits remain useful history, but future work should not reintroduce ProjectDetail to satisfy this phase. Any project/right overlay or preview layout polish belongs on `IframeViewer` and its `PreviewControlOverlay` (`fsb-preview-control-overlay`).
 
 ---
 

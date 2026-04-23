@@ -13,6 +13,8 @@ created: 2026-04-26
 >
 > Source of truth: this spec carries CONTEXT.md's locked decisions into prescriptive tokens, states, and acceptance specs. The Flutter parity mandate from CLAUDE.md governs all visual choices -- this phase tunes existing components for mobile, no new visual language.
 
+**Post-v4.2 correction (2026-04-28):** MOB-03's ProjectDetail target was later resolved by accepting `IframeViewer` as the canonical project viewer and deleting the orphaned ProjectDetail component. The responsive ProjectDetail details below are historical implementation evidence only; future project/right overlay work targets `IframeViewer`'s `PreviewControlOverlay` (`fsb-preview-control-overlay`).
+
 ---
 
 ## Design System

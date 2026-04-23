@@ -6,7 +6,7 @@ tags: [chat-popup, motion, accessibility, aria, prefers-reduced-motion, focus-ma
 
 requires:
   - phase: 28-01
-    provides: Popup geometry (mobile inset / desktop 420px corner anchor, 20px radius, header skeleton)
+    provides: Initial popup geometry baseline; post-v4.2 DART baseline supersedes the old desktop 420px corner anchor
   - phase: 28-02
     provides: Typography stack (Instrument Serif persona, Lato body weights), color tokens, suggestion chip pills, error border
   - phase: 25
@@ -62,6 +62,8 @@ completed: 2026-04-26
 # Phase 28 Plan 03: Motion + Accessibility Summary
 
 **Chat popup landed UI-SPEC §7 motion (popupIn / messageAppear / sendSuccessPulse + prefers-reduced-motion neutralizer) and §8 accessibility (dialog/log/status/alert/group ARIA, Escape-to-close, focus capture+restore, :focus-visible rings) without disturbing Phase 25 voice handoff or Phase 26 iOS keyboard handling.**
+
+**Post-v4.2 correction (2026-04-28):** The user selected the DART-refined chat popup as the final visual baseline after this summary was written. This summary remains historical evidence for Phase 28 a11y/reduced-motion work, but future implementation should preserve the current DART shell and refine transitions/animations under CHAT-ANIM-01.
 
 ## Performance
 
@@ -175,9 +177,10 @@ Per the `<auto_mode>` flag in the orchestrator prompt, the 19-point manual cross
 ## Next Phase Readiness
 
 - Phase 28 is feature-complete against UI-SPEC §3-§10. All 47 acceptance items from §11 are satisfied by the code; §11.5 (motion) and §11.8 (a11y) are now wired.
+- Post-v4.2 direction: DART visual baseline is final; do not revert to the old bottom-right geometry when refining motion.
 - §15 Checker Sign-Off matrix is unblocked: a UI checker can run against the popup against UI-SPEC §3-§10 and §11.
 - Hand-off note: Phase 28 ready for UI-checker review against UI-SPEC §15 sign-off matrix.
-- Optional follow-up (out of scope): wiring `sendSuccessPulse` to a transient state on `handleSend` if product wants the haptic ack. Keyframe + selector + reduced-motion fallback are already in place.
+- Future follow-up (CHAT-ANIM-01): refine voice-to-chat morph/open/close timing, message/send motion, and optional send acknowledgement while preserving the DART visual baseline.
 
 ## Self-Check: PASSED
 

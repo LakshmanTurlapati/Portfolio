@@ -25,6 +25,7 @@ result: [deferred post-milestone QA]
 expected: On mobile (<768px) project URLs open the IframeViewer with `inset-4` margins (already mobile-friendly). Header chrome shows hostname, label, and chrome buttons without cropping. Close (X) and "Open in new tab" buttons are tappable. The orphaned ProjectDetail component (deleted in commit `06d9550`) does NOT appear anywhere — IframeViewer is the canonical viewer per user directive.
 result: [deferred post-milestone QA]
 note: The original MOB-03 work landed in src/components/project-detail.tsx, which was orphaned (not imported anywhere). Per user direction, the orphan was deleted; IframeViewer (already in use at src/app/portfolio/page.tsx and src/providers/site-control-provider.tsx) is now the canonical project viewer. Further IframeViewer mobile polish (larger touch targets, safe-area insets) is deferred to a future phase if needed.
+post_v4_2_overlay_note: Project/right overlay QA belongs to IframeViewer's preview-control overlay (`fsb-preview-control-overlay`), not the removed ProjectDetail panel.
 
 ## Summary
 

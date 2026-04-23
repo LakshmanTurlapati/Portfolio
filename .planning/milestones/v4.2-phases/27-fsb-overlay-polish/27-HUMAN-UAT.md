@@ -11,6 +11,8 @@ closure_reason: "Milestone completed; manual checks retained as post-milestone Q
 
 [closed at milestone completion; deferred QA plan retained]
 
+Post-v4.2 overlay correction: these tests are for the global `FsbControlOverlay` action-caption badge. Right/project preview overlay QA should target `IframeViewer`'s `fsb-preview-control-overlay`, not the removed ProjectDetail panel.
+
 ## Tests
 
 ### 1. FSB-04 caption fires for all 7 tools (incl. navigate after gap fix)

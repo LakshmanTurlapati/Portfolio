@@ -12,7 +12,7 @@ A visually striking, interactive portfolio that showcases projects with rich det
 
 **Shipped:** v4.2 Carry-forward Polish & Hardening (2026-04-27)
 
-v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forward hardening closed v4.1's remaining voice reliability, mobile UX, FSB overlay, and chat UI work: page-ready voice-to-text handoff, Scribe stall fallback, SpeechSynthesis timeout recovery, tool-callback exception wrapping, callback deregister contract, mobile particle reduction, iOS chat keyboard handling, mobile FSB overlay treatment, dynamic FSB action captions, and redesigned chat popup motion/accessibility. Manual cross-device UAT is retained as post-milestone QA, not an active milestone blocker.
+v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forward hardening closed v4.1's remaining voice reliability, mobile UX, FSB overlay, and chat UI work: page-ready voice-to-text handoff, Scribe stall fallback, SpeechSynthesis timeout recovery, tool-callback exception wrapping, callback deregister contract, mobile particle reduction, iOS chat keyboard handling, mobile FSB overlay treatment, dynamic FSB action captions, and the DART-refined chat popup visual baseline. The refined popup is final for design direction; transition and animation refinements are future polish, not a v4.2 blocker. Manual cross-device UAT is retained as post-milestone QA, not an active milestone blocker.
 
 ## Current Milestone: None
 
@@ -24,8 +24,8 @@ v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forwa
 
 - Voice Wave 2 hardening: F-05 openTextChat race, F-06 STT session-started timeout, F-07 SpeechSynthesis fallback timeout, F-08 registerToolCallbacks deregister, F-09 tool-callback exception wrapping.
 - Mobile UX pass: particle-background mobile performance, chat input iOS keyboard handling, canonical IframeViewer project viewing on mobile.
-- FSB overlay polish: FSB-04 dynamic action captions, FSB-05 mobile-specific overlay treatment.
-- Chat UI redesign (CHAT-UI-01): visual / UX polish of the chat popup with preserved voice/mobile behavior.
+- FSB overlay polish: FSB-04 dynamic action captions, FSB-05 mobile-specific overlay treatment, plus clarified separation between the global FSB action overlay and the IframeViewer preview-control overlay.
+- Chat UI redesign (CHAT-UI-01): DART-refined final visual design baseline for the chat popup with preserved voice/mobile behavior.
 - GitHub stats and contribution matrix now pull live GitHub activity on the Fly deployment.
 
 **Key context:** API-03 remains future work because custom-domain / Amplify verification is infra-gated. The active deployed target is Fly (`portfolio-v4-test.fly.dev`).
@@ -95,6 +95,8 @@ v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forwa
 ### Future
 
 - [ ] API-03: Live Amplify / custom-domain smoke test against `audienclature.com` (script ready at `scripts/verify-amplify-apis.mjs`; gated on reachable production URL)
+- [ ] CHAT-ANIM-01: Refine the DART chat popup's transition and animation details (voice-to-chat morph, open/close timing, message/send polish) without changing the final visual design baseline.
+
 ### Out of Scope
 
 - New features or pages not in the v3 design prototype -- design-driven only
@@ -112,8 +114,10 @@ v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forwa
 
 - Current stack: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4
 - v3 design prototype provided as HTML/React bundle from Claude Design
-- Several v3 components already implemented: DataGrid, ProjectDetail, IframeViewer, GitHub Stats, Ask Parz, particles.js, portfolio page redesign, updated project data
+- Several v3 components already implemented: DataGrid, IframeViewer, GitHub Stats, Ask Parz, particles.js, portfolio page redesign, updated project data
 - Circular reveal transition complete -- uses View Transitions API with clip-path on ::view-transition-new(root), matching Flutter's ClipPath behavior
+- Chat popup design source of truth: the DART-refined popup now defines the final visual direction. The current implementation is close to final visually, with remaining work limited to transition and animation refinements tracked as CHAT-ANIM-01.
+- Overlay source of truth: the old right-side ProjectDetail panel is obsolete. Project/right preview overlay work targets `IframeViewer`'s `PreviewControlOverlay` (`fsb-preview-control-overlay`), while Parz action captions remain in the separate global `FsbControlOverlay`.
 - Voice mode is the largest new feature -- requires Web Speech API integration
 - Active deployment target is Fly (`portfolio-v4-test.fly.dev`); `scripts/verify-amplify-apis.mjs` remains available for future Amplify/custom-domain verification if that URL becomes reachable
 - Current work: Lakshman is an AI Enablement Engineer at InfiniteChoice, building Voyza, an AI-first hotel booking platform; Parz and visible site content keep this brief and public-safe.
@@ -156,6 +160,9 @@ v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forwa
 | FSB-inspired Parz control overlay | AI navigation/control should feel visible and intentional, with a monochrome overlay and "powered by FSB" badge | ✓ Good |
 | Public-safe profile source of truth | Phase 16 centralized approved public facts and protected categories in `src/data/public-profile.ts` | ✓ Good |
 | Global Parz site-control provider | Phase 18 centralized navigation, project opening, about-section scrolling, and browser shell actions in `src/providers/site-control-provider.tsx` | ✓ Good |
+| DART-refined chat popup is final design baseline | User chose the refined DART-derived popup as the final visual direction; implementation is near-final visually | ✓ Good |
+| Chat transitions/animations are future polish | Remaining work should refine motion without reopening the visual design decision | -- Future |
+| IframeViewer owns project/right preview overlay | GSD previously assumed the old right-side ProjectDetail surface; current code uses IframeViewer and its preview-control overlay | ✓ Good |
 
 ## Evolution
 
@@ -175,4 +182,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-27 -- v4.2 milestone completed and GSD auto-chain closed*
+*Last updated: 2026-04-28 -- recorded DART chat design and IframeViewer overlay decisions*

@@ -42,6 +42,8 @@ metrics:
 
 # Phase 28 Plan 02: Typography + Color + Visual Treatment Summary
 
+**Post-v4.2 correction (2026-04-28):** This summary remains valid as implementation evidence for typography, bubbles, chips, input controls, and preserved behavior. If any exact visual value conflicts with the DART-refined popup now in code, the DART baseline wins; remaining chat work is transition / animation polish under CHAT-ANIM-01.
+
 Applied UI-SPEC §3 (Typography), §4 (Color), §5.4-§5.7 (Bubble dimensions), §5.8 (Suggestion chips), §5.9 (Input row), and §5.10 (Error border) to `src/components/chat-popup.tsx`. The popup now matches the monochrome + accent contract pixel-for-pixel: Instrument Serif italic persona name, Lato-only body type with two weights (400/500), secondary-tint assistant bubbles with 0.08 alpha subtle borders, full-pill suggestion chips, 44x44 dual-state send button, and conditional red error border on the input wrapper. All Phase 25 voice handoff and Phase 26 iOS keyboard inheritance survives byte-identical.
 
 ## Tasks Completed

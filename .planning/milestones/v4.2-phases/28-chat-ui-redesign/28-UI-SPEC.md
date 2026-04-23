@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 phase: 28
 slug: chat-ui-redesign
-status: draft
+status: superseded_by_dart_baseline
 shadcn_initialized: false
 preset: none
 created: 2026-04-27
@@ -13,6 +13,8 @@ target_file: src/components/chat-popup.tsx
 # Phase 28 -- UI Design Contract: Chat Popup Redesign
 
 > Visual and interaction contract for the redesigned `ChatPopup` component. Behavior is preserved verbatim from the v4.1 baseline plus Phase 25 (voice handoff via `parz:open-text-chat`) and Phase 26 (iOS keyboard / safe-area). This contract is purely visual / UX polish and supersedes the inline styles currently rendered by `src/components/chat-popup.tsx`.
+
+> **Post-v4.2 correction (2026-04-28):** The user selected the DART-refined chat popup as the final visual baseline. Current `src/components/chat-popup.tsx` supersedes the original desktop 420px bottom-right geometry in this archived spec: desktop is a centered max-400px shell, mobile uses an 8px shell, and voice-to-chat morph state is part of the accepted direction. Treat the older geometry below as historical where not explicitly corrected. Remaining work is transition/animation refinement only (CHAT-ANIM-01), not visual redesign.
 
 ---
 
@@ -29,6 +31,7 @@ target_file: src/components/chat-popup.tsx
 - Error display polish (preserve random Parz error copy)
 - Motion: popup entry/exit, message appear, send button tap feedback, reduced-motion fallbacks
 - Accessibility: ARIA roles, focus management, keyboard handling, contrast
+- Post-v4.2 source-of-truth correction: DART-refined visual shell (centered desktop, 8px mobile shell, voice-to-chat morph) is final design baseline
 
 **Out of scope (preserve verbatim):**
 - `useChat` hook wiring, `siteControlChatTransport`, message send / receive paths
@@ -38,6 +41,7 @@ target_file: src/components/chat-popup.tsx
 - Suggestion logic: `userMessageCount < 2` && `!suggestionClicked` (random `smallQuestions` + `bigQuestions`)
 - Phase 25 voice handoff: `parz:open-text-chat` listener and mount-focus pattern
 - Phase 26 iOS keyboard: `inputMode="text"`, `enterKeyHint="send"`, `autoComplete="off"`, 300 ms `scrollIntoView` on focus, `paddingBottom: max(16px, env(safe-area-inset-bottom))`
+- Future CHAT-ANIM-01 polish: timing/easing refinements for voice-to-chat morph, open/close transitions, message appearance, and send acknowledgement
 
 ---
 
@@ -66,7 +70,7 @@ All inner padding, gap, and margin values must come from this 4-point ladder. No
 | s-3 | 12px | Message bubble vertical padding; gap between assistant + user bubble pairs |
 | s-4 | 16px | Default container padding (header sides, message area sides, input row sides); chip horizontal padding |
 | s-5 | 20px | Header vertical inner padding; popup outer corner radius reference |
-| s-6 | 24px | Desktop popup edge offset (right/bottom from viewport); section breaks |
+| s-6 | 24px | Desktop viewport breathing room / section breaks |
 | s-7 | 32px | Empty-state vertical padding |
 | s-8 | 48px | Reserved for future (not used in this phase) |
 
@@ -148,11 +152,11 @@ The chat popup is a **monochrome + accent** surface. Color tokens reference `src
 | Property | Mobile (`< 768px`) | Desktop (`>= 768px`) |
 |----------|---------------------|----------------------|
 | Position | `fixed` | `fixed` |
-| Anchor | `inset: 8px` (top/right/bottom/left) | `right: 24px; bottom: 24px` |
-| Width | `calc(100vw - 16px)` | `420px` |
-| Max width | `100%` | `420px` |
-| Height | `calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom))` (cap) | `min(640px, calc(100vh - 48px))` |
-| Min height | `360px` | `420px` |
+| Anchor | `inset: 8px` shell, respecting safe areas where CSS fallback applies | centered in viewport |
+| Width | `calc(100vw - 16px)` | `min(400px, calc(100vw - 48px))` |
+| Max width | `100%` | `400px` |
+| Height | `calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom))` (fallback) / viewport-minus-16px morph rect | `min(600px, max(360px, calc(100vh - 48px)))` |
+| Min height | `360px` | `360px` |
 | Display | `flex; flex-direction: column` | same |
 | Border radius | `20px` | `20px` |
 | Border | `1px solid` border token | same |
@@ -164,6 +168,8 @@ The chat popup is a **monochrome + accent** surface. Color tokens reference `src
 **Backdrop element:** `position: fixed; inset: 0; z-index: 40; background: rgba(42,42,42,0.30); backdrop-filter: blur(2px);` — click closes popup. Already correct in current code; preserve.
 
 **Mobile breakpoint hook:** use `useMediaQuery('(min-width: 768px)')` from `src/hooks/use-media-query.ts` to switch between mobile and desktop layouts. Matches the breakpoint used by Phase 26 (MOB-01 particle gate) and Phase 27 (FSB-05 overlay gate) for ecosystem coherence.
+
+**DART morph note:** When opened from voice, the popup may start at `data-chat-morph-origin` and animate to the final centered/mobile shell while rendering a temporary `VoicePanel` preview. This behavior is part of the accepted DART direction. Future CHAT-ANIM-01 work should refine timing/easing only.
 
 ### 5.2 Header row
 
@@ -371,7 +377,7 @@ All entry / exit / message-appear / send-pulse animations have an instant fallba
 | State | Trigger | Visual treatment |
 |-------|---------|------------------|
 | Closed | parent unmounts component | Component does not render |
-| Opening | mount | Popup card enters with `popupIn` animation; backdrop fades in; input auto-focuses (100 ms) |
+| Opening | mount | Popup card enters from DART shell/morph state or reduced fallback; backdrop fades in; input auto-focuses after content is ready |
 | Idle / empty | `messages.length === 0 && !isLoading && !error` | Show empty-state greeting + suggestion strip below |
 | Idle / has messages | `messages.length > 0 && !isLoading` | Hide empty state; show message stream; hide suggestion strip if `userMessageCount >= 2` |
 | Composing | input has focus, user typing | Send button transitions from disabled (outlined, 0.30 opacity) to enabled (filled accent) once `inputValue.trim()` truthy |
@@ -380,7 +386,7 @@ All entry / exit / message-appear / send-pulse animations have an instant fallba
 | Suggestion clicked | `handleSuggestionClick` | `setSuggestionClicked(true)`; sends message; suggestion strip animates out (opacity + height collapse over 200 ms) |
 | Error | `error` from useChat | Random Parz error bubble appears; `currentError` state set; input wrapper gains red border; user can retry |
 | User typing after error | input `onChange` fires | Input border returns to default; error bubble persists in message stream until next successful response |
-| Closing | `onClose` invoked (X click, backdrop click, or Escape) | Exit animation 150 ms; backdrop fades; previously-focused element refocused |
+| Closing | `onClose` invoked (X click, backdrop click, or Escape) | DART shell closes/morphs back when origin exists; backdrop fades; previously-focused element refocused |
 
 ---
 
@@ -423,8 +429,8 @@ Implementer may extract `MessageBubble`, `SuggestionChip`, `LoadingBubble`, `Err
 The implementation passes when ALL of the following are TRUE. UI auditor uses this list to verify post-execution.
 
 ### 11.1 Layout
-1. On desktop (`>= 768px`), popup renders at `width: 420px`, anchored 24 px from right and bottom edges of viewport.
-2. On mobile (`< 768px`), popup renders full-bleed minus 8 px inset on all sides; height respects `100dvh` minus safe-area insets.
+1. On desktop (`>= 768px`), popup renders as the DART-refined centered shell at max 400 px width with 24 px viewport breathing room.
+2. On mobile (`< 768px`), popup uses an 8 px shell and respects safe-area top/bottom where CSS fallback applies.
 3. Header is exactly 56 px tall with persona name "Parz" in Instrument Serif italic 22 px on the left and a 32 x 32 close button on the right.
 4. Messages area scrolls independently; popup card itself does not scroll.
 5. Input row sticks to the bottom and respects `env(safe-area-inset-bottom)` on iOS (verified with iOS simulator or real device).
@@ -453,7 +459,7 @@ The implementation passes when ALL of the following are TRUE. UI auditor uses th
 20. Popup entry runs 200 ms `cubic-bezier(0.2, 0.9, 0.2, 1)` with scale 0.96 -> 1.0 + opacity fade.
 21. Message-appear runs 180 ms ease-out with 4 px slide-up.
 22. Send button has a 250 ms green-pulse outline on successful submit (optional but recommended).
-23. `prefers-reduced-motion: reduce` causes all entry / message / send-pulse animations to become instant; loading dots become 3 static dots.
+23. `prefers-reduced-motion: reduce` causes all entry / message / send-pulse/morph animations to become instant; loading dots become 3 static dots.
 
 ### 11.6 Behavior preservation (regression tests — MUST NOT change)
 24. `useChat` hook remains the source of truth for `messages`, `sendMessage`, `status`, `error`.
@@ -484,7 +490,7 @@ The implementation passes when ALL of the following are TRUE. UI auditor uses th
 45. Color contrast verified per Section 4.
 
 ### 11.9 Determinism for the auditor
-46. UI-SPEC values match the implemented component pixel-for-pixel where measurable: 56 px header, 420 px desktop width, 44 x 44 send, 20 px popup radius, 16 px message bubble radius, 4 px tail radius, 32 px close button.
+46. UI-SPEC values match the post-v4.2 DART component pixel-for-pixel where measurable: 56 px header, max 400 px desktop width, 44 x 44 send, 20 px popup radius, 16 px message bubble radius, 4 px tail radius, 32 px close button.
 47. No new external dependencies introduced (no shadcn install, no new font, no new icon library).
 
 ---
@@ -505,7 +511,7 @@ This phase introduces NO third-party UI components. All visuals are hand-rolled 
 - The redesign should be implementable as a **single edit to `src/components/chat-popup.tsx`** plus possibly **one small CSS addition in `src/app/globals.css`** if the scoped `<style>` block grows uncomfortably (e.g. the Escape-key handler keyframes). Prefer scoped styles in the component for proximity.
 - Use `useMediaQuery('(min-width: 768px)')` (existing hook) to gate desktop vs mobile geometry. Do not invent a new breakpoint constant.
 - Preserve every existing `useEffect` body verbatim; only the JSX return tree and the inline `style` objects change.
-- The `<style>{...}</style>` keyframes block already in the file (`popupIn`, `fadeIn`, `dot-wave-popup`, `popup-shimmer`, `popup-shimmer-text`) should remain. Add a `messageAppear` keyframe and a `sendSuccessPulse` keyframe.
+- The `<style>{...}</style>` keyframes block already in the file (`dot-wave-popup`, `popup-shimmer`, `popup-shimmer-text`, plus DART shell/morph data hooks) should remain. `messageAppear` and `sendSuccessPulse` can be refined under CHAT-ANIM-01.
 - Add an `@media (prefers-reduced-motion: reduce)` block inside the same scoped `<style>` that neutralizes the new keyframes.
 - For the optional success pulse, reuse the existing `askParzPulse` keyframe in `globals.css:223-226` -- same color (`rgba(169,227,75,0.55)`), same shape -- by adding a class and toggling it on `useChat` `status === 'ready'` transition (or a one-shot `setTimeout` clearing 250 ms after `sendMessage` returns).
 - Bundle size: no new dependencies, no new Google Font requests.

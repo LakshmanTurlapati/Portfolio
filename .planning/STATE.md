@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v4.2
 milestone_name: Carry-forward Polish & Hardening
 status: complete
-stopped_at: Milestone v4.2 completed and GSD auto-chain closed
-last_updated: "2026-04-27T07:20:00.000Z"
-last_activity: 2026-04-27
+stopped_at: Post-v4.2 GSD docs updated for DART chat design and IframeViewer overlay decisions
+last_updated: "2026-04-28T00:00:00.000Z"
+last_activity: 2026-04-28
 progress:
   total_phases: 4
   completed_phases: 4
@@ -18,7 +18,7 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-27)
+See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
 **Current focus:** No active GSD milestone. v4.2 is complete.
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-27)
 Phase: none
 Plan: none
 Status: Complete — v4.2 closed
-Last activity: 2026-04-27
+Last activity: 2026-04-28
 
 ```
 v4.2 Progress: [####################] 100% (4/4 phases complete, 14/14 plans complete)
@@ -63,6 +63,9 @@ v4.2 Progress: [####################] 100% (4/4 phases complete, 14/14 plans com
 - [v4.2-roadmap]: Phase 27 (FSB overlay) soft-depends on Phase 25's VOICE-09 (`runTool` wrapping) so caption tracking subscribes to clean `tool-executing` semantics.
 - [v4.2-roadmap]: Phase 28 includes an in-phase UI-SPEC step before code (CHAT-UI-01 is design-driven).
 - [v4.2-roadmap]: API-03 stays deferred and out of v4.2 scope; tracked under Future Requirements until a reachable Amplify/custom-domain URL exists.
+- [post-v4.2-chat-design]: The DART-refined chat popup is the final visual design baseline. Current code is near-final visually; remaining work is transition/animation polish only.
+- [post-v4.2-chat-design]: Track remaining popup motion work as CHAT-ANIM-01, a future requirement that must not reopen the visual design decision.
+- [post-v4.2-overlay]: Project/right overlay work targets `IframeViewer`'s preview-control overlay (`fsb-preview-control-overlay`), not the obsolete right-side ProjectDetail panel. The global `FsbControlOverlay` remains the Parz action-caption surface.
 
 ### v4.2 Carry-forward Investigation (file:line evidence, verified 2026-04-26 against `e2a1383`)
 
@@ -73,7 +76,7 @@ v4.2 Progress: [####################] 100% (4/4 phases complete, 14/14 plans com
 - [v4.2-F-09]: `src/lib/voice-controller.ts:125` -- tool callback throws abort the voice turn. Phase 25 / VOICE-09. Complexity: S.
 - [v4.2-particles]: `src/components/particle-background.tsx:84` -- 90 particles hardcoded, no mobile gate. Phase 26 / MOB-01. Complexity: S.
 - [v4.2-chat-ios]: `src/components/chat-popup.tsx:505` -- input has no `inputMode`, no focus-scroll. Phase 26 / MOB-02. Complexity: S.
-- [v4.2-project-detail-mobile]: `src/components/project-detail.tsx` -- `px-14` cramps mobile. Phase 26 / MOB-03. Complexity: M.
+- [v4.2-project-detail-mobile]: `src/components/project-detail.tsx` -- `px-14` cramps mobile. Phase 26 / MOB-03. Complexity: M. Historical finding; resolved by accepting `IframeViewer` as canonical project viewer and deleting the orphaned ProjectDetail path.
 - [v4.2-FSB-04]: `src/components/fsb-control-overlay.tsx:29` -- only static badge; needs `tool-executing` subscription. Phase 27 / FSB-04. Complexity: M.
 - [v4.2-FSB-05]: `src/components/fsb-control-overlay.tsx` -- no mobile breakpoint. Phase 27 / FSB-05. Complexity: S.
 - [v4.2-CHAT-UI-01]: `src/components/chat-popup.tsx` -- design-driven visual / UX polish. Phase 28. Complexity: L (UI-SPEC required).
@@ -83,6 +86,7 @@ v4.2 Progress: [####################] 100% (4/4 phases complete, 14/14 plans com
 
 - No active GSD milestone todos.
 - API-03 remains out of scope for v4.2 and gated on a reachable Amplify/custom-domain production URL.
+- CHAT-ANIM-01 remains future work: refine DART chat popup transitions and animations without changing the final visual design baseline.
 - Manual browser/device UAT from v4.2 is retained as post-milestone QA in per-phase `HUMAN-UAT.md` files, not as a milestone blocker.
 
 ### Blockers/Concerns
@@ -92,11 +96,11 @@ v4.2 Progress: [####################] 100% (4/4 phases complete, 14/14 plans com
 
 ## Session Continuity
 
-Last session: v4.2 milestone completion
-Stopped at: Milestone v4.2 completed, all 4 phases / 14 plans archived, GSD auto-chain closed
+Last session: post-v4.2 GSD documentation correction
+Stopped at: DART chat design and IframeViewer overlay decisions recorded; v4.2 remains complete
 Resume file: --
 
-**Next:** No active GSD next step. Start a new milestone only when new scope is defined.
+**Next:** No active GSD next step. Start a new milestone only when new scope is defined; CHAT-ANIM-01 is the known future chat polish seed.
 
 **Completed Milestone:** v4.2 Carry-forward Polish & Hardening -- 4 phases, 14 plans -- 2026-04-27
 **Completed Phase:** 28 (Chat UI Redesign) -- 3 plans -- 2026-04-27

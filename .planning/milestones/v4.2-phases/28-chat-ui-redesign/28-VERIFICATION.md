@@ -7,7 +7,7 @@ overrides_applied: 0
 uat: deferred_post_milestone
 human_verification:
   - test: "Open chat popup on desktop (>=768px) and verify pixel-for-pixel match against UI-SPEC §5 / §11.2"
-    expected: "Popup anchored 24px from right + bottom, 420px wide, 56px header with Parz in Instrument Serif italic 22px + Lakshman's digital twin subtitle, 32x32 close button, 20px corner radius, 0 24px 64px shadow, 1px subtle border"
+    expected: "Popup matches the post-v4.2 DART-refined baseline: centered max-400px shell, 56px header with Parz in Instrument Serif italic 22px + Lakshman's digital twin subtitle, 32x32 close button, 20px corner radius, 0 24px 64px shadow, 1px subtle border"
     why_human: "Pixel-fidelity / visual treatment review — programmatic grep confirms tokens but does not confirm rendered appearance against UI-SPEC reference"
   - test: "Open chat popup on iOS Safari (real device or simulator), tap input, type a message"
     expected: "Popup fills viewport minus 8px insets respecting safe-area-top/bottom; tapping input pops keyboard, field scrolls into view within 300ms; paddingBottom: max(16px, env(safe-area-inset-bottom)) keeps input clear of home indicator; typing produces correct iOS keyboard with send-arrow enter key"
@@ -39,6 +39,8 @@ human_verification:
 **Status:** passed (manual UAT deferred post-milestone)
 **Re-verification:** No — initial verification
 
+**Post-v4.2 correction (2026-04-28):** This verification remains valid for behavior preservation and a11y wiring, but its old 420px bottom-right geometry evidence is superseded. Current code uses the DART-refined visual baseline: centered desktop shell, mobile 8px shell, voice-to-chat morph, and preserved iOS/chat behavior. Remaining transition and animation refinement is future requirement CHAT-ANIM-01.
+
 ## Goal Achievement
 
 ### Observable Truths
@@ -46,7 +48,7 @@ human_verification:
 | #   | Truth                                                                                                                                                                                  | Status     | Evidence                                                                                                                                                                                                                    |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | User can read and review a UI-SPEC document for the redesigned chat popup before any code lands — covering visual language, layout, motion, and accessibility decisions.                | VERIFIED   | `.planning/phases/28-chat-ui-redesign/28-UI-SPEC.md` exists (547 lines). Sections §1-§15 cover design system, spacing, typography, color, layout geometry, copywriting, motion, accessibility, state inventory, and acceptance criteria with WCAG contrast checks. |
-| 2   | User on desktop opens the chat popup and sees the redesigned visual treatment, matching the UI-SPEC pixel-for-pixel.                                                                    | UNCERTAIN  | All UI-SPEC tokens verified in source: 420px desktop width, 24px right/bottom anchor, 56px header, 20px radius, Instrument Serif italic 22px persona name, Lato body, secondary-tint bubbles with subtle border, pill chips, 44x44 send button. Pixel-for-pixel match requires HUMAN visual review. |
+| 2   | User on desktop opens the chat popup and sees the DART-refined visual treatment, matching the post-v4.2 baseline.                                                                    | UNCERTAIN  | Current source verifies the DART shell and preserved visual tokens: centered max-400px desktop shell, mobile 8px shell, voice-to-chat morph support, 56px header, 20px radius, Instrument Serif italic 22px persona name, Lato body, secondary-tint bubbles with subtle border, pill chips, 44x44 send button. Pixel-for-pixel match requires HUMAN visual review. |
 | 3   | User on mobile opens the chat popup and sees the redesign respect MOB-02's keyboard / safe-area behavior — no regression in iOS input handling.                                         | VERIFIED   | All Phase 26 / MOB-02 attrs present: `inputMode="text"` (line 672), `enterKeyHint="send"` (line 673), `autoComplete="off"` (line 674), `paddingBottom: max(16px, env(safe-area-inset-bottom))` (line 657), 300ms scrollIntoView in onFocus (line 685). Mobile geometry uses `inset: 8px` and `calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom))`. iOS device verification flagged as HUMAN. |
 | 4   | User sending and receiving messages, hitting suggestion chips, and seeing loading / error states experiences the same functional behavior as the v4.1 popup — redesign is visual / UX polish, not a behavior change. | VERIFIED   | useChat destructure preserved (line 126), siteControlChatTransport unchanged (line 41), handledToolCallsRef preserved (line 111), all 6 tool-call branches present (navigate/openProject/scrollTo/closeBrowser/openCurrentProjectExternal/unsupportedIframeControl on lines 149-161), handleSend/handleSuggestionClick/handleKeyDown bodies unchanged, showSuggestions predicate `!suggestionClicked && userMessageCount < 2` (line 134), PARZ_ERRORS array intact, loadingMessages cycle preserved. |
 
@@ -142,7 +144,7 @@ The single `onError: () => {}` handler in useChat (line 128) is intentional: err
 No gaps blocking goal achievement. All four Success Criteria from ROADMAP have automated evidence:
 
 - **SC1 (UI-SPEC document)** — VERIFIED: 28-UI-SPEC.md exists with comprehensive 15-section coverage.
-- **SC2 (Desktop visual treatment)** — All UI-SPEC tokens (geometry, typography, color, motion, a11y) verified by grep + 3 commits + 28-01/02/03 SUMMARY.md attestations. Pixel fidelity is HUMAN-only.
+- **SC2 (Desktop visual treatment)** — Visual baseline is now the DART-refined centered shell in current code. Typography, color, a11y, and behavior-preservation tokens remain verified; pixel fidelity is HUMAN-only.
 - **SC3 (Mobile / iOS keyboard)** — VERIFIED: all Phase 26 attrs present byte-identical; mobile geometry correctly uses inset/safe-area calcs.
 - **SC4 (Behavior preservation)** — VERIFIED: useChat hook, transport, six tool-call branches, three handlers, all five preserved useEffect bodies, suggestion logic, error pick, loading cycle all intact.
 

@@ -7,7 +7,7 @@ requires:
   - src/hooks/use-media-query.ts
   - src/components/chat-popup.tsx (v4.1 baseline incl. Phase 25 + Phase 26)
 provides:
-  - "Desktop bottom-right anchored popup card (420px wide, 24px from edges)"
+  - "Historical desktop bottom-right anchored popup card (420px wide, 24px from edges); superseded post-v4.2 by the DART-refined centered max-400px shell"
   - "Mobile full-bleed popup (8px inset, 100dvh-aware with safe-area)"
   - "56px header with <h2 id=\"chat-popup-heading\">Parz</h2> + 32x32 close button"
   - "Independently scrollable messages area (16px padding, scrollbarWidth none)"
@@ -34,6 +34,8 @@ metrics:
 ---
 
 # Phase 28 Plan 01: Layout Geometry Re-scaffold Summary
+
+**Post-v4.2 correction (2026-04-28):** The layout described below is historical. The user selected the DART-refined chat popup as the final visual baseline after this plan, replacing the 420px bottom-right desktop target with the current centered DART shell. Preserve the behavior evidence below; do not use this summary to undo the DART baseline.
 
 Replaced the chat popup's centered v4.1 geometry with a responsive layout shell — desktop 420px bottom-right anchor, mobile full-bleed minus 8px — gated by `useMediaQuery('(min-width: 768px)')`. Header restructured to a fixed 56px row containing an `<h2 id="chat-popup-heading">Parz</h2>` and a 32x32 close button (44x44 hit area). Messages region now scrolls independently inside the card with 16px padding. All Phase 25 voice handoff and Phase 26 iOS keyboard inheritance preserved verbatim.
 

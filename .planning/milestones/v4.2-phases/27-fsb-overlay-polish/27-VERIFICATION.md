@@ -47,6 +47,8 @@ human_verification:
 **Status:** passed (navigate gap resolved; manual UAT deferred post-milestone)
 **Re-verification:** No — initial verification
 
+**Post-v4.2 overlay correction (2026-04-28):** This report verifies the global `FsbControlOverlay` action-caption surface. Project/right preview overlay work belongs to `IframeViewer`'s `PreviewControlOverlay` (`fsb-preview-control-overlay`), not the obsolete right-side ProjectDetail panel.
+
 ## Goal Achievement
 
 ### Observable Truths

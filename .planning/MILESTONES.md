@@ -8,14 +8,15 @@
 
 - Voice Wave 2 hardening closed the five carry-forward reliability issues from `21-AUDIT.md`: page-ready voice-to-text handoff, Scribe session-start guard, SpeechSynthesis worst-case timeout, deregister contract, and tool-callback exception wrapping.
 - Mobile UX pass reduced particle load on mobile, preserved iOS chat keyboard behavior through the redesign, and confirmed IframeViewer as the canonical mobile project viewer after deleting the orphaned ProjectDetail path.
-- FSB overlay now renders dynamic action captions from real tool payloads and hides the desktop scan grid on mobile while preserving pointer safety.
-- Chat popup redesign shipped against an explicit UI spec: refreshed surface/layout, typography, bubbles, suggestion chips, input/send controls, motion, reduced-motion behavior, and accessibility roles.
+- FSB overlay now renders dynamic action captions from real tool payloads and hides the desktop scan grid on mobile while preserving pointer safety; project/right overlay assumptions now point to IframeViewer's preview-control overlay, not ProjectDetail.
+- Chat popup redesign shipped with the DART-refined popup as the final visual baseline: refreshed surface/layout, typography, bubbles, suggestion chips, input/send controls, reduced-motion behavior, and accessibility roles.
 - Live GitHub stats and the home-page matrix now pull GitHub profile contribution data through `/api/github-stats` on Fly.
 - Milestone audit passed: 11/11 requirements satisfied at code level, 0 broken integration flows.
 
 **Deferred:**
 
 - Manual browser/device/screen-reader UAT is retained as post-milestone QA in per-phase `HUMAN-UAT.md` files.
+- CHAT-ANIM-01: transition and animation refinements for the DART chat popup remain future polish and must preserve the final visual baseline.
 - API-03 custom-domain / Amplify smoke testing remains future work until a reachable custom-domain production URL is available.
 
 ---

@@ -4,6 +4,8 @@
 **Status:** Ready for planning
 **Mode:** Autonomous redesign — Claude's discretion within portfolio aesthetic
 
+**Post-v4.2 correction (2026-04-28):** The user selected the DART-refined chat popup as the final visual baseline after this context was gathered. This document is historical planning context where it conflicts with the newer source of truth: centered desktop shell maxing at 400px, mobile 8px shell, DART voice-to-chat morph, and future-only transition / animation polish tracked as CHAT-ANIM-01.
+
 <domain>
 ## Phase Boundary
 
@@ -20,7 +22,7 @@ Out of scope: any change to chat API behavior; voice integration changes; new fe
 
 ### Visual Language
 - Aesthetic: clean monochrome consistent with FSB overlay + portfolio. No new brand colors introduced.
-- Surface: card-style popup with `rounded-2xl` corners (matches IframeViewer, project-detail aesthetic)
+- Surface: DART-refined popup shell with compact rounded corners (aligned with the current ChatPopup / IframeViewer visual language; the removed ProjectDetail panel is not a reference surface)
 - Background: theme-aware — `#fafaf7` (light) / `#1a1a1c` (dark), matching iframe-viewer
 - Borders: 1px subtle border using `rgba(0,0,0,0.08)` light / `rgba(255,255,255,0.08)` dark
 - Shadow: `0 24px 64px rgba(0,0,0,0.3)` (matches iframe-viewer for visual coherence)
@@ -30,7 +32,7 @@ Out of scope: any change to chat API behavior; voice integration changes; new fe
 - Message area: scrollable, flex-1, padding `px-5 py-4`, gap-3 between message bubbles
 - Suggestion chips: shown above input when message thread is empty or after error; horizontal scrollable strip on mobile, wrapped on desktop
 - Input bar: fixed at bottom, 56-72px tall, padding `px-4 py-3`, send button right-aligned
-- Mobile (<768px): full-width popup with `inset-2` margins; desktop: fixed-width 420px in bottom-right corner with 24px from edges
+- Mobile (<768px): DART shell with 8px viewport margins; desktop: centered shell with 24px viewport breathing room and max 400px width. The earlier 420px bottom-right anchor is superseded.
 
 ### Typography
 - Header persona name: Instrument Serif italic, 20px (matches portfolio's serif accent)

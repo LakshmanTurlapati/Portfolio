@@ -37,6 +37,8 @@ requirements:
 
 # Phase 26 Plan 03: Project-Detail Mobile Layout Summary
 
+**Post-v4.2 correction (2026-04-28):** This summary is historical. The user accepted `IframeViewer` as the canonical project viewer and removed the orphaned ProjectDetail path, so the edits below should not be used as a reason to reintroduce ProjectDetail. Future project/right overlay polish targets `IframeViewer`'s `PreviewControlOverlay` (`fsb-preview-control-overlay`).
+
 Mobile-responsive `project-detail.tsx` panel — replaced fixed `px-14`/`mx-14` with a `px-4 md:px-8 lg:px-14` Tailwind ladder, added full-bleed mobile cover image, switched stats to 2-column on mobile, and applied proportional type-scale reductions; desktop (lg+) layout preserved pixel-identical to v4.1.
 
 ## Files Modified

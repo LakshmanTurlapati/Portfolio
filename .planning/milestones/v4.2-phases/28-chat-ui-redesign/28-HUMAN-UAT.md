@@ -14,7 +14,7 @@ closure_reason: "Milestone completed; manual checks retained as post-milestone Q
 ## Tests
 
 ### 1. Pixel-for-pixel desktop visual review
-expected: Desktop chat popup matches UI-SPEC §11.2 — 420px width anchored bottom-right at 24px from edges, 56px header with Instrument Serif italic 22px "Parz" + Lato 12px subtitle, monochrome surface, 999px pill chips, 44x44 send button.
+expected: Desktop chat popup matches the post-v4.2 DART-refined baseline — centered max-400px shell with 24px viewport breathing room, 56px header with Instrument Serif italic 22px "Parz" + Lato 12px subtitle, monochrome surface, 999px pill chips, 44x44 send button.
 result: [deferred post-milestone QA]
 
 ### 2. iOS Safari real-device test (Phase 26 inheritance)
@@ -30,7 +30,7 @@ expected: Tab cycles input → send → close. Escape closes popup. Focus return
 result: [deferred post-milestone QA]
 
 ### 5. Reduce-motion OS toggle
-expected: With OS-level "reduce motion" enabled, popup entry is instant (no scale/fade), message appears instantly, loading dots are static (no pulse), send pulse animation skipped. Honors prefers-reduced-motion media query.
+expected: With OS-level "reduce motion" enabled, popup entry/morph is instant, message appears instantly, loading dots are static (no pulse), send pulse animation skipped. Honors prefers-reduced-motion media query.
 result: [deferred post-milestone QA]
 
 ### 6. Screen reader (VoiceOver / NVDA)
@@ -57,4 +57,4 @@ blocked: 0
 
 ## Gaps
 
-(none — all automated checks passed; only real-device + screen-reader validation remains)
+(none — all automated checks passed; only real-device + screen-reader validation remains. DART transition/animation refinements are tracked separately as CHAT-ANIM-01.)
