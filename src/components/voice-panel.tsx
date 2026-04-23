@@ -108,6 +108,8 @@ export interface VoicePanelProps {
   compact?: boolean;
   /** Render the panel as visual-only content inside another animation shell. */
   presentation?: boolean;
+  /** Hide the inline text-chat handoff when another surface owns that toggle. */
+  showFallbackChat?: boolean;
 }
 
 export function VoicePanel({
@@ -122,6 +124,7 @@ export function VoicePanel({
   onFallbackChat,
   compact = false,
   presentation = false,
+  showFallbackChat = true,
 }: VoicePanelProps) {
   const dot = STATE_DOTS[state] ?? STATE_DOTS.idle;
   const textColor = isDark ? '#111' : '#fff';
@@ -219,32 +222,34 @@ export function VoicePanel({
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
           {/* Switch to text chat */}
-          <button
-            tabIndex={presentation ? -1 : undefined}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (presentation) return;
-              onFallbackChat(
-                rectFromElement(e.currentTarget.closest('[data-chat-morph-origin="true"]')),
-                { state, caption, transcript, micDenied, compact },
-              );
-            }}
-            title="Switch to text chat"
-            style={{
-              width: compact ? '40px' : '36px',
-              height: compact ? '40px' : '36px',
-              borderRadius: '50%',
-              border: `1px solid ${btnBorder}`,
-              background: btnBg,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: presentation ? 'default' : 'pointer',
-              color: textColor,
-            }}
-          >
-            <FaComment size={14} />
-          </button>
+          {showFallbackChat && (
+            <button
+              tabIndex={presentation ? -1 : undefined}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (presentation) return;
+                onFallbackChat(
+                  rectFromElement(e.currentTarget.closest('[data-chat-morph-origin="true"]')),
+                  { state, caption, transcript, micDenied, compact },
+                );
+              }}
+              title="Switch to text chat"
+              style={{
+                width: compact ? '40px' : '36px',
+                height: compact ? '40px' : '36px',
+                borderRadius: '50%',
+                border: `1px solid ${btnBorder}`,
+                background: btnBg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: presentation ? 'default' : 'pointer',
+                color: textColor,
+              }}
+            >
+              <FaComment size={14} />
+            </button>
+          )}
           {/* Stop */}
           <button
             tabIndex={presentation ? -1 : undefined}

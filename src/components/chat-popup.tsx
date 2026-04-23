@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef, useCallback, useLayoutEffect, type CSSProperties } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { FaXmark, FaArrowUp } from 'react-icons/fa6';
+import { IoChevronBackSharp } from 'react-icons/io5';
 import { sanitizeText } from '@/lib/sanitize-text';
 import { linkifyText, type LinkPart } from '@/lib/linkify';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import type { ChatMorphRect, ChatVoiceSnapshot } from '@/lib/chat-morph';
+import { getLegacyChatTheme } from '@/lib/chat-theme';
 
 // Suggestion chips data
 const smallQuestions = ['Who are you?', 'Your age?', 'Where from?'];
@@ -80,6 +82,9 @@ interface ChatPopupProps {
   originRect?: ChatMorphRect;
   voiceSnapshot?: ChatVoiceSnapshot;
   onOpenAnimationComplete?: () => void;
+  mode?: 'popup' | 'screen';
+  title?: string;
+  subtitle?: string;
 }
 
 const MORPH_DURATION_MS = 560;
@@ -101,9 +106,18 @@ function canAnimateFromOrigin(originRect?: ChatMorphRect): boolean {
   return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-function getFinalChatRect(isDesktop: boolean): ChatMorphRect {
+function getFinalChatRect(isDesktop: boolean, isScreenMode = false): ChatMorphRect {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
+
+  if (isScreenMode) {
+    return {
+      left: 0,
+      top: 0,
+      width: viewportWidth,
+      height: viewportHeight,
+    };
+  }
 
   if (!isDesktop) {
     const inset = 8;
@@ -131,8 +145,12 @@ export function ChatPopup({
   onClose,
   originRect,
   onOpenAnimationComplete,
+  mode = 'popup',
+  title = 'Parz',
+  subtitle = 'Legacy V2 Chat interface (Features may be limited)',
 }: ChatPopupProps) {
   const isDesktop = useMediaQuery('(min-width: 768px)');
+  const isScreenMode = mode === 'screen';
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -144,7 +162,7 @@ export function ChatPopup({
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const [currentError, setCurrentError] = useState<string | null>(null);
   const [sendHover, setSendHover] = useState(false);
-  const initialCanMorphFromOrigin = canAnimateFromOrigin(originRect);
+  const initialCanMorphFromOrigin = !isScreenMode && canAnimateFromOrigin(originRect);
   const [shellRect, setShellRect] = useState<ChatMorphRect | null>(
     () => (initialCanMorphFromOrigin && originRect ? originRect : null),
   );
@@ -200,8 +218,8 @@ export function ChatPopup({
 
   useLayoutEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const finalRect = getFinalChatRect(isDesktop);
-    const canMorphFromOrigin = Boolean(originRect) && !prefersReduced;
+    const finalRect = getFinalChatRect(isDesktop, isScreenMode);
+    const canMorphFromOrigin = Boolean(originRect) && !prefersReduced && !isScreenMode;
     let firstFrame = 0;
     let secondFrame = 0;
     let contentTimer: ReturnType<typeof setTimeout> | null = null;
@@ -255,17 +273,17 @@ export function ChatPopup({
       if (contentTimer) clearTimeout(contentTimer);
       if (completeTimer) clearTimeout(completeTimer);
     };
-  }, [isDesktop, originRect, onOpenAnimationComplete]);
+  }, [isDesktop, isScreenMode, originRect, onOpenAnimationComplete]);
 
   useEffect(() => {
     const onResize = () => {
-      const nextRect = getFinalChatRect(isDesktop);
+      const nextRect = getFinalChatRect(isDesktop, isScreenMode);
       if (!closeRequestedRef.current) setShellRect(nextRect);
     };
 
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [isDesktop]);
+  }, [isDesktop, isScreenMode]);
 
   // Capture opener focus on mount; restore on unmount.
   useEffect(() => {
@@ -338,26 +356,27 @@ export function ChatPopup({
   const cardTransition = morphEnabled
     ? `left ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), top ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), width ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), height ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), border-radius ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), background-color 260ms ease, opacity 160ms ease`
     : 'opacity 180ms ease, transform 200ms cubic-bezier(0.2, 0.9, 0.2, 1)';
-  const cardTransform = morphEnabled ? 'none' : cardVisible ? 'scale(1)' : 'scale(0.96)';
-  const shellBorderRadius = shellExpanded ? 15 : 25;
-  const legacyPanelSurface = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)';
+  const cardTransform = isScreenMode || morphEnabled ? 'none' : cardVisible ? 'scale(1)' : 'scale(0.96)';
+  const shellBorderRadius = isScreenMode ? 0 : shellExpanded ? 15 : 25;
+  const legacyTheme = getLegacyChatTheme(isDark);
+  const legacyPanelSurface = legacyTheme.surface;
   const shellBackground = morphEnabled && !contentReady ? 'var(--color-navbar-bg)' : legacyPanelSurface;
-  const panelForeground = isDark ? '#000000' : '#ffffff';
-  const panelMuted = isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)';
-  const panelBorder = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)';
-  const panelSoftBorder = isDark ? 'rgba(189,189,189,0.3)' : 'rgba(97,97,97,0.2)';
-  const panelStrongerBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)';
-  const panelHoverFill = isDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
-  const panelInputFill = isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.8)';
-  const panelInputText = isDark ? '#424242' : '#808080';
-  const panelInputPlaceholder = isDark ? '#757575' : '#bdbdbd';
-  const panelChipFill = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)';
-  const panelUserBubbleFill = isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)';
-  const panelUserBubbleBorder = isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)';
-  const panelAssistantBubbleFill = isDark ? 'rgba(224,224,224,0.7)' : 'rgba(66,66,66,0.6)';
-  const panelAssistantBubbleBorder = isDark ? 'rgba(189,189,189,0.3)' : 'rgba(97,97,97,0.2)';
-  const panelFocus = isDark ? 'rgba(0,0,0,0.38)' : 'rgba(255,255,255,0.46)';
-  const panelStatus = currentError ? '#ef4444' : '#00E676';
+  const panelForeground = legacyTheme.foreground;
+  const panelMuted = legacyTheme.muted;
+  const panelBorder = legacyTheme.border;
+  const panelSoftBorder = legacyTheme.softBorder;
+  const panelStrongerBorder = legacyTheme.strongerBorder;
+  const panelHoverFill = legacyTheme.hoverFill;
+  const panelInputFill = legacyTheme.inputFill;
+  const panelInputText = legacyTheme.inputText;
+  const panelInputPlaceholder = legacyTheme.inputPlaceholder;
+  const panelChipFill = legacyTheme.chipFill;
+  const panelUserBubbleFill = legacyTheme.userBubbleFill;
+  const panelUserBubbleBorder = legacyTheme.userBubbleBorder;
+  const panelAssistantBubbleFill = legacyTheme.assistantBubbleFill;
+  const panelAssistantBubbleBorder = legacyTheme.assistantBubbleBorder;
+  const panelFocus = legacyTheme.focus;
+  const panelStatus = currentError ? legacyTheme.statusError : legacyTheme.statusHealthy;
   const cardStyle: ChatPanelCssVars = {
     '--chat-panel-fg': panelForeground,
     '--chat-panel-muted': panelMuted,
@@ -380,8 +399,8 @@ export function ChatPopup({
     backgroundColor: shellBackground,
     color: panelForeground,
     backdropFilter: 'blur(10px)',
-    border: `1px solid ${panelBorder}`,
-    boxShadow: '0 24px 64px rgba(0,0,0,0.30)',
+    border: isScreenMode ? 'none' : `1px solid ${panelBorder}`,
+    boxShadow: isScreenMode ? 'none' : '0 24px 64px rgba(0,0,0,0.30)',
     opacity: shellRect && cardVisible ? 1 : 0,
     transform: cardTransform,
     transformOrigin: 'center center',
@@ -465,8 +484,9 @@ export function ChatPopup({
           zIndex: 40,
           background: 'rgba(42,42,42,0.3)',
           backdropFilter: 'blur(2px)',
-          opacity: backdropVisible ? 1 : 0,
+          opacity: isScreenMode ? 0 : backdropVisible ? 1 : 0,
           transition: 'opacity 220ms ease-out',
+          pointerEvents: isScreenMode ? 'none' : 'auto',
         }}
         onClick={requestClose}
       />
@@ -504,7 +524,9 @@ export function ChatPopup({
             alignItems: 'flex-start',
             justifyContent: 'space-between',
             gap: '12px',
-            padding: '15px 15px 8px',
+            padding: isScreenMode
+              ? 'max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left))'
+              : '15px 15px 8px',
             flexShrink: 0,
           }}
         >
@@ -535,7 +557,7 @@ export function ChatPopup({
                   letterSpacing: 0,
                 }}
               >
-                Parz
+                {title}
               </h2>
               <span
                 data-chat-popup-subtitle="true"
@@ -549,7 +571,7 @@ export function ChatPopup({
                   overflowWrap: 'anywhere',
                 }}
               >
-                Legacy V2 Chat interface (Features may be limited)
+                {subtitle}
               </span>
             </div>
           </div>
@@ -562,14 +584,18 @@ export function ChatPopup({
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.opacity = '1';
-              e.currentTarget.style.backgroundColor = isDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+              e.currentTarget.style.backgroundColor = isScreenMode
+                ? legacyTheme.controlFill
+                : isDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
             }}
             style={{
-              width: '30px',
-              height: '30px',
+              width: isScreenMode ? '48px' : '30px',
+              height: isScreenMode ? '48px' : '30px',
               padding: 0,
-              backgroundColor: isDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
-              border: 'none',
+              backgroundColor: isScreenMode
+                ? legacyTheme.controlFill
+                : isDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
+              border: isScreenMode ? `1px solid ${legacyTheme.controlBorder}` : 'none',
               cursor: 'pointer',
               color: panelForeground,
               display: 'flex',
@@ -579,10 +605,15 @@ export function ChatPopup({
               opacity: 1,
               flex: '0 0 auto',
               transition: 'background-color 200ms ease',
+              backdropFilter: isScreenMode ? 'blur(12px)' : undefined,
             }}
-            aria-label="Close chat"
+            aria-label={isScreenMode ? 'Exit chat' : 'Close chat'}
           >
-            <FaXmark size={15} />
+            {isScreenMode ? (
+              <IoChevronBackSharp size={20} data-direction="left" aria-hidden="true" />
+            ) : (
+              <FaXmark size={15} aria-hidden="true" />
+            )}
           </button>
         </div>
 
@@ -730,8 +761,12 @@ export function ChatPopup({
               gap: '8px',
               padding: '0 15px 15px',
               flexShrink: 0,
-              ...(isDesktop
-                ? { flexWrap: 'wrap' as const, justifyContent: 'center' }
+              ...(isDesktop || isScreenMode
+                ? {
+                    flexWrap: 'wrap' as const,
+                    justifyContent: 'center',
+                    overflowX: 'visible' as const,
+                  }
                 : {
                     flexWrap: 'nowrap' as const,
                     overflowX: 'auto' as const,

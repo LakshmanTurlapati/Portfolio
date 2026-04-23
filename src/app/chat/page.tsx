@@ -1,11 +1,19 @@
 'use client';
 
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, type CSSProperties, type ReactNode } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { FaArrowUp, FaArrowLeft } from 'react-icons/fa6';
 import { sanitizeText } from '@/lib/sanitize-text';
 import { linkifyText, type LinkPart } from '@/lib/linkify';
 import { useTransition } from '@/providers/transition-provider';
+import { useTheme } from 'next-themes';
+import { useRouter } from 'next/navigation';
+import { ChatPopup } from '@/components/chat-popup';
+import { MobileParzVoiceScreen, MOBILE_VOICE_STATE_LABELS } from '@/components/mobile-parz-voice-screen';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { useMounted } from '@/hooks/use-mounted';
+import { useVoiceSession } from '@/providers/voice-session-provider';
+import { getLegacyChatTheme } from '@/lib/chat-theme';
 
 // Suggestion chips data
 const smallQuestions = ['Who are you?', 'Your age?', 'Where from?'];
@@ -35,6 +43,10 @@ const PARZ_ERRORS = [
   "Ran into a wall there. Mind asking again?",
   "My gears jammed. One more try should do it.",
 ];
+
+const MOBILE_CHAT_EXIT_DURATION_MS = 320;
+const MOBILE_CHAT_EXIT_CANCEL_MS = 220;
+const MOBILE_CHAT_EXIT_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
 function getRandomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -73,6 +85,197 @@ function RenderLinkedText({ text }: { text: string }) {
 }
 
 export default function ChatPage() {
+  const mounted = useMounted();
+  const isMobile = useMediaQuery('(max-width: 599px)');
+
+  if (!mounted) {
+    return <main className="h-dvh overflow-hidden" style={{ backgroundColor: 'var(--color-bg)' }} />;
+  }
+
+  return isMobile ? <MobileChatPage /> : <DesktopChatPage />;
+}
+
+function MobileChatPage() {
+  const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  const legacyTheme = getLegacyChatTheme(isDark);
+  const { voiceActive, voiceProps, micDenied, openVoice, closeVoice } = useVoiceSession();
+  const [mode, setMode] = useState<'parz' | 'legacy'>('parz');
+  const [isExiting, setIsExiting] = useState(false);
+  const [exitGesture, setExitGesture] = useState({
+    active: false,
+    animating: false,
+    durationMs: MOBILE_CHAT_EXIT_DURATION_MS,
+    progress: 0,
+  });
+  const exitProgressRef = useRef(0);
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exitRafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isExiting && mode === 'parz' && !voiceActive) openVoice();
+  }, [isExiting, mode, openVoice, voiceActive]);
+
+  const clearExitTimers = useCallback(() => {
+    if (exitTimerRef.current !== null) {
+      clearTimeout(exitTimerRef.current);
+      exitTimerRef.current = null;
+    }
+    if (exitRafRef.current !== null) {
+      cancelAnimationFrame(exitRafRef.current);
+      exitRafRef.current = null;
+    }
+  }, []);
+
+  const setExitProgress = useCallback(
+    (progress: number, animating = false, durationMs = MOBILE_CHAT_EXIT_DURATION_MS) => {
+      const nextProgress = Math.min(1, Math.max(0, progress));
+      exitProgressRef.current = nextProgress;
+      setExitGesture({
+        active: nextProgress > 0.001 || animating,
+        animating,
+        durationMs,
+        progress: nextProgress,
+      });
+    },
+    []
+  );
+
+  const animateExitTo = useCallback(
+    (target: number, durationMs: number, onComplete?: () => void) => {
+      clearExitTimers();
+
+      const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReducedMotion) {
+        setExitProgress(target, false, durationMs);
+        if (target <= 0) setExitProgress(0, false, durationMs);
+        onComplete?.();
+        return;
+      }
+
+      setExitProgress(target, true, durationMs);
+      exitTimerRef.current = setTimeout(() => {
+        exitTimerRef.current = null;
+        setExitProgress(target, false, durationMs);
+        if (target <= 0) setExitProgress(0, false, durationMs);
+        onComplete?.();
+      }, durationMs);
+    },
+    [clearExitTimers, setExitProgress]
+  );
+
+  const commitExit = useCallback(
+    (progress: number) => {
+      clearExitTimers();
+      setIsExiting(true);
+      setExitProgress(progress, true, MOBILE_CHAT_EXIT_DURATION_MS);
+      exitRafRef.current = requestAnimationFrame(() => {
+        exitRafRef.current = null;
+        animateExitTo(1, MOBILE_CHAT_EXIT_DURATION_MS, () => {
+          closeVoice();
+          router.push('/');
+        });
+      });
+    },
+    [animateExitTo, clearExitTimers, closeVoice, router, setExitProgress]
+  );
+
+  const cancelExit = useCallback(
+    (progress: number) => {
+      if (progress <= 0.001) {
+        setExitProgress(0, false, MOBILE_CHAT_EXIT_CANCEL_MS);
+        return;
+      }
+      setExitProgress(progress, false, MOBILE_CHAT_EXIT_CANCEL_MS);
+      animateExitTo(0, MOBILE_CHAT_EXIT_CANCEL_MS);
+    },
+    [animateExitTo, setExitProgress]
+  );
+
+  const handleExitTap = useCallback(() => {
+    commitExit(0);
+  }, [commitExit]);
+
+  useEffect(() => {
+    return () => clearExitTimers();
+  }, [clearExitTimers]);
+
+  const handleBack = useCallback(() => {
+    commitExit(0);
+  }, [commitExit]);
+
+  const handleToggleToLegacy = useCallback(() => {
+    closeVoice();
+    setMode('legacy');
+  }, [closeVoice]);
+
+  const voiceStateLabel = MOBILE_VOICE_STATE_LABELS[voiceProps.state] ?? 'Ready';
+  const voiceCaption = micDenied
+    ? 'Mic access blocked'
+    : voiceProps.transcript || voiceProps.caption || voiceStateLabel;
+
+  const motionTransition = exitGesture.animating
+    ? `transform ${exitGesture.durationMs}ms ${MOBILE_CHAT_EXIT_EASING}`
+    : 'none';
+  const chatSurfaceStyle: CSSProperties = {
+    backgroundColor: legacyTheme.surface,
+    transform: `translate3d(${(-exitGesture.progress * 100).toFixed(3)}vw, 0, 0)`,
+    transition: motionTransition,
+    willChange: exitGesture.active ? 'transform' : undefined,
+  };
+  const renderChatShell = (children: ReactNode) => (
+    <div className="relative z-10 h-dvh overflow-hidden">
+      <main
+        data-testid="mobile-parz-chat"
+        data-exit-progress={exitGesture.progress.toFixed(3)}
+        className="absolute inset-0 z-10 h-dvh overflow-hidden"
+        style={chatSurfaceStyle}
+      >
+        {children}
+      </main>
+    </div>
+  );
+
+  if (mode === 'legacy') {
+    return renderChatShell(
+        <ChatPopup
+          isDark={isDark}
+          onClose={handleBack}
+          mode="screen"
+        />
+    );
+  }
+
+  return renderChatShell(
+      <MobileParzVoiceScreen
+        isDark={isDark}
+        legacyTheme={legacyTheme}
+        voiceState={voiceProps.state}
+        caption={voiceCaption}
+        micDenied={micDenied}
+        onMic={voiceProps.onMic}
+        onStop={voiceProps.onStop}
+        onExitTap={handleExitTap}
+        onExitDragStart={() => {
+          clearExitTimers();
+          setExitProgress(exitProgressRef.current, false);
+        }}
+        onExitDragProgress={(progress) => {
+          clearExitTimers();
+          setExitProgress(progress, false);
+        }}
+        onExitDragCommit={commitExit}
+        onExitDragCancel={cancelExit}
+        onToggleToLegacy={handleToggleToLegacy}
+      />
+  );
+}
+
+function DesktopChatPage() {
   const { navigateWithReveal } = useTransition();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);

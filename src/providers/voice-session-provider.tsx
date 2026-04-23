@@ -37,7 +37,7 @@ export function useVoiceSession(): VoiceSessionContextType {
 
 export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { navigateWithReveal } = useTransition();
+  const { navigatePlain } = useTransition();
   const siteControl = useSiteControl();
 
   // Phase 13 (D-01, D-05, D-04): tool callback registry via ref so dispatchToolCall reads fresh values.
@@ -89,9 +89,9 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
         siteControl.navigate(page);
         return;
       }
-      navigateWithReveal('/', window.innerWidth / 2, window.innerHeight / 2);
+      navigatePlain('/');
     },
-    [navigateWithReveal, siteControl]
+    [navigatePlain, siteControl]
   );
 
   // VOICE-05: event-driven coordination replacing the prior hardcoded 400ms.
@@ -130,9 +130,9 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
         if (page === 'home') fire();
       });
       safetyTimer = setTimeout(fire, 1500);
-      navigateWithReveal('/', window.innerWidth / 2, window.innerHeight / 2);
+      navigatePlain('/');
     },
-    [navigateWithReveal, pathname]
+    [navigatePlain, pathname]
   );
 
   // Per Pitfall 5 (RESEARCH.md): currentPage MUST be dynamic, not 'home'.

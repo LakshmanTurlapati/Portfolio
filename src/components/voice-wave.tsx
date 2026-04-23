@@ -7,9 +7,12 @@ interface VoiceWaveProps {
   isDark: boolean;
   /** Compact size for mobile/cramped containers (60×32 instead of 88×40). */
   compact?: boolean;
+  size?: 'default' | 'compact' | 'hero';
+  color?: string;
+  testId?: string;
 }
 
-export function VoiceWave({ isDark, compact = false }: VoiceWaveProps) {
+export function VoiceWave({ isDark, compact = false, size, color, testId }: VoiceWaveProps) {
   const mounted = useMounted();
   const [level, setLevel] = useState(0);
   const [t, setT] = useState(0);
@@ -38,14 +41,23 @@ export function VoiceWave({ isDark, compact = false }: VoiceWaveProps) {
   if (!mounted) return null;
 
   const baseHeights = [0.32, 0.62, 1.0, 0.62, 0.32];
-  const barColor = isDark ? '#1a1a1a' : '#fff';
+  const barColor = color ?? (isDark ? '#1a1a1a' : '#fff');
 
-  const dims = compact
-    ? { gap: '5px', height: '32px', width: '60px', barWidth: '6px' }
-    : { gap: '7px', height: '40px', width: '88px', barWidth: '8px' };
+  const waveSize = size ?? (compact ? 'compact' : 'default');
+  const dims = {
+    compact: { gap: '5px', height: '32px', width: '60px', barWidth: '6px' },
+    default: { gap: '7px', height: '40px', width: '88px', barWidth: '8px' },
+    hero: {
+      gap: 'clamp(8px, 2.8vw, 11px)',
+      height: 'clamp(72px, 18vh, 92px)',
+      width: 'clamp(156px, 48vw, 190px)',
+      barWidth: 'clamp(11px, 3.6vw, 15px)',
+    },
+  }[waveSize];
 
   return (
     <div
+      data-testid={testId}
       style={{
         display: 'flex',
         alignItems: 'center',

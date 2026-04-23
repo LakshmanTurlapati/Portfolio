@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useMounted } from '@/hooks/use-mounted';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { useVoiceSession } from '@/providers/voice-session-provider';
 import { VoicePanel } from '@/components/voice-panel';
 
@@ -11,11 +12,13 @@ export function VoiceOverlay() {
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
+  const isMobile = useMediaQuery('(max-width: 599px)');
   const { voiceActive, voiceProps, micDenied } = useVoiceSession();
 
   // Per Pitfall 1 (RESEARCH.md): MUST return null on home page to avoid double panel.
   // Per D-05: VoiceOverlay only renders on non-home pages.
   if (!mounted || !voiceActive || pathname === '/') return null;
+  if (pathname === '/chat' && isMobile) return null;
 
   return (
     <div role="complementary" aria-label="Voice assistant panel">
