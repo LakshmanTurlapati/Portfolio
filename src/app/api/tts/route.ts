@@ -4,6 +4,7 @@
 
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { hasEnvVar } from '@/lib/env';
+import { jsonError, parseGuardedJson } from '@/lib/api-guard';
 
 const ALLOWED_VOICE_ID = 'dMWVPH9DSxWOMrrrUso3'; // per D-02, locked
 
@@ -18,8 +19,14 @@ export async function POST(req: Request) {
   let text: string;
   let voiceId: string;
   try {
-    const body = await req.json() as { text: unknown; voiceId: unknown };
-    text = typeof body.text === 'string' ? body.text.trim().slice(0, 500) : '';
+    const guarded = await parseGuardedJson<{ text?: unknown; voiceId?: unknown }>(req, {
+      route: 'tts',
+      maxBodyBytes: 16 * 1024,
+    });
+    if (!guarded.ok) return guarded.response;
+
+    const body = guarded.body;
+    text = typeof body.text === 'string' ? body.text.trim() : '';
     voiceId = typeof body.voiceId === 'string' ? body.voiceId : ALLOWED_VOICE_ID;
     // Security: allowlist voice ID per D-02 threat mitigation
     if (voiceId !== ALLOWED_VOICE_ID) voiceId = ALLOWED_VOICE_ID;
@@ -28,6 +35,9 @@ export async function POST(req: Request) {
         JSON.stringify({ error: 'text is required' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
+    }
+    if (text.length > 1000) {
+      return jsonError('text must be 1000 characters or fewer', 413);
     }
   } catch {
     return new Response(

@@ -78,7 +78,7 @@ export const shuffleableProjects: Project[] = [
   { name: "Portfolio", image: "/assets/portfolio.jpg", links: { Website: "https://audienclature.com", GitHub: "https://github.com/LakshmanTurlapati/Portfolio", Design: "https://www.figma.com/design/UeixAHUPLTSKiwHR9HVfT2/Portfolio?node-id=0-1" } },
   { name: "Financial Inclusion", image: "/assets/fi.png", links: { Website: "https://docs.google.com/document/d/1cq1xeUpl-lst5bj4376_QhCSo7HIc1EvPecKw0cmQGc/edit", GitHub: "https://github.com/LakshmanTurlapati/Financial-Inclusion-v2", Design: "https://www.figma.com/design/5kNlAtt2Hh6NTx2YAPLhIu/Financial-Inclusion" } },
   { name: "LinkedIn Auto Connect", image: "/assets/linkedin.png", links: { Website: "https://chromewebstore.google.com/detail/linkedin-auto-connect/jomecnphbmfpkcajfhkoebgmbcbakjoa", GitHub: "https://github.com/LakshmanTurlapati/linkedin-autoconnect-extension/tree/main" } },
-  { name: "Service Portal", image: "/assets/CHD.png", links: { GitHub: "https://github.com/LakshmanTurlapati/Church-Dwight-Solution-Center", Design: "https://www.figma.com/design/Lj0O8tBvyuGSx3LePBCuO1/C%26D" } },
+  { name: "Service Portal", image: "/assets/chd.png", links: { GitHub: "https://github.com/LakshmanTurlapati/Church-Dwight-Solution-Center", Design: "https://www.figma.com/design/Lj0O8tBvyuGSx3LePBCuO1/C%26D" } },
   { name: "X-Read", image: "", links: { GitHub: "https://github.com/LakshmanTurlapati/DCTE-Script" }, useIframe: true },
   { name: "Heartline", image: "/assets/heartline.png", links: { GitHub: "https://github.com/LakshmanTurlapati/Heartline" } },
   { name: "Lucent", image: "/assets/lucent.png", links: { Website: "https://monumental-granita-08d2f5.netlify.app", GitHub: "https://github.com/LakshmanTurlapati/Lucent" } },

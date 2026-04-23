@@ -4,11 +4,15 @@
 
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { hasEnvVar } from '@/lib/env';
+import { guardApiRequest } from '@/lib/api-guard';
 
-export async function POST() {
+export async function POST(req: Request) {
   if (!hasEnvVar('ELEVENLABS_API_KEY')) {
     return Response.json({ error: 'STT not configured' }, { status: 503 });
   }
+
+  const guardResponse = guardApiRequest(req, { route: 'stt-token' });
+  if (guardResponse) return guardResponse;
 
   try {
     const client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY });

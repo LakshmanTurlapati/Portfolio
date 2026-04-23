@@ -3,6 +3,7 @@ import { xai } from '@ai-sdk/xai';
 import { z } from 'zod/v3';
 import { systemPrompt } from '@/data/system-prompt';
 import { hasEnvVar } from '@/lib/env';
+import { parseGuardedJson, validateChatMessages } from '@/lib/api-guard';
 
 const errorMessages = [
   'I might be updating my server right now. Please try again in a moment!',
@@ -112,11 +113,21 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { messages, isVoice, enableSiteControl } = (await req.json()) as {
-      messages: UIMessage[];
+    const guarded = await parseGuardedJson<{
+      messages?: unknown;
       isVoice?: boolean;
       enableSiteControl?: boolean;
-    };
+    }>(req, {
+      route: 'chat',
+      maxBodyBytes: 256 * 1024,
+    });
+    if (!guarded.ok) return guarded.response;
+
+    const messageError = validateChatMessages(guarded.body.messages);
+    if (messageError) return messageError;
+
+    const { isVoice, enableSiteControl } = guarded.body;
+    const messages = guarded.body.messages as UIMessage[];
     const toolsEnabled = Boolean(isVoice || enableSiteControl);
 
     const system = [

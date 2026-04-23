@@ -70,7 +70,7 @@ async function verifyDns() {
 async function testTextChat() {
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Origin: baseUrl },
     body: JSON.stringify({
       messages: [
         {
@@ -98,7 +98,7 @@ async function testTextChat() {
 async function testVoiceChat() {
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Origin: baseUrl },
     body: JSON.stringify({
       messages: [
         {
@@ -126,7 +126,7 @@ async function testVoiceChat() {
 async function testSttToken() {
   const response = await fetch(`${baseUrl}/api/stt-token`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Origin: baseUrl },
   });
 
   const type = contentType(response);
@@ -153,7 +153,7 @@ async function testSttToken() {
 async function testTts() {
   const response = await fetch(`${baseUrl}/api/tts`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Origin: baseUrl },
     body: JSON.stringify({
       text: 'Hello from Parz production verification',
       voiceId: 'dMWVPH9DSxWOMrrrUso3',
