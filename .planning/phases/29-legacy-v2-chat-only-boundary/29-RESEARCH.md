@@ -394,12 +394,13 @@ expect(sessionProvider).toContain('toolCallbacksRef.current.openProject');
 
 All claims in this research were verified against local project files, npm registry output, Context7/official docs, or command output during this session; no assumed claims are intentionally present. [VERIFIED: local source audit; VERIFIED: npm registry; CITED: https://ai-sdk.dev/docs/ai-sdk-ui/transport]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the implementation include an opt-in live LLM smoke test for the exact text redirect copy?**
    - What we know: Source-contract tests can prove tools are withheld, text guidance is present, and text clients cannot execute tool parts. [VERIFIED: tests/voice-barge-in.test.ts; VERIFIED: src/app/api/chat/route.ts]
    - What's unclear: A deterministic unit test cannot prove Grok will always emit the exact guidance sentence without calling the live model. [VERIFIED: AI SDK route streams via xAI in src/app/api/chat/route.ts]
    - Recommendation: Keep required automation as source-contract tests, then add optional manual/live smoke only if `XAI_API_KEY` is available in the execution environment. [VERIFIED: CLAUDE.md; VERIFIED: shell env check]
+   - **RESOLVED:** Live LLM smoke testing is optional, not required for Phase 29 completion. Required validation is the deterministic source-contract suite because it proves the boundary without depending on shell availability of `XAI_API_KEY` or live model wording.
 
 ## Environment Availability
 
