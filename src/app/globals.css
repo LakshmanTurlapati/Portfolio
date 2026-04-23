@@ -102,16 +102,22 @@
 
 /* Arrow bounce animation for mobile */
 @keyframes arrow-bounce {
-  0%, 100% {
+  0%, 12%, 32%, 100% {
     transform: translateX(0);
   }
-  50% {
-    transform: translateX(12px);
+  22% {
+    transform: translateX(6px);
   }
 }
 
 .animate-arrow-bounce {
-  animation: arrow-bounce 1000ms ease-in-out infinite;
+  animation: arrow-bounce 1800ms cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-arrow-bounce {
+    animation: none;
+  }
 }
 
 /* Wave shimmer animation for mobile text */
