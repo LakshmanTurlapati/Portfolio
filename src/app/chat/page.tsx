@@ -2,12 +2,10 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
 import { FaArrowUp, FaArrowLeft } from 'react-icons/fa6';
 import { sanitizeText } from '@/lib/sanitize-text';
 import { linkifyText, type LinkPart } from '@/lib/linkify';
 import { useTransition } from '@/providers/transition-provider';
-import { useSiteControl, type ControlPage } from '@/providers/site-control-provider';
 
 // Suggestion chips data
 const smallQuestions = ['Who are you?', 'Your age?', 'Where from?'];
@@ -37,10 +35,6 @@ const PARZ_ERRORS = [
   "Ran into a wall there. Mind asking again?",
   "My gears jammed. One more try should do it.",
 ];
-
-const siteControlChatTransport = new DefaultChatTransport({
-  body: { enableSiteControl: true },
-});
 
 function getRandomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -78,32 +72,10 @@ function RenderLinkedText({ text }: { text: string }) {
   );
 }
 
-type ToolPart = {
-  type?: string;
-  toolName?: string;
-  toolCallId?: string;
-  state?: string;
-  input?: Record<string, unknown>;
-  args?: Record<string, unknown>;
-};
-
-function getToolCall(part: ToolPart): { id: string; name: string; args: Record<string, unknown> } | null {
-  const name = part.toolName || (part.type?.startsWith('tool-') ? part.type.slice(5) : '');
-  if (!name) return null;
-  if (part.state && part.state !== 'input-available' && part.state !== 'output-available') return null;
-  return {
-    id: part.toolCallId || `${name}:${JSON.stringify(part.input || part.args || {})}`,
-    name,
-    args: part.input || part.args || {},
-  };
-}
-
 export default function ChatPage() {
   const { navigateWithReveal } = useTransition();
-  const siteControl = useSiteControl();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const handledToolCallsRef = useRef<Set<string>>(new Set());
   const [inputValue, setInputValue] = useState('');
   const [userMessageCount, setUserMessageCount] = useState(0);
   const [suggestionClicked, setSuggestionClicked] = useState(false);
@@ -124,7 +96,6 @@ export default function ChatPage() {
   }, []);
 
   const { messages, sendMessage, status, error } = useChat({
-    transport: siteControlChatTransport,
     onError: () => {
       // Error handled via the error state from the hook
     },
@@ -146,36 +117,6 @@ export default function ChatPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
-
-  useEffect(() => {
-    for (const message of messages) {
-      if (message.role !== 'assistant') continue;
-      for (const rawPart of message.parts as ToolPart[]) {
-        const toolCall = getToolCall(rawPart);
-        if (!toolCall || handledToolCallsRef.current.has(toolCall.id)) continue;
-        handledToolCallsRef.current.add(toolCall.id);
-
-        if (toolCall.name === 'navigate') {
-          const page = toolCall.args.page;
-          if (page === 'home' || page === 'portfolio' || page === 'about') siteControl.navigate(page as ControlPage);
-        }
-        if (toolCall.name === 'openProject' && typeof toolCall.args.name === 'string') {
-          siteControl.openProject(toolCall.args.name);
-        }
-        if (toolCall.name === 'scrollTo' && typeof toolCall.args.section === 'string') {
-          siteControl.scrollTo(toolCall.args.section);
-        }
-        if (toolCall.name === 'scrollProjectPreview') {
-          siteControl.scrollProjectPreview(
-            typeof toolCall.args.direction === 'string' ? toolCall.args.direction : undefined,
-          );
-        }
-        if (toolCall.name === 'closeBrowser') siteControl.closeBrowser();
-        if (toolCall.name === 'openCurrentProjectExternal') siteControl.openCurrentProjectExternal();
-        if (toolCall.name === 'unsupportedIframeControl') siteControl.unsupportedIframeControl();
-      }
-    }
-  }, [messages, siteControl]);
 
   // Cycle loading messages every 3 seconds
   useEffect(() => {
