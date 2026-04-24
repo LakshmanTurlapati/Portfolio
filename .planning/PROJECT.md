@@ -47,9 +47,9 @@ A visually striking, interactive portfolio that showcases projects with rich det
 - [ ] DataGrid canvas background with proximity reveal and hover effects
 - [ ] Project detail overlay with rich metadata
 - [ ] IframeViewer + GitHub repo preview
-- [ ] GitHub Stats pill on home page
-- [ ] Ask Parz button in navbar
-- [ ] particles.js connected-node mesh
+- [x] GitHub Stats pill on home page -- Validated in Phase 6
+- [x] Ask Parz button in navbar -- Validated in Phase 6
+- [x] particles.js connected-node mesh -- Validated in Phase 6
 - [ ] Circular reveal page transition fix
 - [ ] Voice mode (VoiceBus, speech recognition, TTS)
 - [ ] About page spotlight cursor effect updates
@@ -91,7 +91,7 @@ A visually striking, interactive portfolio that showcases projects with rich det
 | TypeScript | Type safety, better DX, catches errors at compile time | ✓ Good |
 | API route for chat | Fixes security vulnerability of exposed API key | ✓ Good |
 | AWS Amplify deployment | User preference for hosting platform | ✓ Good |
-| particles.js for home bg | Connected-node mesh with grab/push interactivity, theme-aware | -- Pending |
+| particles.js for home bg | Connected-node mesh with grab/push interactivity, theme-aware | ✓ Good |
 | DataGrid for portfolio bg | Canvas-based pulsing dots with 10 hover effect types | -- Pending |
 | Overlay-based reveal | Needs rework to match Flutter's ClipPath approach | ⚠️ Revisit |
 
@@ -113,4 +113,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-23 after milestone v3 started*
+*Last updated: 2026-04-24 after Phase 6 complete*
