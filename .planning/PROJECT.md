@@ -8,22 +8,16 @@ A Next.js portfolio site (audienclature.com) with Tailwind CSS, featuring an int
 
 A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona -- same creative energy as the Flutter version but with modern web capabilities.
 
-## Current Milestone: v3 Portfolio Redesign
+## Current Milestone: v4.0 Voice Mode Production
 
-**Goal:** Implement the v3 design prototype -- interactive DataGrid backgrounds, project detail overlays, voice mode, GitHub stats, and circular reveal transitions.
+**Goal:** Make voice mode fully functional and production-ready -- real Grok intelligence, ElevenLabs STT upgrade, wired tool calls, and persistent overlay across all pages.
 
 **Target features:**
-- Portfolio page with DataGrid canvas background and per-project hover effects
-- Project detail overlay with rich metadata
-- IframeViewer for embedding external links + GitHub repo preview
-- GitHub Stats pill on home page
-- Ask Parz navbar button with ambient orbs
-- particles.js connected-node mesh
-- Circular reveal page transition (Flutter-accurate)
-- Voice mode (speech recognition, TTS, navbar morph)
-- About page spotlight cursor effect
-- Updated project data with detailed writeups
-- Chat persona updates
+- Wire all voice tool callbacks (openProject, scrollTo, openLink, toggleTheme, navigate) so tour and AI commands actually execute
+- Upgrade STT from Web Speech API to ElevenLabs for better quality and cross-browser support
+- Verify Grok API key is present and voice/chat reach xAI Grok-3-mini
+- Persistent voice overlay that stays open across page navigation (layout-level, not page-level)
+- Voice mode accessible from all pages (portfolio, about, chat) -- not just home
 
 ## Requirements
 
@@ -41,20 +35,23 @@ A visually striking, interactive portfolio that showcases projects with rich det
 - Spotlight effects -- v1.0
 - External link handling (GitHub, LinkedIn, X/Twitter) -- v1.0
 - AWS Amplify deployment -- v1.0
+- GitHub Stats pill on home page -- v3
+- Ask Parz button in navbar with ambient orbs -- v3
+- particles.js connected-node mesh -- v3
+- Circular reveal page transition (View Transitions API) -- v3
+- Voice mode foundation (VoiceBus, ElevenLabs TTS, Web Speech STT, navbar morph) -- v3
+- About page spotlight cursor effect -- v3
+- Full Parz persona with DATA_STORE (21 projects) -- v3
+- Chat QoL (loading messages, friendly errors, suggestion chips) -- v3
+- IframeViewer browser previews (Figma, YouTube, GitHub, fallback CTAs) -- v3
 
 ### Active
 
-- [ ] DataGrid canvas background with proximity reveal and hover effects
-- [ ] Project detail overlay with rich metadata
-- [ ] IframeViewer + GitHub repo preview
-- [x] GitHub Stats pill on home page -- Validated in Phase 6
-- [x] Ask Parz button in navbar -- Validated in Phase 6
-- [x] particles.js connected-node mesh -- Validated in Phase 6
-- [x] Circular reveal page transition fix -- Validated in Phase 7 (View Transitions API)
-- [x] Voice mode (VoiceBus, speech recognition, TTS) -- Validated in Phase 8 (ElevenLabs + Web Speech API)
-- [ ] About page spotlight cursor effect updates
-- [ ] Updated project data with 21 projects and detail writeups
-- [ ] Chat persona updates (full Parz system prompt)
+- [ ] Wire all voice tool callbacks (openProject, scrollTo, openLink, toggleTheme, navigate)
+- [ ] Upgrade STT from Web Speech API to ElevenLabs
+- [ ] Verify Grok API key and voice/chat API connectivity
+- [ ] Persistent voice overlay across page navigation (layout-level)
+- [ ] Voice mode accessible from all pages (portfolio, about, chat)
 
 ### Out of Scope
 
@@ -113,4 +110,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after Phase 8 complete*
+*Last updated: 2026-04-24 after milestone v4.0 started*
