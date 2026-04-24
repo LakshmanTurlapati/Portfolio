@@ -17,11 +17,11 @@ export interface TourStep {
 
 // Port verbatim from voice_mode.jsx lines 354-362
 export function matchNavIntent(u: string): NavIntent | null {
-  if (/(open|show|take me to|go to).*portfolio|show.*work|my work|projects page/.test(u))
+  if (/(open|show|take me to|go to)\s+(the\s+)?portfolio|show\s+(me\s+)?(your\s+)?work|projects page/.test(u))
     return { page: 'portfolio', say: 'Opening the portfolio.' };
-  if (/(open|show|take me to|go to).*about|who are you|about page|bio/.test(u))
+  if (/(open|show|take me to|go to)\s+(the\s+)?about(\s+page)?|about page/.test(u))
     return { page: 'about', say: "Here's the about page." };
-  if (/home|back|main page|landing/.test(u))
+  if (/(go|take me)\s+(to\s+)?home|go back|back home|main page|landing page/.test(u))
     return { page: 'home', say: 'Back home.' };
   return null;
 }
@@ -37,7 +37,7 @@ export const TOUR_STEPS: TourStep[] = [
 
 // Tour trigger detection
 export function isTourIntent(u: string): boolean {
-  return /give me a tour|show me around|take me on a tour|tour/.test(u);
+  return /give me a tour|show me around|take me on a tour|start\s+(the\s+)?tour/.test(u);
 }
 
 // Stop/exit intent
