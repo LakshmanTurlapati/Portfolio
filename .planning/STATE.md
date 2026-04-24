@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 08-02-PLAN.md — Voice session logic (useVoiceController hook + voice-commands)
-last_updated: "2026-04-24T06:35:12.580Z"
+stopped_at: Completed 08-03-PLAN.md — Voice UI layer (VoiceWave, VoicePanel, navbar morphs, page.tsx wiring)
+last_updated: "2026-04-24T06:41:39.194Z"
 last_activity: 2026-04-24 -- Phase --phase execution started
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 12
-  completed_plans: 9
-  percent: 75
+  completed_plans: 10
+  percent: 83
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 1 of --name
 Status: Executing Phase --phase
 Last activity: 2026-04-24 -- Phase --phase execution started
 
-Progress: [████████░░] 75%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -69,6 +69,8 @@ Progress: [████████░░] 75%
 - SpeechRecognition typed as any — TypeScript DOM lib does not expose SpeechRecognition/SpeechRecognitionEvent/SpeechRecognitionErrorEvent even with dom lib target
 - streamTTS Promise wraps source.onended — enables sequential await speak() in tour without event emitter complexity
 - dispatchToolCall inside hook body — single dispatch for all TOUR_STEPS tool calls; openProject wired via toolCallbacks, others console.warn on miss
+- Import Flip from gsap/all to avoid macOS case-insensitive FS TS1149 casing conflict between gsap/Flip and gsap/flip
+- VoiceNavProps = Omit<VoicePanelProps, 'isDark' | 'micDenied'> in navbars — controller voiceProps excludes theme/mic fields that navbars inject themselves
 
 ### Pending Todos
 
@@ -81,8 +83,8 @@ Progress: [████████░░] 75%
 
 ## Session Continuity
 
-Last session: 2026-04-24T06:35:12.575Z
-Stopped at: Completed 08-02-PLAN.md — Voice session logic (useVoiceController hook + voice-commands)
+Last session: 2026-04-24T06:41:39.189Z
+Stopped at: Completed 08-03-PLAN.md — Voice UI layer (VoiceWave, VoicePanel, navbar morphs, page.tsx wiring)
 Resume file: None
 
 **Planned Phase:** 08 (voice-mode) — 5 plans — 2026-04-24T05:25:45.905Z
