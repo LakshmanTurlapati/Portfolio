@@ -250,7 +250,13 @@ Plans:
   2. Saying "go to about" (or any page name) navigates to that page; saying "scroll to experience" on the about page scrolls to that section
   3. Saying "open link" opens the referenced URL in a new tab; saying "toggle theme" or "switch to dark mode" applies the theme change immediately
   4. Viewport border glows blue while listening, amber while a tool call is executing, green on successful completion, and red on error -- each glow state is visually distinct and resolves cleanly
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 13-01-PLAN.md -- Extend VoiceSessionProvider with registerToolCallbacks + fix dispatchToolCall signals + fix startTour race condition
+- [ ] 13-02-PLAN.md -- Create VoiceGlow component, add CSS keyframes to globals.css, mount in layout.tsx
+- [ ] 13-03-PLAN.md -- Register openProject callback in portfolio/page.tsx and scrollTo in about/page.tsx with page-ready signals
+- [ ] 13-04-PLAN.md -- Human visual verification of all 10 Phase 13 requirements
 **UI hint**: yes
 
 ### Phase 14: ElevenLabs STT Upgrade
@@ -294,6 +300,6 @@ v1.0 phases 1-4, then v3 phases 5-11, then v4.0 phases 12-15.
 | 10. Circular Reveal Fix | v3 | 1/1 | Complete | 2026-04-24 |
 | 11. IframeViewer Browser Previews | v3 | 1/1 | Complete | 2026-04-24 |
 | 12. Persistent Voice Overlay | v4.0 | 4/4 | Complete    | 2026-04-25 |
-| 13. Tool Callbacks and Visual Feedback | v4.0 | 0/? | Not started | - |
+| 13. Tool Callbacks and Visual Feedback | v4.0 | 0/4 | Not started | - |
 | 14. ElevenLabs STT Upgrade | v4.0 | 0/? | Not started | - |
 | 15. API Verification and Deployment | v4.0 | 0/? | Not started | - |
