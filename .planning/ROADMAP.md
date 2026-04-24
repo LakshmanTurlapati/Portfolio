@@ -117,8 +117,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md -- GitHub Stats live data pipeline: /api/github-stats route + wire github-stats.tsx to live fetch
-- [ ] 06-02-PLAN.md -- ChatPopup component, Ask Parz wiring (desktop + mobile), particle-background audit
+- [x] 06-01-PLAN.md -- GitHub Stats live data pipeline: /api/github-stats route + wire github-stats.tsx to live fetch
+- [x] 06-02-PLAN.md -- ChatPopup component, Ask Parz wiring (desktop + mobile), particle-background audit
 
 **UI hint**: yes
 
