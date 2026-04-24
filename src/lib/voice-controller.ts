@@ -109,44 +109,54 @@ export function useVoiceController({
 
   // dispatchToolCall — single dispatch point for all step.call entries and AI tool responses.
   // Per D-19: openProject is wired when toolCallbacks.openProject provided; others console.warn on miss.
+  // Phase 13: emits VoiceBus 'tool-executing' before callback and 'tool-success'/'tool-error' after.
   const dispatchToolCall = useCallback(
     (name: string, args: Record<string, unknown>): void => {
       switch (name) {
         case 'openProject':
           if (toolCallbacks?.openProject) {
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
             toolCallbacks.openProject(args as { slug: string });
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-success');
           } else {
             console.warn('[VoiceController] openProject tool called but no toolCallbacks.openProject provided');
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
           }
           break;
         case 'scrollTo':
           if (toolCallbacks?.scrollTo) {
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
             toolCallbacks.scrollTo(args as { selector: string });
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-success');
           } else {
             console.warn('[VoiceController] scrollTo tool called but no toolCallbacks.scrollTo provided');
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
           }
           break;
         case 'openLink':
           if (toolCallbacks?.openLink) {
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
             toolCallbacks.openLink(args as { url: string });
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-success');
           } else {
             console.warn('[VoiceController] openLink tool called but no toolCallbacks.openLink provided');
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
           }
           break;
         case 'toggleTheme':
           if (toolCallbacks?.toggleTheme) {
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
             toolCallbacks.toggleTheme();
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-success');
           } else {
             console.warn('[VoiceController] toggleTheme tool called but no toolCallbacks.toggleTheme provided');
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
           }
           break;
         case 'navigate':
-          // navigate handled inline by goPage; this case is a safety no-op
           goPage((args as { page: string }).page);
           break;
         case 'endCall':
-          // endCall handled internally
-          // close() called below
           break;
         default:
           console.warn(`[VoiceController] Unknown tool call: ${name}`, args);
@@ -154,6 +164,26 @@ export function useVoiceController({
     },
     [toolCallbacks, goPage]
   );
+
+  // Phase 13 (D-08): replace hardcoded 500ms with VoiceBus 'page-ready' event wait.
+  // Pages emit VoiceBus.emit('page-ready', pageName) in their mount useEffect.
+  // Falls back to 1500ms if the page does not emit the event (e.g., already mounted).
+  const waitForPage = useCallback((targetPage: string): Promise<void> => {
+    if (typeof window === 'undefined' || !window.VoiceBus) {
+      return new Promise<void>((r) => setTimeout(r, 500));
+    }
+    return Promise.race([
+      new Promise<void>((resolve) => {
+        const unsub = window.VoiceBus.on('page-ready', (page) => {
+          if (page === targetPage) {
+            (unsub as () => void)();
+            resolve();
+          }
+        });
+      }),
+      new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+    ]);
+  }, []);
 
   // stopAll — cancel all ongoing audio/speech/recognition
   const stopAll = useCallback(() => {
@@ -382,8 +412,7 @@ export function useVoiceController({
 
       if (step.page !== currentPage) {
         goPage(step.page);
-        // Wait 500ms for page to settle before speaking
-        await new Promise<void>((r) => setTimeout(r, 500));
+        await waitForPage(step.page);  // Phase 13 (D-08): event-based wait, 1500ms fallback
       }
 
       await speak(step.say);
@@ -392,7 +421,7 @@ export function useVoiceController({
         dispatchToolCall(step.call[0], step.call[1]);
       }
     }
-  }, [currentPage, goPage, speak, dispatchToolCall]);
+  }, [currentPage, goPage, speak, dispatchToolCall, waitForPage]);
 
   // startListening — Web Speech API STT (per D-05, D-06)
   const startListening = useCallback(() => {
