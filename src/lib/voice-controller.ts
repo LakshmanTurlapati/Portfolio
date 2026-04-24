@@ -7,10 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  matchNavIntent,
-  isTourIntent,
   isStopIntent,
-  isTextModeIntent,
   TOUR_STEPS,
 } from './voice-commands';
 
@@ -293,7 +290,26 @@ export function useVoiceController({
     [streamTTS]
   );
 
-  // handleUserTurn — intent router for transcribed utterances
+  // startTour — iterate TOUR_STEPS sequentially, await each speak(), dispatch tool calls
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const startTour = useCallback(async () => {
+    for (const step of TOUR_STEPS) {
+      if (!activeRef.current) break;
+
+      if (step.page !== currentPage) {
+        goPage(step.page);
+        await waitForPage(step.page);
+      }
+
+      await speak(step.say);
+
+      if (step.call) {
+        dispatchToolCall(step.call[0], step.call[1]);
+      }
+    }
+  }, [currentPage, goPage, speak, dispatchToolCall, waitForPage]);
+
+  // handleUserTurn — ALL utterances go to Grok (except local stop for instant response)
   const handleUserTurn = useCallback(
     async (utterance: string) => {
       window.VoiceBus.setState('thinking');
@@ -301,47 +317,22 @@ export function useVoiceController({
 
       const u = utterance.toLowerCase();
 
-      // Stop intent
+      // Stop intent stays local for instant response (no network latency)
       if (isStopIntent(u)) {
         stopAll();
         return;
       }
 
-      // Text mode switch intent (per D-16)
-      if (isTextModeIntent(u)) {
-        stopAll();
-        openTextChat(utterance);
-        setActive(false);
-        return;
-      }
-
-      // Tour intent (per D-20)
-      if (isTourIntent(u)) {
-        startTour();
-        return;
-      }
-
-      // Navigation intent (per D-15)
-      const nav = matchNavIntent(u);
-      if (nav) {
-        goPage(nav.page);
-        await speak(nav.say);
-        return;
-      }
-
-      // AI intent — forward to /api/chat (per D-18)
+      // Everything else goes to Grok — it decides intent via tool calls
       try {
-        // Append user turn to rolling history
         historyRef.current = [
           ...historyRef.current,
           { role: 'user', content: utterance },
         ];
 
-        // Build messages: voice instruction prepended to user's utterance
         const voiceInstruction =
           'Keep replies under 2 sentences. This is a voice channel — no markdown, no lists, no emoji. ';
 
-        // Build UIMessage array for /api/chat
         const messages = [
           ...historyRef.current.slice(-20).map((m) => ({
             id: Math.random().toString(36).slice(2),
@@ -358,70 +349,104 @@ export function useVoiceController({
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages }),
+          body: JSON.stringify({ messages, isVoice: true }),
         });
 
         if (!res.ok) throw new Error(`/api/chat returned ${res.status}`);
 
-        // Read the streaming response and accumulate text
         const reader = res.body?.getReader();
         const decoder = new TextDecoder();
         let responseText = '';
+        const toolCalls: { name: string; args: Record<string, unknown> }[] = [];
 
         if (reader) {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
             const chunk = decoder.decode(value, { stream: true });
-            // AI SDK streams data: prefixed SSE lines
-            // Extract text from "0:" (text delta) lines
             const lines = chunk.split('\n');
             for (const line of lines) {
+              // Text delta
               if (line.startsWith('0:')) {
                 try {
                   const parsed = JSON.parse(line.slice(2));
                   if (typeof parsed === 'string') responseText += parsed;
                 } catch {}
               }
+              // Tool call — AI SDK format: 9:{toolCallId, toolName, args}
+              if (line.startsWith('9:')) {
+                try {
+                  const tc = JSON.parse(line.slice(2));
+                  if (tc && tc.toolName) {
+                    toolCalls.push({ name: tc.toolName, args: tc.args || {} });
+                  }
+                } catch {}
+              }
             }
           }
         }
 
-        const clean = responseText.trim() || "Hmm, I lost my train of thought.";
+        const clean = responseText.trim();
 
-        // Append assistant response to rolling history
-        historyRef.current = [
-          ...historyRef.current,
-          { role: 'assistant', content: clean },
-        ];
+        // Append assistant response to history (text portion)
+        if (clean) {
+          historyRef.current = [
+            ...historyRef.current,
+            { role: 'assistant', content: clean },
+          ];
+        }
 
-        await speak(clean);
+        // Execute tool calls from Grok
+        for (const tc of toolCalls) {
+          switch (tc.name) {
+            case 'navigate':
+              goPage((tc.args as { page: string }).page);
+              break;
+            case 'openProject': {
+              // Navigate to portfolio first, then open project
+              goPage('portfolio');
+              await waitForPage('portfolio');
+              dispatchToolCall('openProject', { slug: (tc.args as { name: string }).name });
+              break;
+            }
+            case 'scrollTo':
+              dispatchToolCall('scrollTo', { selector: (tc.args as { section: string }).section });
+              break;
+            case 'toggleTheme':
+              dispatchToolCall('toggleTheme', {});
+              break;
+            case 'openLink':
+              dispatchToolCall('openLink', tc.args);
+              break;
+            case 'startTour':
+              startTour();
+              break;
+            case 'switchToText':
+              stopAll();
+              openTextChat();
+              setActive(false);
+              return; // Don't speak after switching to text
+            case 'endCall':
+              if (clean) await speak(clean);
+              stopAll();
+              setActive(false);
+              return; // Don't speak again after ending
+          }
+        }
+
+        // Speak the text response (if any)
+        if (clean) {
+          await speak(clean);
+        } else if (toolCalls.length === 0) {
+          await speak("Hmm, I lost my train of thought.");
+        }
       } catch {
         await speak("My server's glitching. Give me a sec and try again.");
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [goPage, openTextChat, speak, stopAll]
+    [goPage, openTextChat, speak, stopAll, dispatchToolCall, startTour, waitForPage]
   );
-
-  // startTour — iterate TOUR_STEPS sequentially, await each speak(), dispatch tool calls
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const startTour = useCallback(async () => {
-    for (const step of TOUR_STEPS) {
-      if (!activeRef.current) break;  // abort if voice closed mid-tour
-
-      if (step.page !== currentPage) {
-        goPage(step.page);
-        await waitForPage(step.page);  // Phase 13 (D-08): event-based wait, 1500ms fallback
-      }
-
-      await speak(step.say);
-
-      if (step.call) {
-        dispatchToolCall(step.call[0], step.call[1]);
-      }
-    }
-  }, [currentPage, goPage, speak, dispatchToolCall, waitForPage]);
 
   // startListening — Web Speech API STT (per D-05, D-06)
   const startListening = useCallback(() => {
