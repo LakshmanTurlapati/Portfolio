@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Lato } from 'next/font/google';
+import { Lato, Instrument_Serif } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { TransitionProvider } from '@/providers/transition-provider';
 import './globals.css';
@@ -8,6 +8,14 @@ const lato = Lato({
   subsets: ['latin'],
   weight: ['100', '300', '400', '700', '900'],
   variable: '--font-lato',
+  display: 'swap',
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  variable: '--font-instrument-serif',
   display: 'swap',
 });
 
@@ -40,7 +48,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={lato.variable} suppressHydrationWarning>
+    <html lang="en" className={`${lato.variable} ${instrumentSerif.variable}`} suppressHydrationWarning>
       <body className="font-[family-name:var(--font-lato)] bg-[var(--color-bg)] text-[var(--color-text)]">
         <ThemeProvider>
           <TransitionProvider>

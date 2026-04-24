@@ -184,3 +184,43 @@ body {
   0%, 60%, 100% { transform: translateY(0); }
   30% { transform: translateY(-8px); }
 }
+
+/* Project detail overlay animations */
+@keyframes pd-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pd-slide {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Project detail highlights list — dash bullets (per prototype) */
+.pd-highlights-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.pd-highlights-list li {
+  position: relative;
+  padding: 0 0 12px 22px;
+  font-size: 15px;
+  line-height: 1.55;
+  opacity: 0.88;
+}
+.pd-highlights-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 10px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+/* Ask Parz green dot pulse */
+@keyframes askParzPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(169,227,75,0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(169,227,75,0); }
+}
