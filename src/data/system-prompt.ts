@@ -117,12 +117,12 @@ Use the following structured JSON object as your complete and sole source of kno
 "projects": {
 "featured": [
 {
-"name": "Review-Gate (V2)",
+"name": "Review Gate",
 "url": "https://github.com/LakshmanTurlapati/Review-Gate",
 "description": "A rule for the Cursor IDE that prevents the AI from ending a task prematurely. V2 is a complete rebuild with a professional popup UI, voice commands via a local Faster-Whisper model, and visual context sharing (Vision). It has over 1000 GitHub stars."
 },
 {
-"name": "t2s-cli",
+"name": "T2S CLI",
 "url": "https://github.com/LakshmanTurlapati/t2s-cli",
 "description": "A privacy-first, terminal-based Python tool that converts natural language into SQL queries using local AI models. It supports SQLite, PostgreSQL, and MySQL.",
 "installation": "Can be installed via pip: pip install t2s-cli"
@@ -156,12 +156,12 @@ Use the following structured JSON object as your complete and sole source of kno
 {"name": "ProKeys", "url": "https://github.com/LakshmanTurlapati/ProKeys", "description": "A macOS utility that re-types clipboard content with perfect indentation, avoiding IDE auto-formatting interference."},
 {"name": "Star-Trail-Flutter", "url": "https://github.com/LakshmanTurlapati/Star-Trail-Flutter", "description": "A Flutter widget that creates a star trails animation effect, available as a pub package."},
 {"name": "LinkedIn Auto Connect", "url": "https://github.com/LakshmanTurlapati/linkedin-autoconnect-extension", "website": "https://chromewebstore.google.com/detail/linkedin-auto-connect/jomecnphbmfpkcajfhkoebgmbcbakjoa", "description": "Chrome extension to automatically fill personalized LinkedIn connection requests from templates."},
-{"name": "open-api", "url": "https://github.com/LakshmanTurlapati/open-api", "description": "Educational project with a Chrome extension and Node.js server that bridges external applications with a ChatGPT account, simulating API functionality."},
+{"name": "Open-API", "url": "https://github.com/LakshmanTurlapati/open-api", "description": "Educational project with a Chrome extension and Node.js server that bridges external applications with a ChatGPT account, simulating API functionality."},
 {"name": "ArtScii", "url": "https://github.com/LakshmanTurlapati/ArtScii", "description": "A project to convert images and videos (including live webcam feeds) into ASCII art."},
-{"name": "DCTE-Script (X-Read)", "url": "https://github.com/LakshmanTurlapati/DCTE-Script", "description": "A script to process and classify business documents like RFQs and POs from various file formats, extracting key information."}
+{"name": "X-Read", "url": "https://github.com/LakshmanTurlapati/DCTE-Script", "description": "A script to process and classify business documents like RFQs and POs from various file formats, extracting key information."}
 ],
 "gamesAndFun": [
-{"name": "Asteroids Multiplayer", "url": "https://github.com/LakshmanTurlapati/Atari-Astroids-Multiplayer", "website": "https://harmonious-caramel-3c3627.netlify.app", "description": "Multiplayer implementation of the classic Atari Asteroids game with modern web technologies."},
+{"name": "Asteroids Game", "url": "https://github.com/LakshmanTurlapati/Atari-Astroids-Multiplayer", "website": "https://harmonious-caramel-3c3627.netlify.app", "description": "Multiplayer implementation of the classic Atari Asteroids game with modern web technologies."},
 {"name": "FSB", "url": "https://github.com/LakshmanTurlapati/FSB", "description": "Game development project exploring interactive gameplay mechanics."}
 ],
 "conceptualAndWIP": [
