@@ -12,6 +12,7 @@ import { ProjectDetail } from '@/components/project-detail';
 import { IframeViewer, isUnembeddable } from '@/components/iframe-viewer';
 import { useTransition } from '@/providers/transition-provider';
 import { useMounted } from '@/hooks/use-mounted';
+import { useVoiceSession } from '@/providers/voice-session-provider';
 
 function shuffle<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -27,6 +28,7 @@ export default function PortfolioPage() {
   const { resolvedTheme } = useTheme();
   const mounted = useMounted();
   const isDark = mounted && resolvedTheme === 'dark';
+  const { registerToolCallbacks } = useVoiceSession();
 
   const projects = useMemo(
     () => [...pinnedProjects, ...shuffle(shuffleableProjects)],
@@ -82,6 +84,32 @@ export default function PortfolioPage() {
       opacityMin: rand(0.02, 0.08),
       opacityMax: rand(0.10, 0.24),
     }));
+  }, []);
+
+  // Phase 13 (D-01, D-02, TOOL-01): register openProject voice callback on mount.
+  // The voice callback bridges slug → Project → setSelectedProject (opens the ProjectDetail overlay).
+  // NOTE: This is NOT the local openProject function (which opens the iframe viewer).
+  // Using setSelectedProject directly — matches PATTERNS.md Key Observation #2.
+  useEffect(() => {
+    registerToolCallbacks({
+      openProject: ({ slug }) => {
+        // Case-sensitive first (per D-09), case-insensitive fallback per RESEARCH.md Pitfall 5
+        const project = projects.find(
+          (p) => p.name === slug || p.name.toLowerCase() === slug.toLowerCase()
+        );
+        if (project) setSelectedProject(project);
+      },
+    });
+    // Deregister on unmount — prevents stale callbacks when navigating away
+    return () => registerToolCallbacks({});
+  }, [registerToolCallbacks, projects]);
+
+  // Phase 13 (D-08, TOOL-06): emit 'page-ready' after mount so the tour's waitForPage resolves.
+  // Empty deps — fires once after first mount. Guards for VoiceBus availability (SSR safety).
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.VoiceBus) {
+      window.VoiceBus.emit('page-ready', 'portfolio');
+    }
   }, []);
 
   // Keyboard shortcuts
