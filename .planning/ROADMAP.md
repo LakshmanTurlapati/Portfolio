@@ -95,7 +95,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 10-01-PLAN.md -- Verify fix (remove hero-nav-btn duplicates) and human visual verification of circular reveal
+- [x] 10-01-PLAN.md -- Verify fix (remove hero-nav-btn duplicates) and human visual verification of circular reveal
 
 **UI hint**: yes
 
@@ -226,5 +226,5 @@ v1.0 phases 1-4 execute first, then v3 phases 5-9, then fix/polish phases 10-11.
 | 7. Circular Reveal Transition | v3 | 2/2 | Complete | 2026-04-24 |
 | 8. Voice Mode | v3 | 5/5 | Complete | 2026-04-24 |
 | 9. Chat, About, and Polish | v3 | 3/3 | Complete | 2026-04-24 |
-| 10. Circular Reveal Fix | v3 | 0/1 | In progress | - |
+| 10. Circular Reveal Fix | v3 | 1/1 | Complete | 2026-04-24 |
 | 11. IframeViewer Browser Previews | v3 | 1/1 | Complete    | 2026-04-24 |

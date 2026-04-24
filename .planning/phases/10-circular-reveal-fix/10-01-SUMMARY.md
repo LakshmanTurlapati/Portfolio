@@ -42,30 +42,31 @@ completed: 2026-04-24
 
 # Phase 10 Plan 01: Circular Reveal Fix Summary
 
-**Verified circular reveal regression fix: zero hero-nav-btn/view-transition-name residue in src/, both .catch() guards confirmed, experimental.viewTransition: true in next.config.ts**
+**Verified circular reveal regression fix: zero hero-nav-btn/view-transition-name residue in src/, both .catch() guards confirmed, human-approved on all 5 navigation paths**
 
 ## Performance
 
-- **Duration:** ~5 min
+- **Duration:** ~10 min
 - **Started:** 2026-04-24T19:37:00Z
-- **Completed:** 2026-04-24T19:37:37Z
-- **Tasks:** 1 of 2 (Task 2 is human-verify checkpoint — awaiting human approval)
+- **Completed:** 2026-04-24
+- **Tasks:** 2 of 2 (complete)
 - **Files modified:** 0
 
 ## Accomplishments
 
-- All 5 automated static checks passed with zero failures
+- All 6 automated static checks passed with zero failures
 - Confirmed fix from commit a95f9f6 is fully applied and clean
 - Verified both .catch() handlers present on transition.ready and transition.finished chains
 - globals.css contains only root view-transition rules (no hero-nav-btn, no view-transition-group hero rules)
 - next.config.ts experimental.viewTransition: true confirmed
+- Human visual verification APPROVED: all 5 navigation paths show correct circular reveal animation
 
 ## Task Commits
 
 Task 1 was a verification-only task — the fix was pre-applied in commit a95f9f6. No new code commits were needed.
 
-1. **Task 1: Verify fix is fully applied — no hero-nav-btn residue** - No commit (verification only, zero file changes)
-2. **Task 2: Human visual verification** - PENDING (checkpoint reached)
+1. **Task 1: Verify fix is fully applied — no hero-nav-btn residue** - `ebe8ae2` (docs)
+2. **Task 2: Human visual verification** - APPROVED (user confirmed all 5 nav paths working)
 
 ## Files Created/Modified
 
@@ -105,12 +106,12 @@ None — all 5 acceptance criteria passed immediately.
 
 ## Human Verification Status
 
-**PENDING** — Task 2 checkpoint not yet reached. Human must verify circular reveal works across all 5 nav paths:
-1. Home → Portfolio
-2. Portfolio → Home (back button)
-3. Home → About
-4. Home → Chat
-5. Browser back button
+**APPROVED** — User confirmed circular reveal works correctly across all 5 nav paths:
+1. Home → Portfolio — circular reveal from Portfolio button center
+2. Portfolio → Home (back button) — circular reveal from back button
+3. Home → About — circular reveal from About Me link
+4. Home → Chat — circular reveal from Ask Parz button
+5. Browser back button — circular reveal from screen center fallback
 
 ## Next Phase Readiness
 
