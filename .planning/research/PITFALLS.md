@@ -1,183 +1,158 @@
-# Domain Pitfalls
+# Pitfalls Research
 
-**Domain:** Flutter-to-Next.js portfolio migration with canvas animations, custom page transitions, and AWS Amplify deployment
-**Researched:** 2026-04-02
+**Domain:** Voice mode production features — ElevenLabs STT, persistent overlay, cross-page voice, tool call wiring in Next.js App Router
+**Researched:** 2026-04-24
+**Confidence:** HIGH (codebase read + ElevenLabs docs + browser API documentation verified)
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites, broken features, or deployment failures.
+Mistakes that cause rewrites, broken sessions, or silent failures.
 
 ---
 
-### Pitfall 1: Canvas Animation Memory Leaks from requestAnimationFrame Without Cleanup
+### Pitfall 1: ElevenLabs STT Requires a New Server Endpoint — The API Key Cannot Be Used Client-Side
 
-**What goes wrong:** The Flutter codebase runs three simultaneous canvas animations (particle background with 7 circles, snowfall with 220 snowflakes across 3 layers, and fog with 2000 particles). Each uses `AnimationController` with `SingleTickerProviderStateMixin`, which Flutter manages automatically. In React, developers typically use `requestAnimationFrame` inside `useEffect` but forget to cancel the frame ID in the cleanup function, or they cancel the wrong frame ID. This creates animation loops that persist after component unmount, consuming CPU indefinitely.
+**What goes wrong:**
+The existing TTS route (`/api/tts`) works because it proxies the ElevenLabs call entirely server-side. ElevenLabs STT via the Scribe Realtime v2 model is a WebSocket connection that the browser must open directly — the server cannot proxy a browser microphone stream through a Next.js API route without extreme complexity. This means the browser needs credentials. But using the raw `ELEVENLABS_API_KEY` in the browser violates the existing security model and would expose the key in client bundle or network traffic.
 
-**Why it happens:** In Flutter, `dispose()` on the controller stops everything. In React, `requestAnimationFrame` returns a new ID each frame, and the cleanup function in `useEffect` captures the ID from the initial render via closure -- not the latest frame ID. The latest ID must be stored in a `useRef` that the cleanup function reads.
+**Why it happens:**
+The ElevenLabs STT realtime API requires the client to open a `wss://` WebSocket directly. The `/api/tts` pattern (HTTP POST → server fetches → proxied response) does not port to WebSocket. Developers assume the same pattern will work and either: (a) pass the API key directly to the client, or (b) try to proxy via a server WebSocket, adding a complex relay layer.
 
-**Consequences:**
-- Multiple animation loops accumulate on every page navigation (each navigate-away spawns a zombie loop)
-- Memory grows from ~2.5 KB to ~819 KB per leaked animation (empirically measured)
-- Mobile devices overheat and drain battery; desktop tabs become sluggish
-- Particularly severe because this portfolio runs 3-4 canvas animations simultaneously on the home page
-
-**Prevention:**
-```typescript
-// WRONG -- closure captures stale frameId
-useEffect(() => {
-  let frameId = requestAnimationFrame(animate);
-  return () => cancelAnimationFrame(frameId); // captures initial frameId only
-}, []);
-
-// CORRECT -- ref always holds latest frameId
-const frameRef = useRef<number>(0);
-useEffect(() => {
-  const animate = (time: number) => {
-    // update logic here
-    frameRef.current = requestAnimationFrame(animate);
-  };
-  frameRef.current = requestAnimationFrame(animate);
-  return () => cancelAnimationFrame(frameRef.current);
-}, []);
-```
-
-**Detection (warning signs):**
-- Open DevTools Performance Monitor; memory should plateau, not climb on navigation
-- Check "JS Heap Size" after navigating away from home page -- should drop
-- CPU usage should return to near-zero when leaving the home page
-
-**Phase relevance:** Phase 1 (Home Page) -- must be correct from the first canvas implementation. Every subsequent canvas component will follow this pattern.
-
-**Confidence:** HIGH -- verified via multiple sources including empirical studies and React documentation patterns.
-
----
-
-### Pitfall 2: Circular Reveal Page Transition Breaks with Next.js App Router
-
-**What goes wrong:** The Flutter app uses `Navigator.push(CircularRevealPageRoute(...))` with imperative, stack-based navigation. The circular reveal uses `ClipPath` with a custom clipper that expands a circle from the click origin. In Next.js App Router, there is no equivalent to Flutter's imperative `Navigator.push` with custom transition builders. The App Router controls component lifecycle -- it unmounts the old page and mounts the new page without any hook for exit animations. Attempting to use Framer Motion's `AnimatePresence` with `exit` props fails because the App Router tears down the outgoing component before the exit animation can run.
-
-**Why it happens:** Next.js App Router re-renders the layout tree on navigation. The outgoing page's React tree is destroyed immediately. There is no built-in mechanism to delay unmount for a transition. This is a fundamental architectural mismatch: Flutter's `PageRouteBuilder` controls the entire transition lifecycle; Next.js App Router does not expose this control.
-
-**Consequences:**
-- Attempted Framer Motion exit animations produce no visible effect
-- Developers spend days debugging why `AnimatePresence` exit is ignored
-- The workaround (FrozenRouter pattern) relies on unexposed Next.js internals (`LayoutRouterContext`) and can break on any Next.js update
-- Circular reveal specifically requires coordinating origin position, clip-path animation, and page content rendering in sequence
-
-**Prevention -- choose one of these approaches:**
-
-1. **CSS clip-path with View Transitions API (recommended):** Enable `experimental.viewTransition` in `next.config.js`. Use CSS `clip-path: circle()` to animate the reveal. The View Transitions API captures a snapshot of the old page and animates to the new one without needing to delay unmount. This is the closest analog to Flutter's `CircularRevealPageRoute`.
-
-   ```javascript
-   // next.config.js
-   const nextConfig = {
-     experimental: {
-       viewTransition: true,
-     },
-   };
-   ```
-
-   Then use `document.startViewTransition()` with custom CSS that applies `clip-path: circle(0% at Xpx Ypx)` expanding to `circle(150% at Xpx Ypx)`.
-
-2. **Intercepting navigation with a transition wrapper:** Build a custom `TransitionLink` component that intercepts `router.push`, runs the clip-path animation on an overlay, waits for it to complete, then performs the actual navigation. This avoids relying on App Router lifecycle entirely.
-
-3. **next-transition-router library:** A community library (`next-transition-router`) that provides leave/enter hooks for the App Router. Wraps the layout and delays navigation until the leave animation completes.
-
-**Detection:**
-- Test navigation between all pages immediately after implementing transitions
-- Verify the transition plays on both forward navigation and browser back button
-- Test on mobile Safari -- View Transitions API support varies
-
-**Phase relevance:** Phase 3 or dedicated transition phase -- must be prototyped early because it affects the entire navigation architecture. Do not defer this to the end.
-
-**Confidence:** HIGH -- multiple open issues on Next.js GitHub (Discussion #42658, motion issue #2411) confirm this is a known, fundamental limitation.
-
----
-
-### Pitfall 3: AWS Amplify Environment Variables Invisible to Server-Side Runtime
-
-**What goes wrong:** The xAI API key is stored as an environment variable in Amplify Console. Next.js API routes (`/api/chat`) attempt to read it via `process.env.XAI_API_KEY`. The API route returns undefined for the key. The chat feature silently fails or returns errors. This happens because Amplify treats build-time and runtime environments differently -- environment variables set in the Amplify Console are available during the build phase but are NOT automatically available to the server-side Lambda runtime that executes API routes.
-
-**Why it happens:** AWS Amplify deploys Next.js SSR apps using Lambda@Edge or Lambda functions behind CloudFront. Environment variables configured in the Amplify Console are injected into the build container, not the Lambda execution environment. Next.js only forwards `NEXT_PUBLIC_*` variables to the client bundle; server-side variables require explicit configuration in `amplify.yml` to be written to `.env.production` at build time so they are bundled alongside the Lambda code.
-
-**Consequences:**
-- Chat feature completely broken in production while working perfectly in local development
-- Difficult to diagnose because Amplify shows "deployment successful"
-- Exposing `NEXT_PUBLIC_XAI_API_KEY` as a workaround re-introduces the security vulnerability that motivated the migration
-
-**Prevention:**
-
-Add an explicit environment variable injection step in `amplify.yml`:
-
-```yaml
-version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - npm ci
-    build:
-      commands:
-        - echo "XAI_API_KEY=$XAI_API_KEY" >> .env.production
-        - npm run build
-  artifacts:
-    baseDirectory: .next
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-      - .next/cache/**/*
-```
-
-Alternatively, use AWS Systems Manager Parameter Store for secrets and retrieve them at runtime via the AWS SDK.
-
-**Detection:**
-- Test the chat feature in the deployed environment immediately after first deployment -- do not assume it works because local dev works
-- Log `!!process.env.XAI_API_KEY` (boolean check, not the value) in the API route during initial testing
-- Check Amplify build logs for the env injection step
-
-**Phase relevance:** Phase 4 (Chat + API) and Phase 5 (Deployment) -- must be validated with a minimal API route test before building the full chat feature.
-
-**Confidence:** HIGH -- confirmed by official AWS documentation and multiple community reports.
-
----
-
-### Pitfall 4: Theme Hydration Mismatch Causes Flash of Wrong Theme
-
-**What goes wrong:** The Flutter app detects system theme preference via `WidgetsBinding.instance.window.platformBrightness` and toggles between dark/light mode. In Next.js with server components, the server renders HTML without knowing the user's theme preference (it cannot read `localStorage` or `prefers-color-scheme`). The server renders light mode (the default). When the client hydrates, it detects dark mode and switches -- causing a visible flash of light-to-dark content, or worse, a React hydration mismatch error that breaks interactivity.
-
-**Why it happens:** Server-Side Rendering (SSR) fundamentally cannot access client-side state. `localStorage` does not exist on the server. `window.matchMedia('(prefers-color-scheme: dark)')` does not exist on the server. Any component that conditionally renders based on theme during SSR will produce HTML that differs from what the client produces, triggering React's hydration mismatch.
-
-**Consequences:**
-- Visible flash of wrong theme on every page load (FOUC -- Flash of Unstyled Content)
-- React hydration errors in console that can cascade to break interactive components
-- Users on dark mode see a jarring white flash before dark mode activates
-- Theme toggle breaks if hydration error corrupts the component tree
-
-**Prevention:**
-
-Use the `next-themes` library with the cookie-based approach:
-
-1. Store theme preference in a cookie (readable by the server) instead of `localStorage`
-2. Read the cookie in the root layout's server component to set the initial `className`
-3. Use a `mounted` state guard for any theme-dependent UI that reads from `useTheme()`
+**How to avoid:**
+Use ElevenLabs' single-use token endpoint. Add a new API route (`/api/stt-token`) that generates a short-lived token server-side via `elevenlabs.tokens.singleUse.create("realtime_scribe")`. The browser fetches this token (15-minute TTL), then opens the WebSocket using the token as a query parameter (`?token=...`). The token is useless after expiry, so exposure is low-risk.
 
 ```typescript
-// layout.tsx (server component)
-import { cookies } from 'next/headers';
+// /api/stt-token/route.ts
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+import { hasEnvVar } from '@/lib/env';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = cookies();
-  const theme = cookieStore.get('theme')?.value || 'system';
+export async function POST() {
+  if (!hasEnvVar('ELEVENLABS_API_KEY')) {
+    return Response.json({ error: 'STT not configured' }, { status: 503 });
+  }
+  const client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY });
+  const token = await client.tokens.singleUse.create('realtime_scribe');
+  return Response.json(token);
+}
+```
 
+**Warning signs:**
+- Any code that passes `ELEVENLABS_API_KEY` to the client component
+- `NEXT_PUBLIC_ELEVENLABS_API_KEY` appearing anywhere in the codebase
+- WebSocket connection errors with 401 in the browser network tab
+
+**Phase to address:** STT Upgrade phase (first task). The token endpoint must exist before the browser WebSocket can be tested.
+
+---
+
+### Pitfall 2: MediaRecorder Cannot Produce PCM16 — AudioWorklet Is Required
+
+**What goes wrong:**
+The current `window.VoiceBus.attachMic()` uses `getUserMedia` → `createMediaStreamSource` → `AnalyserNode` for amplitude visualization only. For Web Speech API STT, the browser handles audio capture internally. For ElevenLabs STT, audio data must be sent to the WebSocket as base64-encoded PCM16 at 16kHz. `MediaRecorder` (the obvious choice) produces WebM/Opus or MP4/AAC depending on browser — it cannot produce raw PCM16. This is a hard constraint, not a configuration option.
+
+**Why it happens:**
+Developers reach for `MediaRecorder` because it is the standard recording API and appears in every browser audio tutorial. The mismatch with STT API requirements is only discovered when the WebSocket rejects the audio format or produces garbled transcripts.
+
+**How to avoid:**
+Use an `AudioWorklet` to capture raw Float32 samples and convert them to Int16 PCM. The worklet runs on the audio thread, sends buffer messages via `port.postMessage` to the main thread, and the main thread base64-encodes them before sending to the WebSocket.
+
+Critical implementation details:
+- Browser native sample rate is 44100 Hz or 48000 Hz. ElevenLabs Scribe default is 16000 Hz (`PCM_16000`). The worklet must downsample.
+- AudioWorklet scripts must be plain JavaScript — no TypeScript, no imports, no ESM. Serve from `public/` directory.
+- The existing `VoiceBus._ctx` (AudioContext) is created with default sample rate. For STT worklets, create a separate AudioContext with `sampleRate: 16000` OR implement manual downsampling in the worklet.
+
+```javascript
+// public/pcm-processor.js (plain JS, no imports)
+class PCMProcessor extends AudioWorkletProcessor {
+  process(inputs) {
+    const input = inputs[0];
+    if (input && input[0]) {
+      const float32 = input[0];
+      const int16 = new Int16Array(float32.length);
+      for (let i = 0; i < float32.length; i++) {
+        const s = Math.max(-1, Math.min(1, float32[i]));
+        int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      }
+      this.port.postMessage(int16.buffer, [int16.buffer]);
+    }
+    return true;
+  }
+}
+registerProcessor('pcm-processor', PCMProcessor);
+```
+
+**Warning signs:**
+- `MediaRecorder` appearing in any STT capture code
+- Transcripts that are empty or gibberish despite audio being captured
+- WebSocket receiving data but returning `CommittedTranscript` with empty text
+
+**Phase to address:** STT Upgrade phase. Prototype the AudioWorklet capture in isolation before integrating with VoiceBus.
+
+---
+
+### Pitfall 3: Sharing the VoiceBus AudioContext Between TTS Playback and STT Capture Causes Echo and State Conflicts
+
+**What goes wrong:**
+The current `VoiceBus._ctx` is a single `AudioContext` instance used for TTS audio decoding and playback (`decodeAudioData`, `createBufferSource`), amplitude analysis (`_startLoop`, AnalyserNode), and now potentially STT capture (AudioWorklet + microphone source). When ElevenLabs TTS is playing and the microphone is simultaneously active, the playback audio feeds back into the microphone capture path, producing an echo loop in the transcription. This manifests as Parz "hearing" its own speech and trying to respond to it.
+
+**Why it happens:**
+Sharing one AudioContext seems elegant — the `_getCtx()` helper already lazy-creates it, and Web Audio API allows routing both inputs (mic) and outputs (TTS playback) through the same graph. But `createMediaStreamSource` (mic input) and `createBufferSource` (TTS output) in the same AudioContext with an AnalyserNode can route mic audio back into the analysis loop. Browser `echoCancellation` on `getUserMedia` only suppresses echo in WebRTC/MediaRecorder contexts, not in AudioContext graphs.
+
+**How to avoid:**
+Use separate AudioContexts for TTS output and STT input. Keep `VoiceBus._ctx` for TTS playback and amplitude visualization exclusively. For STT, create a dedicated `sttCtx = new AudioContext({ sampleRate: 16000 })` that is only used for microphone capture → AudioWorklet → WebSocket pipeline. This context never connects to the destination (no speaker output), so there is no path for TTS audio to leak into it.
+
+Additionally, implement the state guard already implied by `VoiceBus.state`: only open the STT WebSocket when state is `listening`, close it when state transitions to `speaking`. Never have both the STT WebSocket and the TTS AudioBufferSourceNode active simultaneously.
+
+**Warning signs:**
+- Parz responding to its own TTS output mid-sentence (barge-in triggering on its own voice)
+- Transcript containing text that matches the TTS caption
+- `detachMicRef` not being called before TTS playback starts
+
+**Phase to address:** STT Upgrade phase. Add explicit mic-detach → TTS-start sequencing in `startListening` / `streamTTS` transition.
+
+---
+
+### Pitfall 4: The Voice Controller Is Instantiated per Page — Moving It to Layout Level Requires Architectural Surgery
+
+**What goes wrong:**
+`useVoiceController` is currently called inside `Home` (page-level component). The voice overlay (`VoicePanel`) is rendered inside `DesktopNavbar`, which is also page-level. When the user navigates from home to portfolio while voice is active, the entire voice session is destroyed: React unmounts the home page component, `useVoiceController` teardown runs (which calls `stopAll()`), TTS mid-sentence cuts off, the WebSocket drops, and the navbar reverts to default appearance. Voice mode does not survive navigation.
+
+**Why it happens:**
+This was the v3 design: voice was home-only. Moving it to layout-level is a justified architectural change but requires lifting the hook call (and all its state) into the root layout or a layout-level client component — which the current architecture does not have. The root layout (`layout.tsx`) is a server component and cannot call hooks.
+
+**How to avoid:**
+Create a dedicated client component, e.g., `VoiceController.tsx`, that wraps `useVoiceController` and renders the `DesktopNavbar` + `MobileNavbar`. Mount it in the root layout as a persistent client component. This component is never unmounted across navigations. Pages register their tool callbacks into a shared context (or directly into VoiceBus) via `useEffect` on mount/unmount.
+
+```tsx
+// src/components/voice-controller.tsx  ('use client')
+export function VoiceController({ children }: { children: React.ReactNode }) {
+  const { navigateWithReveal } = useTransition();
+  const { resolvedTheme } = useTheme();
+  // ... voice state and useVoiceController call
   return (
-    <html lang="en" className={theme === 'dark' ? 'dark' : ''}>
+    <>
+      <DesktopNavbar ... />
+      <MobileNavbar ... />
+      {children}
+    </>
+  );
+}
+
+// src/app/layout.tsx (server component)
+export default function RootLayout({ children }) {
+  return (
+    <html>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
+        <ThemeProvider>
+          <TransitionProvider>
+            <VoiceBusProvider>
+              <VoiceController>
+                {children}  {/* pages mount/unmount here */}
+              </VoiceController>
+            </VoiceBusProvider>
+          </TransitionProvider>
         </ThemeProvider>
       </body>
     </html>
@@ -185,321 +160,311 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-```typescript
-// ThemeToggle.tsx (client component)
-'use client';
-import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
-
-export function ThemeToggle() {
-  const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
-
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return <div className="w-8 h-8" />; // placeholder to avoid layout shift
-
-  return <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>...</button>;
-}
-```
-
-Also inject a blocking `<script>` in the `<head>` to set the theme class before first paint:
-
-```html
-<script dangerouslySetInnerHTML={{ __html: `
-  (function() {
-    const theme = document.cookie.match(/theme=([^;]+)/)?.[1]
-      || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-  })();
-` }} />
-```
-
-**Detection:**
-- Load the page with "Disable cache" enabled in DevTools -- do you see a flash?
-- Test with system dark mode enabled, then toggle to light and reload
-- Check browser console for "Hydration mismatch" warnings
-
-**Phase relevance:** Phase 1 (Foundation/Setup) -- theme infrastructure must be correct before any themed component is built.
-
-**Confidence:** HIGH -- confirmed by Next.js official documentation and the `next-themes` library documentation.
-
----
-
-### Pitfall 5: AWS Amplify Fails to Detect Next.js SSR When amplify.yml Exists
-
-**What goes wrong:** Amplify auto-detects Next.js SSR apps and generates the correct build configuration. However, if you add a custom `amplify.yml` file (which you need for the environment variable injection in Pitfall 3), Amplify stops auto-detecting and uses your config verbatim. If `baseDirectory` is not set to `.next`, or if the `files` glob is wrong, the deployment "succeeds" but the site shows a blank page or 404 errors at the deployed domain.
-
-**Why it happens:** Amplify's auto-detection and custom config are mutually exclusive. When `amplify.yml` is present, Amplify trusts it completely. A common mistake is setting `baseDirectory` to `out` (which is for static export) instead of `.next` (which is for SSR).
-
-**Consequences:**
-- Deployment shows "successful" in Amplify Console but the domain shows nothing
-- Extremely confusing because there are no error logs -- the build completed
-- SSR features (API routes, server components) silently don't work if Amplify treats the app as static
-
-**Prevention:**
-- Always set `baseDirectory: .next` in `amplify.yml` for SSR apps
-- Always include `files: '**/*'` to capture all build output
-- Do NOT set `output: 'export'` in `next.config.js` -- that disables SSR, API routes, and server components
-- Verify in Amplify Console > App settings > Build settings that "Framework" shows "Next.js - SSR"
-
-**Detection:**
-- After first deployment, check the Amplify Console for the "Framework" detection
-- Visit the deployed URL immediately -- do not assume success from the build log
-- Test an API route (e.g., `/api/health`) to confirm SSR is working
-
-**Phase relevance:** Phase 5 (Deployment) -- but should be validated with a skeleton deployment in Phase 1.
-
-**Confidence:** HIGH -- confirmed by AWS documentation and multiple GitHub issues (amplify-hosting #3838).
-
----
-
-## Moderate Pitfalls
-
----
-
-### Pitfall 6: Canvas Animation setState per Frame Destroys React Performance
-
-**What goes wrong:** The Flutter snowfall uses `setState()` inside the animation listener to trigger repaints every frame (~60 fps). Direct translation to React would mean calling a state setter 60 times per second, causing 60 full React re-renders per second per animation. With 3 animations running simultaneously, that is 180 React reconciliation cycles per second.
-
-**Prevention:**
-- Never use `useState` for per-frame animation data. Use `useRef` for all mutable animation state (particle positions, velocities, sizes)
-- Draw directly to the canvas via `canvasRef.current.getContext('2d')` inside the `requestAnimationFrame` callback
-- The React component should render the `<canvas>` element exactly once; all updates happen imperatively via the Canvas 2D API
-- This is the single biggest mindset shift from Flutter's `CustomPainter` + `setState` pattern
-
-**Detection:**
-- React DevTools Profiler shows constant re-renders from the canvas component
-- Visible jank or frame drops in the animation
-- CPU usage stays above 30% even for simple particle effects
-
-**Phase relevance:** Phase 1 (Home Page) -- foundational pattern for all canvas work.
-
-**Confidence:** HIGH -- well-documented React performance pattern.
-
----
-
-### Pitfall 7: Responsive Layout Hydration Mismatch from useMediaQuery / window.innerWidth
-
-**What goes wrong:** The Flutter app uses `LayoutBuilder` with a 600px breakpoint to switch between `MobileHome` and `HomePage`. The direct React translation would be: `const isMobile = window.innerWidth < 600`. This crashes on the server (no `window`) and causes hydration mismatch (server renders one layout, client renders another based on actual viewport).
-
-**Prevention:**
-- Use CSS media queries and Tailwind's responsive prefixes (`md:`, `lg:`) for layout switching -- these work without JavaScript and produce consistent server/client HTML
-- For the 600px breakpoint: define a custom Tailwind breakpoint (`screens: { 'sm': '600px' }`) and use `hidden sm:block` / `sm:hidden` to toggle components
-- If JavaScript-based detection is unavoidable, use the `mounted` guard pattern (render a default layout on server, switch after mount)
-- Do NOT use `@artsy/fresnel` or similar libraries that render both versions and hide one with CSS -- this doubles the DOM size for every responsive component
-
-```typescript
-// tailwind.config.ts
-export default {
-  theme: {
-    screens: {
-      'sm': '600px', // matches Flutter's 600px breakpoint
-    },
-  },
-};
-```
+Pages then push their callbacks into a context provided by `VoiceController`:
 
 ```tsx
-// layout component
-<div className="sm:hidden"><MobileHome /></div>
-<div className="hidden sm:block"><DesktopHome /></div>
+// Portfolio page
+const { registerTools } = useVoiceTools();
+useEffect(() => {
+  registerTools({ openProject: (args) => setSelectedProject(findProject(args.slug)) });
+  return () => registerTools({});  // deregister on unmount
+}, []);
 ```
 
-**Detection:**
-- Console warnings about hydration mismatch on page load
-- Layout "jumps" from mobile to desktop (or vice versa) on first load
-- Different content rendered during SSR vs client
+**Warning signs:**
+- Voice state resetting when user navigates while voice is active
+- `VoicePanel` disappearing on page change
+- `useVoiceController` being called in any page component (`page.tsx`)
 
-**Phase relevance:** Phase 1 (Foundation) -- the responsive system is the skeleton that everything else hangs on.
-
-**Confidence:** HIGH -- confirmed by Next.js documentation and community discussions.
+**Phase to address:** Layout Lift phase. This is the highest-risk structural change and must be done before tool callbacks are wired.
 
 ---
 
-### Pitfall 8: Multiple Canvas Elements on One Page Kill Mobile Performance
+### Pitfall 5: Tool Callback Registration Race — Page Unmounts Before Voice Completes Its Tool Call
 
-**What goes wrong:** The home page simultaneously runs: particle background (7 circles with radial gradients + blur), snowfall (220 snowflakes with blur across 3 layers), and potentially fog (2000 particles). Each is a separate `<canvas>` element with its own `requestAnimationFrame` loop. On mobile devices, this causes frame drops below 30 fps, battery drain, and device heating.
+**What goes wrong:**
+During the tour, `TOUR_STEPS[3]` calls `openProject({ slug: 'Parz-AI' })`. The tour is navigating pages sequentially. If the portfolio page is not yet mounted when this call fires (because the navigation transition is still in progress), `toolCallbacks.openProject` is either undefined (portfolio not mounted, no registration) or points to a stale closure from a previously mounted page. The project detail overlay either fails to open silently (`console.warn`) or opens on the wrong page.
 
-**Prevention:**
-- Consolidate all home page animations into a single canvas with a single `requestAnimationFrame` loop. One loop updates particles, snow, and fog in sequence, then draws all to the same canvas context
-- Reduce particle counts on mobile: use `navigator.hardwareConcurrency` or a simple viewport width check to scale down (e.g., 50% fewer snowflakes on mobile)
-- Use `will-change: transform` on the canvas element to hint GPU compositing
-- Consider `OffscreenCanvas` with a Web Worker for the particle calculations (keep drawing on the main thread)
-- Cap to 30fps on mobile if needed -- most of these ambient effects look fine at 30fps
-- Add `visibility` detection: pause all animations when the tab is not visible (`document.visibilitychange` event)
+**Why it happens:**
+The `startTour` function navigates then waits 500ms (`await new Promise(r => setTimeout(r, 500))`), then calls `speak`, then fires `dispatchToolCall`. The 500ms hardcoded delay is a heuristic that does not guarantee the new page has mounted and registered its tool callbacks. On slow devices or after a View Transitions animation, the portfolio page may take longer than 500ms to mount.
 
-**Detection:**
-- Test on an actual mobile device (not just browser dev tools responsive mode)
-- Use Chrome DevTools Performance tab to check frame rate
-- Monitor battery consumption during a 1-minute session
-
-**Phase relevance:** Phase 1 (Home Page) -- architecture decision that is painful to change later.
-
-**Confidence:** HIGH -- well-established web performance pattern.
-
----
-
-### Pitfall 9: Canvas Blur Effects (MaskFilter) Are Expensive in HTML5 Canvas
-
-**What goes wrong:** The Flutter particle background uses `MaskFilter.blur(BlurStyle.normal, circleSizes[i] / 8)` on every circle, and the snowfall uses `MaskFilter.blur(BlurStyle.normal, blurSigma)` per layer. In HTML5 Canvas, the equivalent is `ctx.filter = 'blur(Xpx)'` or `ctx.shadowBlur = X`. Both are extremely expensive operations -- Canvas 2D blur is software-rendered and recalculated every frame. Seven blurred circles with radial gradients at 60fps will tank performance.
-
-**Prevention:**
-- Pre-render blurred circles to an offscreen canvas once, then `drawImage()` them each frame (stamp approach)
-- Use CSS `backdrop-filter: blur()` on a positioned element above the canvas instead of in-canvas blur
-- For radial gradients, pre-create `CanvasGradient` objects and reuse them -- do not recreate gradients every frame
-- For the snowfall blur layers, use CSS `filter: blur()` on separate `<canvas>` elements rather than in-canvas blur
-- The fog effect (2000 particles with blur) should use a CSS-based approach entirely -- 2000 blurred circles per frame is not viable in Canvas 2D
-
-**Detection:**
-- Frame rate drops below 30fps on the home page
-- "Long task" warnings in Chrome DevTools Performance panel
-- GPU memory spikes in `chrome://gpu`
-
-**Phase relevance:** Phase 1 (Home Page) -- must decide on blur strategy before implementing any canvas animation.
-
-**Confidence:** HIGH -- Canvas 2D blur performance is well-documented as a bottleneck.
-
----
-
-### Pitfall 10: `dart:html` APIs Have No Direct React Equivalent
-
-**What goes wrong:** The Flutter app uses `dart:html` to manipulate meta tags (`html.document.querySelector('meta[name="theme-color"]')`) and potentially for URL launching. Developers try to find React equivalents and end up putting `document.querySelector` calls inside components without proper SSR guards, crashing the server.
-
-**Prevention:**
-- For meta tag management: use Next.js `metadata` export in page/layout files (App Router built-in)
-- For dynamic meta updates: use `next/head` or the `useEffect`-guarded `document` access
-- For URL launching: use standard `<a href="..." target="_blank" rel="noopener noreferrer">`
-- For any remaining `document`/`window` access: always guard with `typeof window !== 'undefined'` or use `useEffect`
-- Map all `dart:html` usages before starting migration
-
-**Detection:**
-- `ReferenceError: document is not defined` during SSR
-- Pages that work on client navigation but break on hard refresh (which triggers SSR)
-
-**Phase relevance:** Phase 1 (Foundation) -- audit all `dart:html` usage upfront and plan replacements.
-
-**Confidence:** HIGH -- standard SSR knowledge.
-
----
-
-## Minor Pitfalls
-
----
-
-### Pitfall 11: Flutter's Prop Drilling Pattern Creates Unnecessary React Complexity
-
-**What goes wrong:** The Flutter app passes `isDarkMode` and `toggleTheme` through every widget constructor. Developers replicate this prop drilling pattern in React instead of using React Context or Zustand. With 10+ components needing theme state, this creates brittle, deeply-nested prop chains.
-
-**Prevention:**
-- Use `next-themes` for theme state (already recommended in Pitfall 4)
-- Any component can call `useTheme()` directly -- no prop passing needed
-- Similarly, consolidate navigation state into a React context rather than replicating Flutter's callback pattern
-
-**Phase relevance:** Phase 1 (Foundation).
-
----
-
-### Pitfall 12: Hardcoded Pixel Values from Flutter Don't Map to Responsive CSS
-
-**What goes wrong:** The Flutter app has hardcoded values throughout: navbar width `630`, breakpoint `600`, item width `300`, button size `200x60`. Directly translating these to CSS pixel values creates rigid layouts that break at intermediate screen sizes.
-
-**Prevention:**
-- Define a design token system in Tailwind config (`theme.extend`) for all spacing/sizing values
-- Use relative units (`rem`, viewport units, `clamp()`) where appropriate
-- The 600px breakpoint maps to a Tailwind screen, but intermediate layout adjustments may be needed
-- Test at 600px, 768px, 1024px, 1280px, and 1440px -- Flutter's LayoutBuilder only cared about < or >= 600px
-
-**Phase relevance:** Phase 1 (Foundation) -- Tailwind config should be set up with the token system before building components.
-
----
-
-### Pitfall 13: Google Fonts Loading Flash
-
-**What goes wrong:** The Flutter app uses `GoogleFonts.latoTextTheme()` which bundles fonts at build time. In Next.js, loading Google Fonts incorrectly causes a Flash of Unstyled Text (FOUT) where the browser shows a fallback font before the web font loads.
-
-**Prevention:**
-- Use `next/font/google` which automatically handles font loading, preloading, and CSS `font-display: swap`
-- Import at the layout level so the font is available globally
-- Use `next/font`'s `subsets` option to reduce download size
+**How to avoid:**
+Replace the fixed `setTimeout` delay with a promise that resolves when the target page signals readiness. Use a context value or VoiceBus event. Portfolio page fires `window.VoiceBus.emit('page-ready', 'portfolio')` in a `useEffect` with no deps (runs after first mount). The tour waits for this event with a timeout fallback.
 
 ```typescript
-import { Lato } from 'next/font/google';
-const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
+// In startTour, replace the 500ms wait:
+await Promise.race([
+  new Promise<void>(res => {
+    const unsub = window.VoiceBus.on('page-ready', (page) => {
+      if (page === step.page) { unsub(); res(); }
+    });
+  }),
+  new Promise<void>(res => setTimeout(res, 1500)), // fallback
+]);
 ```
 
-**Phase relevance:** Phase 1 (Foundation).
+Additionally, `dispatchToolCall` should check `activeRef.current` before executing — if voice was closed during the wait, abort.
+
+**Warning signs:**
+- `[VoiceController] openProject tool called but no toolCallbacks.openProject provided` in console during tour
+- Tour completing but project detail overlay never appearing
+- Race condition logs where tool fires before page mounts
+
+**Phase to address:** Tool Wiring phase. Implement the page-ready signal pattern when wiring `openProject` on the portfolio page.
 
 ---
 
-### Pitfall 14: Chat API Route Timeout on AWS Amplify Lambda
+### Pitfall 6: VoiceBus `declare global` Type Leaks Into SSR — Server Components Will Throw
 
-**What goes wrong:** The xAI Grok API can take 10-30 seconds for complex responses. AWS Amplify deploys Next.js API routes as Lambda functions with a default timeout of 10 seconds. Long chat responses get cut off with a 504 Gateway Timeout.
+**What goes wrong:**
+`window.VoiceBus` is typed via `declare global { interface Window { VoiceBus: ... } }`. This works in client components because `typeof window !== 'undefined'` guards are in place. However, if any file that imports from `voice-bus-init.ts` or `voice-controller.ts` ends up in the server component graph (e.g., a layout import without `'use client'`), TypeScript will emit the type but Next.js will throw at runtime because `window` does not exist on the server. The `declare global` adds `VoiceBus` to `Window` globally for TypeScript, which does not cause a compile error even in server context.
 
-**Prevention:**
-- Implement streaming responses using the Vercel AI SDK pattern or raw `ReadableStream` to send tokens as they arrive
-- If streaming is not possible, increase the Lambda timeout in the Amplify configuration
-- Add a client-side timeout indicator so users know the response is still generating
-- The Flutter app's current approach of waiting for the full response before displaying is already problematic -- streaming improves this
+**Why it happens:**
+When `VoiceController.tsx` is added as a layout-level component without `'use client'`, or when a server component imports anything from the voice module chain, the server execution touches `window.VoiceBus`. The `initVoiceBus()` call at module scope in `voice-bus-provider.tsx` has a `typeof window === 'undefined'` guard, but the `declare global` type pattern gives a false sense of safety.
 
-**Detection:**
-- Chat responses that work for short questions but fail for complex ones
-- 504 errors in the browser network tab
+**How to avoid:**
+- `VoiceController.tsx` must have `'use client'` as its first line.
+- `voice-bus-init.ts`, `voice-controller.ts`, `voice-commands.ts` must all be client-only. Add `'use client'` to any of these that do not already have it, or confirm they are only ever imported from client components.
+- Keep the server layout thin: only import providers that are themselves `'use client'` wrappers.
+- Run `next build` and check for "You're importing a component that needs `useState`..." errors as a verification step.
 
-**Phase relevance:** Phase 4 (Chat + API).
+**Warning signs:**
+- `ReferenceError: window is not defined` in server-side stack traces
+- Build output showing voice files in the server bundle
+- Pages that work on client navigation but crash on hard refresh (which triggers SSR)
+
+**Phase to address:** Layout Lift phase. Audit `'use client'` directives as part of moving voice components into the layout.
 
 ---
 
-## Phase-Specific Warnings
+### Pitfall 7: The 15-Minute STT Token Expires During a Long Voice Session — WebSocket Closes Silently
 
-| Phase Topic | Likely Pitfall | Mitigation | Severity |
-|-------------|---------------|------------|----------|
-| Phase 1: Foundation/Setup | Theme hydration mismatch (Pitfall 4) | Use next-themes with cookie + blocking script | Critical |
-| Phase 1: Foundation/Setup | Responsive hydration mismatch (Pitfall 7) | CSS media queries, not JS detection | Critical |
-| Phase 1: Foundation/Setup | dart:html assumptions (Pitfall 10) | Audit and map all browser API usage upfront | Moderate |
-| Phase 1: Home Page | Canvas memory leaks (Pitfall 1) | useRef for frame IDs, proper cleanup | Critical |
-| Phase 1: Home Page | setState per frame (Pitfall 6) | useRef for all animation state, imperative canvas | Critical |
-| Phase 1: Home Page | Canvas blur performance (Pitfall 9) | Pre-render blurred shapes, CSS filter alternatives | Critical |
-| Phase 1: Home Page | Multiple canvases on mobile (Pitfall 8) | Single canvas loop, reduced particle counts | Moderate |
-| Phase 2-3: Navigation/Transitions | Circular reveal breaks in App Router (Pitfall 2) | View Transitions API or custom transition wrapper | Critical |
-| Phase 4: Chat + API | API route env vars invisible (Pitfall 3) | amplify.yml env injection to .env.production | Critical |
-| Phase 4: Chat + API | Lambda timeout (Pitfall 14) | Streaming responses | Moderate |
-| Phase 5: Deployment | Amplify SSR detection failure (Pitfall 5) | Correct amplify.yml with baseDirectory: .next | Critical |
-| Phase 5: Deployment | Env vars not in Lambda (Pitfall 3) | Validate with test route before full deployment | Critical |
+**What goes wrong:**
+ElevenLabs single-use STT tokens expire after 15 minutes. If a user opens voice mode and leaves it in the background (tab open, voice idle), the WebSocket established with that token will close with an auth error after 15 minutes. The next time the user speaks, `startListening` tries to reuse the existing WebSocket (if cached), which is closed. Transcripts stop arriving. The UX state machine stalls in `listening` forever because `onend` was never fired for the stale socket.
+
+**Why it happens:**
+Token generation happens once at session start (`open()` or first `startListening()`). Web Speech API had no concept of token expiry — the browser manages its own auth. ElevenLabs STT requires explicit token refresh. The LiveKit agents repository has documented this exact reconnection failure: `SpeechStream._run()` does not automatically reconnect after mid-stream WebSocket drops.
+
+**How to avoid:**
+Do not cache the STT WebSocket across calls to `startListening`. Open a fresh WebSocket (with a fresh token) on each listening session. Since the STT WebSocket is only open during active listening (not during thinking/speaking/idle), the 15-minute window is effectively irrelevant — a fresh token is fetched on each mic activation. The cost is one extra `/api/stt-token` HTTP round-trip per listening session (~50ms), which is acceptable.
+
+```typescript
+// In startListening, always fetch a fresh token:
+const startListening = useCallback(async () => {
+  const res = await fetch('/api/stt-token', { method: 'POST' });
+  const { token } = await res.json();
+  const ws = new WebSocket(`wss://api.elevenlabs.io/v1/speech-to-text/realtime?token=${token}&audio_format=pcm_16000`);
+  // ... setup handlers, close on session end
+}, []);
+```
+
+**Warning signs:**
+- STT stops working after extended idle periods (>15 min)
+- WebSocket `close` event with code 4001 or 4003 (auth failure)
+- `listening` state stuck with no transcript arriving
+
+**Phase to address:** STT Upgrade phase. Do not implement token caching; design for per-session token fetch from the start.
+
+---
+
+### Pitfall 8: `scrollTo` Tool on the About Page Targets a Scoped Scrollable Div, Not `window`
+
+**What goes wrong:**
+The about page uses a custom scrollable right panel (`ref={scrollContainerRef}`) that is a `div` with `overflow-y: auto` — not the browser window. The `scrollTo` tool in `dispatchToolCall` will call `toolCallbacks.scrollTo({ selector: '#experience' })`. A naive implementation does `document.querySelector(selector)?.scrollIntoView()` which calls the browser's default `scrollIntoView` on `window`. On the about page, this does nothing visible because the page is not window-scrollable — the right panel is.
+
+**Why it happens:**
+The about page layout is `position: fixed` sidebar + scrollable right panel. `window.scrollY` is always 0. `scrollIntoView()` with default behavior scrolls the nearest scrollable ancestor, which is the right panel `div`. But if the `selector` targets the section `data-section="experience"`, `scrollIntoView` may not scroll the custom container as expected if the container is not a scrolling ancestor of the element in the DOM hierarchy.
+
+**How to avoid:**
+The about page's `scrollTo` implementation must be custom — it must call `ref.current.scrollIntoView({ behavior: 'smooth' })` using the existing `sectionRefs` map (already present at lines 112-116 in `about/page.tsx`). When the about page registers its `scrollTo` tool callback, it passes its own implementation that understands the section refs:
+
+```typescript
+registerTools({
+  scrollTo: ({ selector }) => {
+    const id = selector.replace('#', '') as SectionId;
+    scrollToSection(id);  // existing method, already works
+  },
+});
+```
+
+**Warning signs:**
+- Voice command "scroll to experience" plays the TTS response but the page does not scroll
+- `window.scrollY` remaining 0 throughout the about page session
+- `scrollIntoView` calls in browser console with no visible effect
+
+**Phase to address:** Tool Wiring phase, specifically the about page's tool registration.
+
+---
+
+### Pitfall 9: `openProject` Tool Uses a `slug` But Portfolio Cards Are Matched by `name` — Data Shape Mismatch
+
+**What goes wrong:**
+`TOUR_STEPS[3]` calls `openProject({ slug: 'Parz-AI' })`. The portfolio page's `openProject` callback (line 41 in `portfolio/page.tsx`) receives a `Project` object and extracts URLs from it. The tour's `openProject` tool passes `{ slug: string }`, but the portfolio page's `openProject` is typed as `(project: Project) => void`. The tool callback interface in `ToolCallbacks` (`openProject?: (args: { slug: string }) => void`) does not match the page's own `openProject` callback. The wiring requires a lookup: find the project by slug, then call the page's handler with the full `Project` object.
+
+**Why it happens:**
+The AI tool interface was designed with string-based slugs (LLM-friendly), while the UI was designed with full typed objects (React-friendly). The disconnect was never resolved because `openProject` was never actually wired in v3.
+
+**How to avoid:**
+The portfolio page's tool registration must bridge the two interfaces:
+
+```typescript
+// In portfolio/page.tsx tool registration
+registerTools({
+  openProject: ({ slug }) => {
+    const project = projects.find(p => p.name === slug || p.slug === slug);
+    if (project) setSelectedProject(project);
+  },
+});
+```
+
+Also verify the slug values in `TOUR_STEPS` match actual project names in the data store. `'Parz-AI'` must match a `project.name` exactly (case-sensitive). Check `src/data/projects.ts` for the exact casing.
+
+**Warning signs:**
+- `openProject` tool fires but `selectedProject` remains null
+- `console.warn` about no project found for slug
+- Project detail overlay never opening during tour step 4
+
+**Phase to address:** Tool Wiring phase. Verify slug-to-name mapping before writing the tool registration.
+
+---
+
+## Technical Debt Patterns
+
+Shortcuts that seem reasonable but create long-term problems.
+
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Hardcoded 500ms navigation wait in `startTour` | Simple to implement, works on fast machines | Race condition on slow devices — tool calls fire before page mounts | Never for production; replace with page-ready signal |
+| Using `window.VoiceBus` global instead of React context for tool callbacks | Works across any component without prop drilling | Difficult to TypeScript-type; bypasses React rendering model; callbacks can be stale | Acceptable for state/level events; avoid for tool callbacks |
+| Caching STT WebSocket across listening sessions | Saves one round-trip per activation | Silent failure after 15-minute token expiry | Never; per-session token fetch is cheap enough |
+| `any` type for `SpeechRecognition` in `voice-controller.ts` (lines 79, 400, 410) | Avoids complex `@types/webdomspeech` installation | Type errors in Web Speech API calls are invisible; won't be needed after ElevenLabs STT replaces it | Acceptable temporarily; eliminate when Web Speech API code is removed |
+| Inline `setTimeout(r, 500)` for tour pacing | Predictable tour pacing in controlled environment | Breaks on slow navigation transitions or slow devices | Only for a prototype demo; replace with event-driven wait |
+
+---
+
+## Integration Gotchas
+
+Common mistakes when connecting to external services.
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| ElevenLabs STT (Scribe Realtime) | Passing raw API key to browser WebSocket | Fetch single-use token from `/api/stt-token`, use `?token=` query parameter |
+| ElevenLabs STT WebSocket | Using MediaRecorder for audio capture | Use AudioWorklet with PCM16 conversion; MediaRecorder cannot produce raw PCM |
+| ElevenLabs STT audio format | Sending 48kHz Float32 directly | Convert to 16kHz Int16 PCM first; Scribe expects `pcm_16000` by default |
+| ElevenLabs STT + TTS | Sharing one AudioContext for both mic input and speaker output | Separate AudioContexts: `VoiceBus._ctx` for TTS only, dedicated `sttCtx` for microphone capture |
+| ElevenLabs TTS streaming | Calling `decodeAudioData` on a stream mid-flight | The current implementation waits for full `arrayBuffer()` before decode — correct but adds latency; acceptable tradeoff for MVP |
+| Amplify env vars | Missing `ELEVENLABS_API_KEY` in Lambda runtime | Add `echo "ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY" >> .env.production` to `amplify.yml` build phase (same pattern as existing `XAI_API_KEY`) |
+
+---
+
+## Performance Traps
+
+Patterns that work at small scale but fail under real usage.
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| PCM16 conversion on main thread (no AudioWorklet) | UI jank during listening; animation stutter | Always use AudioWorklet for audio processing; it runs on separate audio thread | Immediately on any device; audio thread misses deadlines if on main thread |
+| Resubscribing to VoiceBus events on every render | Duplicate event handlers accumulate; state machine fires N times per event | Store unsubscribe functions in `useRef`; verify cleanup functions are called | After ~20 renders of the controller component |
+| Sending large PCM chunks (>8KB) to ElevenLabs WebSocket | Transcript latency increases; backpressure on WebSocket | Send chunks of 4-8KB maximum (maps to ~125-250ms of audio at 16kHz) | Noticeable delay in transcription when chunks exceed 250ms of audio |
+| Tour's sequential `await speak()` calls blocking close | User cannot exit mid-tour; voice stays in `speaking` state | Always check `activeRef.current` at the start of each tour step | Any time user closes voice during a long tour step |
+| `historyRef.current` growing unboundedly during long sessions | localStorage write fails (5MB limit); JSON serialization slow | Existing `slice(-20)` on save is correct; also enforce during append | After ~100 turns in a single session if slice-on-save is missed |
+
+---
+
+## Security Mistakes
+
+Domain-specific security issues beyond general web security.
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Using `NEXT_PUBLIC_ELEVENLABS_API_KEY` to avoid building `/api/stt-token` route | API key fully exposed in browser bundle; anyone can make unlimited STT requests on your account | Always use single-use token endpoint; the 15-minute TTL and single-use semantics limit exposure |
+| Not allowlisting the STT token scope | Token could be reused for other ElevenLabs API operations | Use `elevenlabs.tokens.singleUse.create("realtime_scribe")` with the specific scope |
+| Logging transcript content server-side | User speech content visible in Amplify CloudWatch logs | Do not log transcript payloads; log only connection events and error codes |
+| Missing rate limiting on `/api/stt-token` | Attacker floods the endpoint, burning ElevenLabs quota | Add request-based rate limiting or require session validation before issuing tokens |
+
+---
+
+## UX Pitfalls
+
+Common user experience mistakes in this domain.
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| No visual feedback while fetching STT token | User taps mic, sees nothing for 1-2 seconds, taps again | Set VoiceBus state to `listening` optimistically on mic tap; update if token fetch fails |
+| Barge-in threshold too sensitive with ElevenLabs TTS | Parz interrupts itself when TTS volume fluctuates above 0.15 | Disable barge-in detection entirely during TTS playback (silence the level listener when `state === 'speaking'`) — OR raise threshold to 0.35 for ElevenLabs audio which has consistent volume |
+| Voice overlay disappearing during circular reveal transition | Voice capsule morphs back to navbar during the 500ms clip-path animation | Ensure `VoiceController` is in the layout (persistent), not in the page; the reveal only animates page content |
+| No fallback when ElevenLabs STT WebSocket fails to connect | User sees the UI stuck in `listening` state permanently | Always have a fallback path back to Web Speech API (`window.SpeechRecognition`) when the STT WebSocket does not emit `SessionStarted` within 3 seconds |
+| `CommittedTranscript` arrives after `onend` in Web Speech API replacement | `handleUserTurn` called with empty string | ElevenLabs STT fires `CommittedTranscript` asynchronously; wire it to `handleUserTurn` only on `CommittedTranscript` messages, not on WebSocket `close` |
+
+---
+
+## "Looks Done But Isn't" Checklist
+
+Things that appear complete but are missing critical pieces.
+
+- [ ] **ElevenLabs STT:** Token endpoint exists and returns a valid token — verify token can actually open a WebSocket connection (test with `wscat` or a small standalone script before integrating)
+- [ ] **AudioWorklet:** Worklet file is in `public/` and served correctly — verify `audioContext.audioWorklet.addModule('/pcm-processor.js')` resolves without 404
+- [ ] **Voice overlay persistence:** Navigate home → portfolio while voice is active — verify `VoicePanel` stays rendered and state machine does not reset
+- [ ] **`openProject` tool:** Tour step 4 fires and the project detail overlay opens on the portfolio page — not just a console.log
+- [ ] **`scrollTo` tool:** "Scroll to experience" command scrolls the right panel on the about page, not `window`
+- [ ] **`toggleTheme` tool:** Voice command "switch theme" actually toggles theme — verify `useTheme().setTheme` is called via the registered callback
+- [ ] **`openLink` tool:** Verify it opens the URL in a new tab, not navigating away from the current page
+- [ ] **Mic denied path:** Deny mic permission, try to activate voice, verify `micDenied` banner appears and retry works
+- [ ] **Amplify env:** `ELEVENLABS_API_KEY` present in Lambda runtime — test `/api/stt-token` endpoint after deployment (not just local dev)
+- [ ] **`navigate` tool (already wired):** Voice command "go to portfolio" fires `goPage('portfolio')` and transition plays — verify this still works after layout lift
+
+---
+
+## Recovery Strategies
+
+When pitfalls occur despite prevention, how to recover.
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| API key exposed client-side | HIGH | Rotate ELEVENLABS_API_KEY immediately in ElevenLabs dashboard; add `/api/stt-token` endpoint; redeploy |
+| VoiceController instantiated per-page (not layout) | MEDIUM | Move `useVoiceController` call and navbar rendering to a new `VoiceController.tsx` client component in layout; update all page components to remove their voice state |
+| Web Speech API left as sole STT after ElevenLabs token endpoint is built | LOW | Token endpoint already exists; connect AudioWorklet capture pipeline; swap out `startListening` implementation |
+| AudioContext conflict (STT mic + TTS playback echo) | MEDIUM | Split contexts immediately: keep `VoiceBus._ctx` for TTS, add `sttCtx` for mic; the VoiceBus API surface does not change |
+| Tour stalls waiting for page mount (500ms race) | LOW | Add `window.VoiceBus.emit('page-ready', 'pageName')` in a `useEffect` in each page; add event wait before tour tool dispatch |
+| `openProject` slug mismatch | LOW | Inspect `src/data/projects.ts` for exact `project.name` values; update `TOUR_STEPS[3]` to match |
+
+---
+
+## Pitfall-to-Phase Mapping
+
+How roadmap phases should address these pitfalls.
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| ElevenLabs STT token endpoint missing | Phase 1 (STT token + AudioWorklet setup) | `POST /api/stt-token` returns `{ token }` in curl test |
+| MediaRecorder used for PCM capture | Phase 1 (STT token + AudioWorklet setup) | AudioWorklet `onmessage` fires with Int16Array data when mic is open |
+| STT/TTS AudioContext echo conflict | Phase 1 (STT token + AudioWorklet setup) | Separate `sttCtx` reference in code; no audio route from mic to speakers |
+| VoiceController per-page (not layout) | Phase 2 (Layout lift) | Navigate home→portfolio with voice active; VoicePanel stays mounted |
+| Server component importing voice modules | Phase 2 (Layout lift) | `next build` completes without "cannot use useState" errors in voice files |
+| Tool registration race (page not mounted) | Phase 3 (Tool wiring) | Tour step 3→4 successfully opens project detail on portfolio |
+| `scrollTo` targeting window instead of panel | Phase 3 (Tool wiring) | "Scroll to experience" scrolls the about page right panel |
+| `openProject` slug/name mismatch | Phase 3 (Tool wiring) | Tour step 4 opens Parz-AI project detail |
+| STT token expiry after 15 minutes | Phase 1 (STT token + AudioWorklet setup) | Per-session token fetch in `startListening` — no caching |
+| Amplify missing `ELEVENLABS_API_KEY` in Lambda | Phase 4 (Deployment verification) | `/api/stt-token` returns 200 (not 503) in production |
 
 ---
 
 ## Sources
 
-### Canvas Animation Performance
-- [Optimizing GSAP Animations in Next.js 15](https://medium.com/@thomasaugot/optimizing-gsap-animations-in-next-js-15-best-practices-for-initialization-and-cleanup-2ebaba7d0232) -- GSAP cleanup patterns applicable to raw canvas
-- [RequestAnimationFrame and UseEffect vs UseLayoutEffect](https://blog.jakuba.net/request-animation-frame-and-use-effect-vs-use-layout-effect/) -- why useLayoutEffect is needed for frame cancellation
-- [Frontend Memory Leaks: 500-Repository Study](https://stackinsight.dev/blog/memory-leak-empirical-study/) -- empirical data on rAF memory leak severity
-- [Creating Interactive Animations with Canvas and React](https://medium.com/@ignatovich.dm/creating-interactive-animations-with-canvas-and-react-7c4e85eb7bce) -- useRef pattern for canvas state
-
-### Page Transitions
-- [Next.js App Router Page Transition Discussion #42658](https://github.com/vercel/next.js/discussions/42658) -- canonical discussion on the limitation
-- [Framer Motion exit animation bug #2411](https://github.com/framer/motion/issues/2411) -- confirms exit animations broken with App Router
-- [Next.js viewTransition Config](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition) -- official experimental flag
-- [Solving Framer Motion Page Transitions in Next.js App Router](https://www.imcorfitz.com/posts/adding-framer-motion-page-transitions-to-next-js-app-router) -- FrozenRouter workaround
-- [next-transition-router](https://github.com/ismamz/next-transition-router) -- community library for App Router transitions
-- [The Magic of Clip Path](https://emilkowal.ski/ui/the-magic-of-clip-path) -- clip-path animation techniques
-
-### AWS Amplify + Next.js
-- [AWS: Making Environment Variables Accessible to Server-Side Runtimes](https://docs.aws.amazon.com/amplify/latest/userguide/ssr-environment-variables.html) -- official docs confirming the env var problem
-- [Deploying a Next.js SSR Application to Amplify](https://docs.aws.amazon.com/amplify/latest/userguide/deploy-nextjs-app.html) -- official deployment guide
-- [Beware of Next.js on AWS Amplify](https://betterprogramming.pub/beware-of-next-js-on-aws-amplify-5a1286db2a6a) -- real-world deployment pain points
-- [Amplify Hosting Issue #3838](https://github.com/aws-amplify/amplify-hosting/issues/3838) -- "successful" deployment showing nothing
-- [Next.js Deployment to AWS Amplify: Environment Variable Fix](https://dev.to/dilumdarshana/nextjs-deployment-to-aws-amplify-environment-variable-issue-fix-333k) -- community fix
-
-### Theme and Hydration
-- [Fixing Hydration Mismatch in Next.js (next-themes)](https://medium.com/@pavan1419/fixing-hydration-mismatch-in-next-js-next-themes-issue-8017c43dfef9) -- the mounted pattern
-- [next-themes](https://github.com/pacocoursey/next-themes) -- library documentation
-- [Next.js Dark Mode Implementation Guide](https://eastondev.com/blog/en/posts/dev/20251220-nextjs-dark-mode-guide/) -- cookie-based approach
-
-### Responsive Design and SSR
-- [React/NextJS: SSR and Responsive Design](https://medium.com/fredwong-it/react-nextjs-ssr-and-responsive-design-ae33e658975c) -- core problem statement
-- [Managing useMediaQuery Hydration Errors in Next.js](https://medium.com/@dwinTech/managing-usemediaquery-hydration-errors-in-next-js-9ecc555542c7) -- hydration fix patterns
+- [ElevenLabs Realtime STT API Reference](https://elevenlabs.io/docs/api-reference/speech-to-text/v-1-speech-to-text-realtime) — WebSocket endpoint, auth, audio format, message schema
+- [ElevenLabs Client-Side STT Streaming Guide](https://elevenlabs.io/docs/eleven-api/guides/how-to/speech-to-text/realtime/client-side-streaming) — single-use token pattern, Scribe.connect() SDK usage
+- [ElevenLabs Create Single Use Token](https://elevenlabs.io/docs/api-reference/tokens/create) — token expiry, scope parameter
+- [LiveKit Agents Issue #4609 — ElevenLabs STT does not reconnect after WebSocket disconnect](https://github.com/livekit/agents/issues/4609) — confirmed reconnection limitation
+- [Streaming PCM16 from Browser — Medium](https://medium.com/developer-rants/streaming-audio-with-16-bit-mono-pcm-encoding-from-the-browser-and-how-to-mix-audio-while-we-are-f6a160409135) — MediaRecorder cannot produce PCM; AudioWorklet required
+- [Getting Monochannel 16-bit PCM from browser microphone — Medium](https://medium.com/@ragymorkos/gettineg-monochannel-16-bit-signed-integer-pcm-audio-samples-from-the-microphone-in-the-browser-8d4abf81164d) — Float32 to Int16 conversion implementation
+- [Web Audio API Best Practices — MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices) — AudioContext autoplay policy, user gesture requirements
+- [AudioWorklet Recorder (reference implementation)](https://github.com/alyssonbarrera/audio-worklet-recorder) — production PCM16 capture pattern for STT APIs
+- [Next.js Layouts and Pages — Official Docs](https://nextjs.org/docs/app/getting-started/layouts-and-pages) — layout persistence across navigations confirmed
+- [A Deep Dive into Web Speech API — AddPipe Blog](https://blog.addpipe.com/a-deep-dive-into-the-web-speech-api/) — `isFinal` flag, 60-second timeout limitations
+- [Real-time transcription debouncing — AssemblyAI](https://www.assemblyai.com/blog/best-api-models-for-real-time-speech-recognition-and-transcription) — interim message volume and debounce requirement
+- Codebase reading: `src/lib/voice-controller.ts`, `src/lib/voice-bus-init.ts`, `src/app/page.tsx`, `src/app/portfolio/page.tsx`, `src/app/about/page.tsx`, `src/providers/voice-bus-provider.tsx`, `src/app/api/tts/route.ts`
 
 ---
 
-*Concerns audit: 2026-04-02*
+*Pitfalls research for: ElevenLabs STT upgrade, persistent voice overlay, cross-page tool wiring in Next.js App Router*
+*Researched: 2026-04-24*

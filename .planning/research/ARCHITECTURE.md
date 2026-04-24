@@ -1,552 +1,580 @@
-# Architecture Patterns
-
-**Domain:** Portfolio website migration (Flutter to Next.js App Router)
-**Researched:** 2026-04-02
-**Confidence:** HIGH (Next.js App Router patterns well-documented, animation patterns verified from multiple sources)
-
-## Recommended Architecture
-
-### High-Level Structure
-
-```
-src/
-  app/                          # Next.js App Router (routes, layouts, API)
-    layout.tsx                  # Root layout (ThemeProvider, fonts, metadata)
-    template.tsx                # Root template (page transition animation wrapper)
-    page.tsx                    # Home page (server component shell)
-    portfolio/
-      page.tsx                  # Portfolio page
-    about/
-      page.tsx                  # About page
-    chat/
-      page.tsx                  # Chat page
-    api/
-      chat/
-        route.ts                # xAI Grok API proxy (server-side key)
-    globals.css                 # Global styles, Tailwind directives, theme variables
-  components/
-    layout/                     # Structural components
-      Navbar.tsx                # Desktop navigation bar (client)
-      MobileNavbar.tsx          # Mobile navigation bar (client)
-      ResponsiveShell.tsx       # 600px breakpoint switcher (client)
-    canvas/                     # HTML5 Canvas animation components
-      ParticleBackground.tsx    # Floating circle particles (client)
-      SnowfallEffect.tsx        # Mouse-reactive snowfall (client)
-      DotMatrix.tsx             # Dot matrix effect (client)
-    effects/                    # CSS/DOM visual effects
-      Spotlight.tsx             # Spotlight beam effect (client)
-      RotatingCircularText.tsx  # Circular rotating text (client)
-      ClickHere.tsx             # Click prompt animation (client)
-    ui/                         # Reusable UI primitives
-      ThemeToggle.tsx           # Sun/moon theme switcher (client)
-      PortfolioButton.tsx       # Animated portfolio button (client)
-      ExternalLink.tsx          # External link with icon (client)
-    transitions/                # Page transition system
-      TransitionProvider.tsx    # Circular reveal transition context (client)
-      TransitionLink.tsx        # Navigation link with transition trigger (client)
-    pages/                      # Page-level content compositions
-      HomeContent.tsx           # Home page content assembly (client)
-      MobileHomeContent.tsx     # Mobile home page variant (client)
-      PortfolioGrid.tsx         # Staggered project grid (client)
-      AboutSections.tsx         # Bio/experience/education (client)
-      ChatInterface.tsx         # Chat UI with message history (client)
-  lib/                          # Non-component logic
-    data/
-      projects.ts               # Portfolio project data (typed)
-      experience.ts             # Experience/education data (typed)
-    types/
-      index.ts                  # Shared TypeScript interfaces
-    utils/
-      cn.ts                     # Tailwind class merging utility
-    hooks/
-      useCanvas.ts              # Canvas setup + rAF loop hook
-      useResponsive.ts          # Responsive breakpoint hook
-      useTheme.ts               # Theme access hook (wraps next-themes)
-  public/
-    images/                     # Portfolio images, experience images
-    favicon.ico
-```
-
-### Why This Structure
-
-**`src/` directory:** Separates application code from config files at root. Standard Next.js convention since v13+.
-
-**`app/` for routing only:** Pages in `app/` are thin shells. They import composed content from `components/pages/`. This keeps the router directory clean and makes component testing easier.
-
-**`components/` split by concern, not by page:** The Flutter codebase splits by page (desktop/mobile variants per file). The Next.js version should split by responsibility instead. Responsive behavior is handled within each component via Tailwind breakpoints and a single `ResponsiveShell` wrapper, eliminating the need for separate mobile files.
-
-**`lib/` for non-React code:** Data, types, and utility functions live outside the component tree. This matches Next.js conventions and keeps imports clean.
-
-### Component Boundaries
-
-| Component | Responsibility | Communicates With | Rendering |
-|-----------|---------------|-------------------|-----------|
-| `app/layout.tsx` | Root HTML, ThemeProvider, font loading, metadata | Wraps all pages | Server |
-| `app/template.tsx` | Page transition animation wrapper | Wraps page content per navigation | Client |
-| `app/page.tsx` (home) | Entry for home route | Imports `HomeContent` | Server shell |
-| `app/api/chat/route.ts` | Proxies chat requests to xAI Grok API | Called by `ChatInterface` via fetch | Server |
-| `ResponsiveShell` | Detects viewport width, renders mobile/desktop variant | Wraps page content components | Client |
-| `Navbar` / `MobileNavbar` | Navigation links, external links, portfolio button | Triggers `TransitionLink` navigation | Client |
-| `TransitionProvider` | Manages circular reveal animation state | Wraps app in `template.tsx`, used by `TransitionLink` | Client |
-| `TransitionLink` | Triggers circular reveal from click position | Reads `TransitionProvider` context | Client |
-| `ParticleBackground` | Canvas-based floating gradient circles | Standalone, layered behind content | Client |
-| `SnowfallEffect` | Canvas-based snowfall with mouse-reactive drift | Standalone, listens to mouse events | Client |
-| `DotMatrix` | Canvas-based dot pattern | Standalone, layered behind content | Client |
-| `ThemeToggle` | Dark/light mode switch with sun/moon animation | Calls `next-themes` setTheme | Client |
-| `ChatInterface` | Chat UI, message state, API calls | Calls `/api/chat` route | Client |
-| `PortfolioGrid` | Staggered grid of project cards | Reads from `lib/data/projects.ts` | Client (animations) |
-| `AboutSections` | Scrollable bio/experience/education | Reads from `lib/data/experience.ts` | Client (scroll) |
-
-### Server vs Client Component Boundary
-
-The critical architectural decision in Next.js App Router is where the "use client" boundary sits. For this portfolio:
-
-**Server Components (no interactivity, rendered on server):**
-- `app/layout.tsx` -- static HTML shell, metadata, font links
-- `app/page.tsx`, `app/portfolio/page.tsx`, etc. -- thin route entry points
-- `app/api/chat/route.ts` -- API proxy
-
-**Client Components (interactive, shipped to browser):**
-- ALL canvas animations (ParticleBackground, SnowfallEffect, DotMatrix)
-- ALL visual effects (Spotlight, RotatingCircularText, ClickHere)
-- Navigation bars (need click handlers, transition triggers)
-- ThemeToggle (needs useTheme hook)
-- ChatInterface (needs useState, useEffect, fetch)
-- TransitionProvider/TransitionLink (need useRef for click position, animation state)
-- ResponsiveShell (needs window width detection)
-- PortfolioGrid (uses staggered animations)
-- AboutSections (uses scroll detection)
-
-**Key insight:** This portfolio is heavily interactive. Most leaf components will be client components. The server/client boundary should be at the page level: pages are server components that import client component trees. This keeps initial HTML fast while shipping interactivity to the browser.
-
-```
-Server Component (page.tsx)
-  --> Client Component (HomeContent.tsx) "use client"
-        --> Client Component (Navbar.tsx)
-        --> Client Component (ParticleBackground.tsx)
-        --> Client Component (SnowfallEffect.tsx)
-        --> etc.
-```
-
-The "use client" directive only needs to be on the top-level client component in each tree. Child imports inherit the client boundary.
-
-## Data Flow
-
-### Theme State Flow
-
-```
-1. next-themes ThemeProvider wraps app in layout.tsx
-2. ThemeProvider reads system preference on mount (prefers-color-scheme)
-3. ThemeProvider sets "dark" class on <html> element
-4. Tailwind dark: variants respond to class presence
-5. ThemeToggle calls setTheme("dark" | "light") from useTheme()
-6. next-themes persists choice to localStorage automatically
-7. All components using dark: Tailwind classes update instantly via CSS
-
-Improvement over Flutter: Theme persists across sessions (localStorage)
-                          No prop drilling of isDarkMode/toggleTheme
-```
-
-### Page Navigation Flow (Circular Reveal)
-
-```
-1. User clicks a navigation link (e.g., "Portfolio" in Navbar)
-2. TransitionLink captures click position (clientX, clientY) via onClick
-3. TransitionLink calls TransitionProvider.startTransition(position, targetPath)
-4. TransitionProvider:
-   a. Sets clip-path: circle(0% at Xpx Ypx) on overlay div
-   b. Animates to circle(150vmax at Xpx Ypx) over 500ms
-   c. At animation midpoint (~250ms), triggers router.push(targetPath)
-   d. New page renders under the expanding circle
-   e. Animation completes, overlay removed
-5. New page is fully visible
-
-Implementation: CSS clip-path animation on a positioned overlay div
-Alternative: View Transitions API with clip-path (experimental in Next.js)
-```
-
-This replicates the Flutter `CircularRevealPageRoute` behavior where:
-- The reveal originates from the clicked button's position
-- The circle expands to cover the entire viewport
-- The new page content is revealed as the circle grows
-
-### Canvas Animation Flow
-
-```
-1. Canvas component mounts (useEffect with empty deps)
-2. useCanvas hook:
-   a. Gets canvas ref via useRef<HTMLCanvasElement>
-   b. Gets 2D context
-   c. Initializes particle/entity state in useRef (not useState -- no re-renders)
-   d. Starts requestAnimationFrame loop
-   e. Each frame: clear canvas, update positions, draw entities
-   f. Cleanup: cancelAnimationFrame on unmount
-3. Canvas element sized to viewport via CSS (width: 100%, height: 100%)
-4. Canvas resolution set to devicePixelRatio for crisp rendering
-5. Positioned absolutely behind content via z-index
-
-Performance: Mutations happen in refs, never triggering React re-renders.
-             Only the canvas draw calls happen per frame.
-```
-
-### Chat API Flow
-
-```
-1. User types message in ChatInterface
-2. ChatInterface maintains message history in useState
-3. On submit: POST to /api/chat with { messages: [...history, newMessage] }
-4. /api/chat route.ts:
-   a. Reads GROK_API_KEY from process.env (server-side only)
-   b. Forwards request to https://api.x.ai/v1/chat/completions
-   c. Returns streaming response via ReadableStream
-5. ChatInterface consumes stream, updating UI incrementally
-6. Message appended to conversation history state
-
-Security improvement: API key never reaches the browser.
-```
-
-### Asset Loading Flow
-
-```
-1. Images placed in public/images/ directory
-2. Referenced via Next.js Image component: <Image src="/images/project.png" />
-3. Next.js optimizes images automatically (WebP, sizing, lazy loading)
-4. Portfolio data in lib/data/projects.ts references image paths as strings
-```
-
-## Patterns to Follow
-
-### Pattern 1: Canvas Animation Hook
-
-**What:** Custom hook encapsulating HTML5 Canvas setup, animation loop, and cleanup.
-**When:** For every canvas-based effect (particles, snow, dot matrix).
-
-```typescript
-// hooks/useCanvas.ts
-import { useRef, useEffect, useCallback } from 'react';
-
-type DrawFunction = (
-  ctx: CanvasRenderingContext2D,
-  frameCount: number,
-  deltaTime: number
-) => void;
-
-export function useCanvas(draw: DrawFunction) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const frameRef = useRef<number>(0);
-  const lastTimeRef = useRef<number>(0);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Handle high-DPI displays
-    const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    let animationId: number;
-    const animate = (timestamp: number) => {
-      const deltaTime = timestamp - lastTimeRef.current;
-      lastTimeRef.current = timestamp;
-      frameRef.current++;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      draw(ctx, frameRef.current, deltaTime);
-      animationId = requestAnimationFrame(animate);
-    };
-    animationId = requestAnimationFrame(animate);
-
-    return () => {
-      cancelAnimationFrame(animationId);
-      window.removeEventListener('resize', resize);
-    };
-  }, [draw]);
-
-  return canvasRef;
-}
-```
-
-### Pattern 2: Responsive Component (No Separate Mobile Files)
-
-**What:** Single component that handles both layouts internally using Tailwind breakpoints and a responsive hook.
-**When:** Every component that differs between mobile and desktop.
-
-```typescript
-// hooks/useResponsive.ts
-'use client';
-import { useState, useEffect } from 'react';
-
-export function useResponsive(breakpoint = 600) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < breakpoint);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, [breakpoint]);
-
-  return { isMobile };
-}
-
-// Usage in component:
-export function Navbar() {
-  const { isMobile } = useResponsive();
-  if (isMobile) return <MobileNavbarLayout />;
-  return <DesktopNavbarLayout />;
-}
-```
-
-This eliminates the Flutter pattern of separate `navbar.dart` / `mobile_navbar.dart` files. One component, one import, one concern.
-
-### Pattern 3: Circular Reveal Transition System
-
-**What:** A context-based transition system that captures click position and animates a circular clip-path expansion.
-**When:** All inter-page navigation (except back button).
-
-```typescript
-// The transition overlay is a fixed-position div with clip-path animation.
-// CSS handles the heavy lifting:
-//
-// .reveal-overlay {
-//   position: fixed;
-//   inset: 0;
-//   z-index: 9999;
-//   clip-path: circle(0% at var(--cx) var(--cy));
-//   transition: clip-path 500ms ease-in-out;
-// }
-// .reveal-overlay.active {
-//   clip-path: circle(150vmax at var(--cx) var(--cy));
-// }
-//
-// TransitionProvider sets --cx and --cy CSS custom properties
-// from the click event coordinates.
-```
-
-### Pattern 4: Server Page Shell with Client Content
-
-**What:** Page files in `app/` are minimal server components that delegate to client components.
-**When:** Every page route.
-
-```typescript
-// app/portfolio/page.tsx (Server Component)
-import { Metadata } from 'next';
-import { PortfolioContent } from '@/components/pages/PortfolioContent';
-
-export const metadata: Metadata = {
-  title: 'Portfolio | Lakshman',
-  description: 'Projects and work',
-};
-
-export default function PortfolioPage() {
-  return <PortfolioContent />;
-}
-
-// components/pages/PortfolioContent.tsx (Client Component)
-'use client';
-// All interactive logic here
-```
-
-## Anti-Patterns to Avoid
-
-### Anti-Pattern 1: Separate Mobile/Desktop Page Files
-
-**What:** Creating `portfolio.tsx` and `mobile_portfolio.tsx` as separate files, mirroring the Flutter pattern.
-**Why bad:** Duplicates logic, layout, and data fetching. Changes must be made in two places. The Flutter codebase has this problem -- 9,873 lines of code where roughly 40% is mobile/desktop duplication.
-**Instead:** Use Tailwind responsive classes (`md:`, `lg:`) and a single `useResponsive` hook. One component handles both layouts. For radically different mobile/desktop layouts (like NavBar), use conditional rendering within the same file or split into sub-components imported by one parent.
-
-### Anti-Pattern 2: useState for Animation State
-
-**What:** Using React `useState` to track positions/velocities of animated entities (particles, snowflakes).
-**Why bad:** Each `setState` triggers a React re-render. At 60fps with 100+ particles, that is 6000+ re-renders per second. Performance will collapse.
-**Instead:** Store animation state in `useRef`. Mutate refs directly. Only the canvas draw loop reads them. React never re-renders for animation frames.
-
-### Anti-Pattern 3: Prop Drilling Theme State
-
-**What:** Passing `isDarkMode` and `toggleTheme` as props through every component, as done in the Flutter version.
-**Why bad:** Every intermediate component needs to know about theme. Adding a new nested component requires threading props through the entire tree.
-**Instead:** Use `next-themes` with React context. Any component calls `useTheme()` directly. No prop drilling. The ThemeProvider in `layout.tsx` handles everything.
-
-### Anti-Pattern 4: API Key in Client Code
-
-**What:** Storing the xAI API key in a client-accessible file (like Flutter's `env.dart`).
-**Why bad:** The key is exposed in the browser's network tab, source maps, or minified JS. Anyone can extract and abuse it.
-**Instead:** Store in `.env.local` as `GROK_API_KEY` (no `NEXT_PUBLIC_` prefix). Only accessible in server-side code (`app/api/chat/route.ts`).
-
-### Anti-Pattern 5: Putting Interactive Logic in layout.tsx
-
-**What:** Adding "use client" to `layout.tsx` for theme or animation management.
-**Why bad:** Layout is shared across all routes and should remain a server component for performance. Making it a client component opts the entire app out of server rendering benefits.
-**Instead:** Keep `layout.tsx` as server component. Wrap children in a client `ThemeProvider` component that is imported into the layout. The layout itself stays server-rendered.
-
-### Anti-Pattern 6: Using template.tsx for Static Content
-
-**What:** Putting non-transition content in `template.tsx`.
-**Why bad:** `template.tsx` re-mounts on every navigation. Any state inside it resets. Only use it for things that SHOULD reset per navigation (like page transitions).
-**Instead:** Static shared content (fonts, providers, metadata) goes in `layout.tsx`. Only the transition overlay wrapper goes in `template.tsx`.
-
-## Component Dependency Graph and Build Order
-
-### Dependency Layers (build bottom-up)
-
-```
-Layer 0: Foundation (no dependencies on other project code)
-  |
-  |- lib/types/index.ts          -- TypeScript interfaces
-  |- lib/utils/cn.ts             -- Tailwind class merge utility
-  |- lib/data/projects.ts        -- Portfolio data
-  |- lib/data/experience.ts      -- Experience/education data
-  |- globals.css                 -- Tailwind config, CSS variables, theme colors
-  |
-Layer 1: Hooks (depend on Layer 0)
-  |
-  |- hooks/useCanvas.ts          -- Canvas + rAF abstraction
-  |- hooks/useResponsive.ts      -- Viewport breakpoint detection
-  |
-Layer 2: Leaf Components (depend on Layers 0-1, no project component deps)
-  |
-  |- ThemeToggle.tsx             -- Uses next-themes useTheme
-  |- ParticleBackground.tsx      -- Uses useCanvas
-  |- SnowfallEffect.tsx          -- Uses useCanvas
-  |- DotMatrix.tsx               -- Uses useCanvas
-  |- Spotlight.tsx               -- CSS/DOM animation
-  |- RotatingCircularText.tsx    -- CSS/DOM animation
-  |- ClickHere.tsx               -- CSS/DOM animation
-  |- PortfolioButton.tsx         -- Styled button
-  |- ExternalLink.tsx            -- Link with icon
-  |
-Layer 3: Transition System (depends on Next.js router)
-  |
-  |- TransitionProvider.tsx      -- Context + overlay div + clip-path animation
-  |- TransitionLink.tsx          -- Click capture + context consumer
-  |
-Layer 4: Composition Components (depend on Layers 2-3)
-  |
-  |- Navbar.tsx                  -- Composes TransitionLink, PortfolioButton, ExternalLink, ThemeToggle
-  |- MobileNavbar.tsx            -- Composes TransitionLink, ExternalLink, ThemeToggle
-  |
-Layer 5: Page Content Components (depend on Layers 2-4)
-  |
-  |- HomeContent.tsx             -- Composes Navbar, ParticleBackground, SnowfallEffect, DotMatrix, etc.
-  |- PortfolioContent.tsx        -- Composes Navbar, PortfolioGrid
-  |- AboutContent.tsx            -- Composes Navbar, AboutSections
-  |- ChatContent.tsx             -- Composes Navbar, ChatInterface
-  |
-Layer 6: App Shell (depends on all layers)
-  |
-  |- app/layout.tsx              -- ThemeProvider, fonts, metadata
-  |- app/template.tsx            -- TransitionProvider wrapper
-  |- app/page.tsx                -- Imports HomeContent
-  |- app/portfolio/page.tsx      -- Imports PortfolioContent
-  |- app/about/page.tsx          -- Imports AboutContent
-  |- app/chat/page.tsx           -- Imports ChatContent
-  |- app/api/chat/route.ts       -- xAI Grok API proxy
-```
-
-### Suggested Build Order
-
-Build in this order to maintain a working application at each step:
-
-**Phase 1: Foundation + App Shell**
-- Set up Next.js project with App Router, Tailwind, TypeScript
-- Create `app/layout.tsx` with ThemeProvider (next-themes)
-- Create `globals.css` with theme variables and Tailwind directives
-- Create `lib/types/`, `lib/utils/`, `lib/data/` with data and types
-- Create `hooks/useResponsive.ts`
-- Result: App boots, theme works, no pages yet
-
-**Phase 2: Navigation + Layout**
-- Build `Navbar.tsx` and `MobileNavbar.tsx` (without transition system, use standard Next.js Link)
-- Build `ResponsiveShell.tsx`
-- Create all 4 page routes (`page.tsx` files) with placeholder content
-- Result: Navigable multi-page app with responsive navbar
-
-**Phase 3: Canvas Animations**
-- Build `hooks/useCanvas.ts`
-- Port `ParticleBackground.tsx` (floating gradient circles)
-- Port `SnowfallEffect.tsx` (mouse-reactive snowfall)
-- Port `DotMatrix.tsx` (dot pattern)
-- Layer them on home page
-- Result: Home page has all background effects
-
-**Phase 4: Home Page Content**
-- Port `HomeContent.tsx` with text animations, RotatingCircularText, ClickHere, Spotlight
-- Wire up all effects on home page
-- Result: Home page feature-complete
-
-**Phase 5: Content Pages**
-- Port `PortfolioContent.tsx` with staggered grid layout
-- Port `AboutContent.tsx` with scrollable sections
-- Result: Portfolio and About pages complete
-
-**Phase 6: Chat System**
-- Build `app/api/chat/route.ts` (xAI Grok proxy with streaming)
-- Build `ChatInterface.tsx` with message history and streaming display
-- Result: Chat page functional with secure API key handling
-
-**Phase 7: Circular Reveal Transitions**
-- Build `TransitionProvider.tsx` with clip-path animation
-- Build `TransitionLink.tsx` with click position capture
-- Replace standard Links in Navbar with TransitionLinks
-- Wire into `app/template.tsx`
-- Result: All navigation uses circular reveal transition
-
-**Phase 8: Polish + Deploy**
-- Visual fidelity audit against Flutter version
-- Performance optimization (lazy loading, image optimization)
-- AWS Amplify deployment configuration
-- Result: Production-ready
-
-### Why This Order
-
-1. **Foundation first (Phase 1-2):** You need routing, theming, and layout before building anything visual. Without these, you cannot see or test components in context.
-
-2. **Canvas before content (Phase 3 before 4):** The home page's visual identity depends on background effects. Building text content without the background makes visual fidelity comparison impossible.
-
-3. **Home before other pages (Phase 4 before 5):** The home page is the most complex page (5+ layered effects). Getting it right validates the entire animation architecture. If canvas performance is bad, you find out early.
-
-4. **Chat last among pages (Phase 6):** Chat is the only page with backend integration. It is functionally independent of the other pages. Building it last means the API route pattern is the last new architectural concept introduced.
-
-5. **Transitions near-last (Phase 7):** Circular reveal transitions are a cross-cutting concern. They modify navigation behavior app-wide. All pages must exist and work before wrapping them in transition animations. Debugging page content is harder if transitions are animating during development.
-
-## Scalability Considerations
-
-| Concern | This Portfolio | If Adding More Pages | If Adding CMS |
-|---------|---------------|---------------------|---------------|
-| Data | Hardcoded TS files | Still hardcoded, add more files | Move to headless CMS, fetch in server components |
-| Routing | 4 static routes | Add more `app/[page]/page.tsx` | Same pattern, possibly dynamic routes |
-| State | Client-only (theme, chat) | Same | Consider Zustand if state grows |
-| Animation perf | 3 canvas layers on home | Keep canvas layers per-page, not global | Same |
-| Bundle size | ~50-80KB JS estimated | Grows linearly with pages | Same |
-| Images | public/ directory | Consider CDN if >50 images | CMS handles images |
-
-## Sources
-
-- [Next.js App Router Documentation](https://nextjs.org/docs/app)
-- [Next.js Server and Client Components](https://nextjs.org/docs/app/getting-started/server-and-client-components)
-- [Next.js View Transition Config](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition)
-- [Next.js App Router Route Transitions Discussion](https://github.com/vercel/next.js/discussions/42658)
-- [next-transition-router Library](https://github.com/ismamz/next-transition-router)
-- [Animation with Canvas and requestAnimationFrame in React](https://dev.to/ptifur/animation-with-canvas-and-requestanimationframe-in-react-5ccj)
-- [Using requestAnimationFrame with React Hooks (CSS-Tricks)](https://css-tricks.com/using-requestanimationframe-with-react-hooks/)
-- [Framer Motion vs GSAP Performance Comparison](https://blog.uavdevelopment.io/blogs/comparing-the-performance-of-framer-motion-and-gsap-animations-in-next-js)
-- [Next.js on AWS Amplify](https://docs.aws.amazon.com/amplify/latest/userguide/deploy-nextjs-app.html)
-- [AWS Amplify SSR Support](https://docs.aws.amazon.com/amplify/latest/userguide/ssr-amplify-support.html)
-- [next-themes for Dark Mode](https://www.davegray.codes/posts/light-dark-mode-nextjs-app-router-tailwind)
-- [Vercel AI SDK with xAI Provider](https://ai-sdk.dev/providers/ai-sdk-providers/xai)
-- [xAI Streaming Guide](https://docs.x.ai/docs/guides/streaming-response)
-- [Next.js Project Structure Best Practices 2025](https://dev.to/bajrayejoon/best-practices-for-organizing-your-nextjs-15-2025-53ji)
+# Architecture Research
+
+**Domain:** Next.js App Router — persistent voice overlay, cross-page tool callbacks, ElevenLabs STT
+**Researched:** 2026-04-24
+**Confidence:** HIGH (all claims verified directly from codebase and installed package types)
 
 ---
 
-*Architecture analysis: 2026-04-02*
+## Current State Diagnosis
+
+### What exists (verified in source)
+
+| Component | Location | Role |
+|-----------|----------|------|
+| `window.VoiceBus` | `src/lib/voice-bus-init.ts` | Global event bus, state machine, AudioContext owner |
+| `VoiceBusProvider` | `src/providers/voice-bus-provider.tsx` | React context mirror of `VoiceBus.state`; calls `initVoiceBus()` at module scope |
+| `useVoiceController` | `src/lib/voice-controller.ts` | Full session hook — STT, TTS, AI agent, tour, history |
+| `VoicePanel` | `src/components/voice-panel.tsx` | UI inside navbar when voice active |
+| `VoiceWave` | `src/components/voice-wave.tsx` | Amplitude visualizer |
+| `DesktopNavbar` | `src/components/desktop-navbar.tsx` | Hosts VoicePanel; GSAP Flip morph on `voiceActive` |
+| `MobileNavbar` | `src/components/mobile-navbar.tsx` | Hosts VoicePanel; CSS height morph on `voiceActive` |
+| `/api/tts` | `src/app/api/tts/route.ts` | ElevenLabs TTS proxy, `eleven_turbo_v2_5`, MP3 stream |
+| `/api/chat` | `src/app/api/chat/route.ts` | xAI Grok-3-mini, AI SDK streaming |
+| `layout.tsx` | `src/app/layout.tsx` | Wraps all pages: `ThemeProvider > TransitionProvider > VoiceBusProvider > {children}` |
+| `page.tsx` (home) | `src/app/page.tsx` | Only place `useVoiceController()` is called; owns `voiceActive`, `voiceProps`, `micDenied` |
+
+### The root problem
+
+`useVoiceController` lives in `page.tsx`. When the user navigates to `/portfolio` or `/about`, `page.tsx` unmounts, destroying the voice session — audio stops, state resets, the navbar morph collapses. The navbars on other pages don't receive `voiceActive`/`voiceProps` at all because those page files don't call `useVoiceController`.
+
+`window.VoiceBus` already survives navigation because it lives on `window`. The `VoiceBusProvider` React context also survives because it is in `layout.tsx`. But the hook that drives the session (`useVoiceController`) and the state that feeds the navbar props do not survive.
+
+---
+
+## Recommended Architecture
+
+### System Overview
+
+```
+layout.tsx  (survives all navigation)
+├── ThemeProvider
+├── TransitionProvider
+├── VoiceBusProvider               ← already here, keeps window.VoiceBus subscribed
+└── VoiceSessionProvider  [NEW]    ← lifts useVoiceController() here
+    │   owns: voiceActive, voiceProps, micDenied, currentPage
+    │   exposes: useVoiceSession() hook
+    │   exposes: registerToolCallbacks() for pages
+    │
+    ├── LayoutShell  [NEW]         ← renders navbars persistently
+    │   ├── DesktopNavbar          ← consumes useVoiceSession()
+    │   └── MobileNavbar           ← consumes useVoiceSession()
+    │
+    └── {children}                 ← page.tsx, portfolio/page.tsx, about/page.tsx
+        │
+        └── pages call useVoiceToolCallbacks() [NEW] on mount
+            portfolio/page.tsx → openProject, openLink
+            about/page.tsx     → scrollTo
+            home page.tsx      → (none; navigate/goPage is layout-level)
+```
+
+### Component Boundaries (new vs modified)
+
+| Component | Status | Responsibility |
+|-----------|--------|----------------|
+| `VoiceSessionProvider` | NEW | Holds `useVoiceController()` state, exposes context |
+| `LayoutShell` | NEW | Renders navbars using session context, wraps `{children}` |
+| `useVoiceSession()` hook | NEW | Read access to `voiceActive`, `voiceProps`, `micDenied` |
+| `useVoiceToolCallbacks()` hook | NEW | Pages push page-scoped callbacks into session on mount |
+| `useVoiceController` | MODIFIED | `startListening` switches from Web Speech API to MediaRecorder + `/api/stt` |
+| `DesktopNavbar` | MODIFIED | Sources voice props from context via LayoutShell, not from page.tsx props |
+| `MobileNavbar` | MODIFIED | Same as DesktopNavbar |
+| `page.tsx` (home) | MODIFIED | Removes `useVoiceController()` call; removes navbar renders; reads `useVoiceSession()` only for `handleAskParz` if needed |
+| `portfolio/page.tsx` | MODIFIED | Adds `useVoiceToolCallbacks` for `openProject`/`openLink` |
+| `about/page.tsx` | MODIFIED | Adds `useVoiceToolCallbacks` for `scrollTo` |
+| `/api/stt` | NEW | ElevenLabs STT proxy (same `ELEVENLABS_API_KEY`) |
+| `window.VoiceBus` | UNCHANGED | Already global; already survives navigation |
+| `VoiceBusProvider` | UNCHANGED | No changes needed |
+| `/api/tts` | UNCHANGED | No changes needed |
+| `VoicePanel` | UNCHANGED | No changes needed |
+| `VoiceWave` | UNCHANGED | No changes needed |
+| `voice-bus-init.ts` | UNCHANGED | No changes needed |
+| `voice-commands.ts` | UNCHANGED | No changes needed |
+
+---
+
+## Key Architecture Patterns
+
+### Pattern 1: VoiceSessionProvider in layout.tsx
+
+**What:** A React context provider that owns the voice controller hook. Replaces calling `useVoiceController` inside `page.tsx`.
+
+**When to use:** Any state that must survive Next.js App Router page navigation must live in a layout-level provider, not in a page component.
+
+**Trade-offs:** The provider needs `usePathname()` to know `currentPage`. This is valid inside a Client Component in the App Router — `usePathname` re-runs on every navigation and returns the current path. The provider is `'use client'` — this is fine since all voice logic is already client-only.
+
+```typescript
+// src/providers/voice-session-provider.tsx
+'use client';
+
+import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { usePathname } from 'next/navigation';
+import { useTransition } from '@/providers/transition-provider';
+import { useVoiceController, type ToolCallbacks } from '@/lib/voice-controller';
+
+interface VoiceSessionContextType {
+  voiceActive: boolean;
+  voiceProps: ReturnType<typeof useVoiceController>['voiceProps'];
+  micDenied: boolean;
+  prefersReduced: boolean;
+  openVoice: () => void;
+  closeVoice: () => void;
+  registerToolCallbacks: (cbs: ToolCallbacks) => () => void;
+}
+
+const VoiceSessionContext = createContext<VoiceSessionContextType | null>(null);
+
+export function useVoiceSession() {
+  const ctx = useContext(VoiceSessionContext);
+  if (!ctx) throw new Error('useVoiceSession must be used within VoiceSessionProvider');
+  return ctx;
+}
+
+export function VoiceSessionProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { navigateWithReveal } = useTransition();
+  const [chatOpen, setChatOpen] = useState(false);
+  const toolCallbacksRef = useRef<ToolCallbacks>({});
+
+  const currentPage =
+    pathname === '/'          ? 'home'      :
+    pathname === '/portfolio' ? 'portfolio' :
+    pathname === '/about'     ? 'about'     : 'home';
+
+  const goPage = useCallback((page: string) => {
+    const paths: Record<string, string> = {
+      home: '/', portfolio: '/portfolio', about: '/about',
+    };
+    navigateWithReveal(paths[page] ?? '/', window.innerWidth / 2, window.innerHeight / 2);
+  }, [navigateWithReveal]);
+
+  const openTextChat = useCallback(() => setChatOpen(true), []);
+
+  // Forwarding proxy — delegates to whatever callbacks pages have registered
+  const toolCallbacks: ToolCallbacks = {
+    openProject: (args) => toolCallbacksRef.current.openProject?.(args),
+    scrollTo:    (args) => toolCallbacksRef.current.scrollTo?.(args),
+    openLink:    (args) => toolCallbacksRef.current.openLink?.(args),
+    toggleTheme: ()     => toolCallbacksRef.current.toggleTheme?.(),
+  };
+
+  const { active, open, close, micDenied, prefersReduced, voiceProps } =
+    useVoiceController({ goPage, openTextChat, currentPage, toolCallbacks });
+
+  const registerToolCallbacks = useCallback((cbs: ToolCallbacks): (() => void) => {
+    toolCallbacksRef.current = { ...toolCallbacksRef.current, ...cbs };
+    return () => {
+      const keys = Object.keys(cbs) as (keyof ToolCallbacks)[];
+      keys.forEach((k) => { delete toolCallbacksRef.current[k]; });
+    };
+  }, []);
+
+  return (
+    <VoiceSessionContext.Provider value={{
+      voiceActive: active, voiceProps, micDenied, prefersReduced,
+      openVoice: open, closeVoice: close, registerToolCallbacks,
+    }}>
+      {children}
+    </VoiceSessionContext.Provider>
+  );
+}
+```
+
+### Pattern 2: LayoutShell — navbars rendered at layout level
+
+**What:** A thin `'use client'` component that renders both navbars. Pages no longer render navbars. The layout owns them.
+
+**When to use:** Any UI element that must be shared across pages and must not unmount on navigation. This is the standard pattern for persistent headers in Next.js App Router.
+
+**Trade-offs:** Pages lose direct control of navbar props. This is the intended outcome — the navbar reads from context rather than from page-local state.
+
+```typescript
+// src/components/layout-shell.tsx
+'use client';
+
+import { useVoiceSession } from '@/providers/voice-session-provider';
+import { DesktopNavbar } from '@/components/desktop-navbar';
+import { MobileNavbar } from '@/components/mobile-navbar';
+
+export function LayoutShell({ children }: { children: React.ReactNode }) {
+  const { voiceActive, voiceProps, micDenied, openVoice, closeVoice } = useVoiceSession();
+  const handleAskParz = () => voiceActive ? closeVoice() : openVoice();
+
+  return (
+    <>
+      <div className="hidden sm:block">
+        <DesktopNavbar
+          onAskParz={handleAskParz}
+          voiceActive={voiceActive}
+          voiceProps={voiceProps}
+          micDenied={micDenied}
+        />
+      </div>
+      <div className="sm:hidden">
+        <MobileNavbar
+          onAskParz={handleAskParz}
+          voiceActive={voiceActive}
+          voiceProps={voiceProps}
+          micDenied={micDenied}
+        />
+      </div>
+      {children}
+    </>
+  );
+}
+```
+
+Then `layout.tsx` becomes:
+
+```tsx
+<VoiceBusProvider>
+  <VoiceSessionProvider>
+    <LayoutShell>
+      {children}
+    </LayoutShell>
+  </VoiceSessionProvider>
+</VoiceBusProvider>
+```
+
+### Pattern 3: useVoiceToolCallbacks — page-scoped tool registration
+
+**What:** Each page calls this hook on mount to register its tool callbacks. The returned cleanup removes them on unmount.
+
+**When to use:** `openProject` only makes sense on `/portfolio`; `scrollTo` only makes sense on `/about`. Rather than making the layout aware of page internals, each page self-registers and self-cleans.
+
+**Trade-offs:** During the ~100ms gap between page unmount and next page mount, registered callbacks are absent. This is safe — no voice tool call fires during that window because TTS for any command queued during navigation has not started yet.
+
+```typescript
+// src/hooks/use-voice-tool-callbacks.ts
+'use client';
+
+import { useEffect } from 'react';
+import { useVoiceSession } from '@/providers/voice-session-provider';
+import type { ToolCallbacks } from '@/lib/voice-controller';
+
+export function useVoiceToolCallbacks(callbacks: ToolCallbacks) {
+  const { registerToolCallbacks } = useVoiceSession();
+  useEffect(() => {
+    return registerToolCallbacks(callbacks);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // stable — callbacks captured at mount
+}
+```
+
+Usage in portfolio page:
+
+```typescript
+useVoiceToolCallbacks({
+  openProject: ({ slug }) => {
+    const project = projects.find((p) => p.name === slug || p.slug === slug);
+    if (project) setSelectedProject(project);
+  },
+  openLink: ({ url }) => setViewer({ url, label: 'Visit' }),
+});
+```
+
+Usage in about page:
+
+```typescript
+useVoiceToolCallbacks({
+  scrollTo: ({ selector }) => {
+    const el = document.querySelector(selector);
+    el?.scrollIntoView({ behavior: 'smooth' });
+  },
+});
+```
+
+### Pattern 4: /api/stt — ElevenLabs STT proxy
+
+**What:** A server-side route that accepts a multipart audio blob, forwards it to ElevenLabs `speechToText.convert()`, and returns the transcript string. `ELEVENLABS_API_KEY` stays server-side — same key already used by `/api/tts`.
+
+**ElevenLabs STT API facts (verified from installed package v2.44.0):**
+
+- Method: `client.speechToText.convert({ file, modelId, languageCode })`
+- `modelId` value for current model: `"scribe_v2"` (verified in type definitions)
+- `file` field type: `core.file.Uploadable` — accepts `Blob`/`File` directly
+- Response type: `SpeechToTextChunkResponseModel` for standard non-multichannel calls
+- Response has `text: string` (the full transcript) and `languageCode: string`
+- No streaming — this is a synchronous REST call returning a single JSON object
+- File size limit: 3 GB; minimum audio length: 100ms
+
+```typescript
+// src/app/api/stt/route.ts
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+import { hasEnvVar } from '@/lib/env';
+
+export async function POST(req: Request) {
+  if (!hasEnvVar('ELEVENLABS_API_KEY')) {
+    return Response.json({ error: 'STT not configured' }, { status: 503 });
+  }
+
+  const formData = await req.formData();
+  const audio = formData.get('audio');
+  if (!(audio instanceof Blob)) {
+    return Response.json({ error: 'audio field required' }, { status: 400 });
+  }
+
+  try {
+    const client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY });
+    const result = await client.speechToText.convert({
+      file: audio,
+      modelId: 'scribe_v2',
+      languageCode: 'en',
+    });
+    // SpeechToTextChunkResponseModel | MultichannelSpeechToTextResponseModel | SpeechToTextWebhookResponseModel
+    const text = 'text' in result ? result.text : '';
+    return Response.json({ text });
+  } catch {
+    return Response.json({ error: 'STT failed' }, { status: 500 });
+  }
+}
+```
+
+**Client side — replacing Web Speech API in `voice-controller.ts`:**
+
+The current `startListening` uses `SpeechRecognition`. Replace it with MediaRecorder:
+
+1. `navigator.mediaDevices.getUserMedia({ audio: true })` — get mic stream
+2. `MediaRecorder` records until silence threshold is crossed
+3. On stop: assemble `Blob`, POST as `FormData` to `/api/stt`
+4. On response: call `handleUserTurn(result.text)`
+
+The `attachMic`/`_startLoop`/`_stopLoop` amplitude path on `window.VoiceBus` stays entirely unchanged — it uses the raw audio stream for RMS visualization, independent of the STT transport.
+
+Silence detection strategy: stop recording when `VoiceBus.level` drops below `0.05` for 1.5 seconds after having exceeded `0.15` (indicating the user finished speaking). This mirrors the barge-in threshold already in the codebase.
+
+---
+
+## Data Flow
+
+### Voice Session Lifecycle (new flow after changes)
+
+```
+User taps "Ask Parz" (any page)
+    ↓
+LayoutShell.handleAskParz()
+    ↓
+VoiceSessionContext.openVoice()
+    ↓
+useVoiceController.open()
+    → VoiceBus.setState('speaking')
+    → streamTTS(greetMessage) → POST /api/tts → ElevenLabs TTS
+    ← audio plays; VoiceWave in navbar reflects amplitude
+```
+
+### Navigation During Active Voice (preserved state)
+
+```
+Voice active on /home
+    ↓
+User says "show portfolio" → handleUserTurn → matchNavIntent → goPage('portfolio')
+    ↓
+navigateWithReveal('/portfolio') — View Transitions API clip-path reveal
+    ↓
+layout.tsx does NOT unmount — VoiceSessionProvider stays alive
+    ↓
+portfolio/page.tsx mounts → useVoiceToolCallbacks registers openProject/openLink
+    ↓
+Voice continues: navbar morph stays, audio continues, tour can proceed
+```
+
+### Tool Call Dispatch (wired flow)
+
+```
+AI response or TOUR_STEP: tool call "openProject" { slug: "Parz-AI" }
+    ↓
+dispatchToolCall("openProject", { slug: "Parz-AI" })  [in voice-controller.ts]
+    ↓
+toolCallbacks.openProject?.({ slug: "Parz-AI" })      [forwarding proxy in VoiceSessionProvider]
+    ↓
+toolCallbacksRef.current.openProject?.(...)            [registered by portfolio/page.tsx]
+    ↓
+setSelectedProject(project)  →  ProjectDetail overlay opens
+```
+
+### STT Flow (ElevenLabs upgrade)
+
+```
+User speaks → attachMic() on VoiceBus starts RMS loop (amplitude visualization)
+           → MediaRecorder captures audio chunks in parallel
+    ↓
+VoiceBus.level drops below 0.05 for 1.5s (silence detection)
+    ↓
+MediaRecorder.stop() → Blob assembled (webm/opus on Chrome, mp4/aac on Safari)
+    ↓
+POST /api/stt  FormData { audio: Blob }
+    ↓
+Server: ElevenLabsClient.speechToText.convert({ file: audio, modelId: 'scribe_v2' })
+    ↓
+{ text: "show me the portfolio" }
+    ↓
+handleUserTurn("show me the portfolio") → matchNavIntent / AI agent
+```
+
+---
+
+## Integration Points
+
+### New vs Modified vs Unchanged — Complete Map
+
+| | File | Change |
+|--|------|--------|
+| NEW | `src/providers/voice-session-provider.tsx` | Create — lifts `useVoiceController` to layout level; owns session state; exposes `registerToolCallbacks` |
+| NEW | `src/components/layout-shell.tsx` | Create — renders both navbars from context; wraps `{children}` |
+| NEW | `src/hooks/use-voice-tool-callbacks.ts` | Create — page-side registration hook |
+| NEW | `src/app/api/stt/route.ts` | Create — ElevenLabs STT proxy; accepts `FormData { audio: Blob }` |
+| MODIFIED | `src/app/layout.tsx` | Add `VoiceSessionProvider` wrapping `VoiceBusProvider`'s children; add `LayoutShell` wrapping `{children}` |
+| MODIFIED | `src/app/page.tsx` | Remove `useVoiceController` call; remove `DesktopNavbar`/`MobileNavbar` renders (LayoutShell owns them); call `useVoiceSession()` only if home page needs `handleAskParz` reference |
+| MODIFIED | `src/app/portfolio/page.tsx` | Add `useVoiceToolCallbacks({ openProject, openLink })`; no navbar renders to add (LayoutShell covers it) |
+| MODIFIED | `src/app/about/page.tsx` | Add `useVoiceToolCallbacks({ scrollTo })`; no navbar renders to add |
+| MODIFIED | `src/lib/voice-controller.ts` | Replace `startListening` body: swap `SpeechRecognition` for MediaRecorder + fetch to `/api/stt`; keep all other code unchanged |
+| UNCHANGED | `src/lib/voice-bus-init.ts` | `window.VoiceBus` already global; already survives navigation |
+| UNCHANGED | `src/providers/voice-bus-provider.tsx` | No changes |
+| UNCHANGED | `src/app/api/tts/route.ts` | No changes |
+| UNCHANGED | `src/app/api/chat/route.ts` | No changes |
+| UNCHANGED | `src/components/voice-panel.tsx` | No changes |
+| UNCHANGED | `src/components/voice-wave.tsx` | No changes |
+| UNCHANGED | `src/components/desktop-navbar.tsx` | Props interface unchanged; still receives `onAskParz/voiceActive/voiceProps/micDenied` — now from LayoutShell not page |
+| UNCHANGED | `src/components/mobile-navbar.tsx` | Same as desktop-navbar |
+
+### External Service Boundaries
+
+| Service | Route | Auth | Notes |
+|---------|-------|------|-------|
+| ElevenLabs TTS | `/api/tts` | `ELEVENLABS_API_KEY` server-only | Already working; streams MP3 chunks |
+| ElevenLabs STT | `/api/stt` (new) | Same `ELEVENLABS_API_KEY` | `scribe_v2`; REST; returns `{ text: string }` |
+| xAI Grok | `/api/chat` | `XAI_API_KEY` server-only | Already working; unchanged |
+
+---
+
+## Recommended Build Order
+
+Dependencies between the four milestone features determine sequencing:
+
+### Step 1: VoiceSessionProvider + LayoutShell (overlay persistence prerequisite)
+
+This must come first. Until `useVoiceController` lives in layout, the overlay cannot persist across navigation, tool callbacks have nowhere stable to live, and any STT work done in `page.tsx` will still unmount on navigation.
+
+- Create `VoiceSessionProvider` with empty `toolCallbacks` forwarding proxy
+- Create `LayoutShell` wrapping both navbars
+- Update `layout.tsx` to nest `VoiceSessionProvider > LayoutShell > {children}`
+- Strip `useVoiceController` call and navbar renders from `page.tsx`
+- Verification gate: open voice on home, navigate to portfolio, voice stays active
+
+### Step 2: Tool callback wiring
+
+Now that the session is stable, wire the page callbacks. Gives the tour and AI tool calls actual effect.
+
+- Create `useVoiceToolCallbacks` hook
+- Add `openProject` + `openLink` to `portfolio/page.tsx`
+- Add `scrollTo` to `about/page.tsx`
+- Verification gate: say "give me a tour" — Parz-AI project card opens on portfolio page, about sections scroll on command
+
+### Step 3: ElevenLabs STT route
+
+Independent of steps 1 and 2 structurally, but benefits from the stable session in step 1 (microphone input stays alive across navigation).
+
+- Create `src/app/api/stt/route.ts`
+- Replace `startListening` in `voice-controller.ts`: MediaRecorder records audio, silence detection stops recording, POST blob to `/api/stt`, call `handleUserTurn` on response
+- Keep `attachMic`/`_startLoop` amplitude path entirely untouched
+- Verification gate: voice transcribes correctly in Firefox and Safari (not only Chrome)
+
+### Step 4: Grok API key verification
+
+Orthogonal to the above. An environment variable audit and a health-check call to verify both `XAI_API_KEY` and `ELEVENLABS_API_KEY` are present and functional in the deployment environment.
+
+---
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Calling useVoiceController in multiple pages
+
+**What people do:** Copy the `useVoiceController` call into portfolio and about pages to "add voice support there."
+
+**Why it's wrong:** Creates multiple independent voice sessions. When navigating, one session dies and another starts from idle. Two controllers calling `VoiceBus.setState` clobber each other. AudioContext may be double-allocated.
+
+**Do this instead:** Single call in `VoiceSessionProvider` at layout level. Pages only call `useVoiceSession()` to read state or `useVoiceToolCallbacks()` to register actions.
+
+### Anti-Pattern 2: Passing toolCallbacks as props through layout
+
+**What people do:** Add `openProject` as a prop on `layout.tsx`, thread it through `LayoutShell`, through `VoiceSessionProvider`, into `useVoiceController`.
+
+**Why it's wrong:** `layout.tsx` has no awareness of which page is active or what project data it holds. Props flow parent-to-child; you cannot push data upward from a page to the layout through props. You would be reinventing context to avoid context.
+
+**Do this instead:** The `registerToolCallbacks` / `useVoiceToolCallbacks` pattern — pages push their handlers into a ref on mount, remove on unmount. The layout stays ignorant of page internals.
+
+### Anti-Pattern 3: Keeping Web Speech API as the primary STT path
+
+**What people do:** Keep `SpeechRecognition` as primary, add ElevenLabs as fallback only.
+
+**Why it's wrong:** Web Speech API sends audio to Google regardless of the ElevenLabs integration, is unavailable in Firefox entirely, and returns an untyped event. The entire point of the upgrade is cross-browser support and quality.
+
+**Do this instead:** MediaRecorder + `/api/stt` as the only path. Keep `SpeechSynthesisUtterance` as the TTS fallback (it already is in `streamTTS`) — not as an STT path.
+
+### Anti-Pattern 4: Moving VoiceBus from window into React state
+
+**What people do:** Propose refactoring `window.VoiceBus` into Zustand or a context ref inside the layout.
+
+**Why it's wrong:** `window.VoiceBus` is intentionally global. The AudioContext, RAF loop, and mic stream live on it and do not belong in React's render cycle. React state would cause rerenders on every amplitude tick (60 fps). The existing design is correct — `VoiceBusProvider` React context mirrors only the `VoiceState` string; the raw audio internals stay on `window`.
+
+**Do this instead:** Keep `window.VoiceBus` as-is. The only new React context needed is `VoiceSessionProvider` for `voiceActive`, `voiceProps`, and `micDenied`.
+
+---
+
+## Recommended Project Structure (after changes)
+
+```
+src/
+├── app/
+│   ├── layout.tsx                    # Updated: VoiceSessionProvider + LayoutShell added
+│   ├── page.tsx                      # Updated: removes voice controller + navbar renders
+│   ├── portfolio/page.tsx            # Updated: adds useVoiceToolCallbacks
+│   ├── about/page.tsx                # Updated: adds useVoiceToolCallbacks
+│   ├── chat/page.tsx                 # No change
+│   └── api/
+│       ├── chat/route.ts             # No change
+│       ├── tts/route.ts              # No change
+│       └── stt/route.ts              # NEW
+├── providers/
+│   ├── theme-provider.tsx            # No change
+│   ├── transition-provider.tsx       # No change
+│   ├── voice-bus-provider.tsx        # No change
+│   └── voice-session-provider.tsx    # NEW — owns useVoiceController
+├── components/
+│   ├── layout-shell.tsx              # NEW — renders navbars from context
+│   ├── desktop-navbar.tsx            # Props interface unchanged
+│   ├── mobile-navbar.tsx             # Props interface unchanged
+│   ├── voice-panel.tsx               # No change
+│   └── voice-wave.tsx                # No change
+├── hooks/
+│   ├── use-voice-bus.ts              # No change
+│   └── use-voice-tool-callbacks.ts   # NEW
+└── lib/
+    ├── voice-controller.ts           # Modified: startListening body only
+    ├── voice-bus-init.ts             # No change
+    └── voice-commands.ts             # No change
+```
+
+---
+
+## Scaling Considerations
+
+This is a portfolio site — single user, single tab. Scale is not a concern. The architectural choices here are all about session lifecycle correctness:
+
+- **`window.VoiceBus` as global** — correct for single-tab use; if multi-tab were needed, a `BroadcastChannel` bridge would be the extension point
+- **No WebSocket for STT** — ElevenLabs Scribe v2 is a REST API (file upload, synchronous). Latency is ~500–1500ms per utterance depending on clip length. Acceptable for a portfolio. If lower latency is needed later, the ElevenLabs Conversational AI WebSocket API is the upgrade path — but that is a distinct product with a different billing model
+- **History in localStorage** — 20-message cap is correct; no backend needed
+
+---
+
+## Sources
+
+All claims verified directly from the codebase and installed package:
+
+- `src/lib/voice-controller.ts` — session hook implementation, `ToolCallbacks` interface, `startListening` (Web Speech API path to replace)
+- `src/lib/voice-bus-init.ts` — `initVoiceBus()` structure, confirms global singleton pattern
+- `src/providers/voice-bus-provider.tsx` — confirms `VoiceBusProvider` is already in layout, mirrors only `VoiceState` string
+- `src/app/layout.tsx` — confirmed provider nesting order; `VoiceBusProvider` is innermost before `{children}`
+- `src/app/page.tsx` — confirmed single call site for `useVoiceController`; confirmed navbar renders in page (not layout)
+- `src/app/portfolio/page.tsx` — confirmed `openProject` exists locally, not wired to voice
+- `src/app/about/page.tsx` — confirmed `scrollToSection` exists locally, not wired to voice
+- `node_modules/@elevenlabs/elevenlabs-js/dist/Client.d.ts` — confirms `speechToText` property on `ElevenLabsClient` (v2.44.0)
+- `node_modules/@elevenlabs/elevenlabs-js/dist/api/resources/speechToText/client/Client.d.ts` — confirms `convert()` method signature
+- `node_modules/@elevenlabs/elevenlabs-js/dist/api/resources/speechToText/client/requests/BodySpeechToTextV1SpeechToTextPost.d.ts` — confirms `file: core.file.Uploadable`, `modelId` field, `languageCode` field
+- `node_modules/@elevenlabs/elevenlabs-js/dist/api/types/SpeechToTextChunkResponseModel.d.ts` — confirms `text: string` on response
+- `node_modules/@elevenlabs/elevenlabs-js/dist/api/resources/speechToText/types/SpeechToTextConvertResponse.d.ts` — confirms response union type
+
+---
+
+*Architecture research for: Voice Mode Production — persistent overlay, cross-page tool callbacks, ElevenLabs STT*
+*Researched: 2026-04-24*
