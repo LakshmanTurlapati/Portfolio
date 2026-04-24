@@ -47,9 +47,9 @@
 
 ### Chat & Persona
 
-- [ ] **CHAT-01**: Chat uses the full Parz system prompt with complete DATA_STORE (bio, education, experience, projects, hobbies, philosophy)
-- [ ] **CHAT-02**: Chat shows rotating loading messages and random friendly error messages
-- [ ] **CHAT-03**: Suggestion pool shows one small + one big question, hidden after 2 user messages
+- [x] **CHAT-01**: Chat uses the full Parz system prompt with complete DATA_STORE (bio, education, experience, projects, hobbies, philosophy)
+- [x] **CHAT-02**: Chat shows rotating loading messages and random friendly error messages
+- [x] **CHAT-03**: Suggestion pool shows one small + one big question, hidden after 2 user messages
 
 ### About Page
 
@@ -113,10 +113,10 @@ All v1 migration requirements completed in milestone v1.0. See git history for d
 | VOIC-03 | Phase 8 | Pending |
 | VOIC-04 | Phase 8 | Pending |
 | VOIC-05 | Phase 8 | Pending |
-| CHAT-01 | Phase 9 | Pending |
-| CHAT-02 | Phase 9 | Pending |
-| CHAT-03 | Phase 9 | Pending |
-| ABUT-01 | Phase 9 | Pending |
+| CHAT-01 | Phase 9 | Complete |
+| CHAT-02 | Phase 9 | Complete |
+| CHAT-03 | Phase 9 | Complete |
+| ABUT-01 | Phase 9 | Complete |
 | DATA-01 | Phase 5 | Pending |
 | DATA-02 | Phase 5 | Pending |
 
