@@ -36,7 +36,7 @@ export function VoiceWave({ isDark }: VoiceWaveProps) {
   if (!mounted) return null;
 
   const baseHeights = [0.32, 0.62, 1.0, 0.62, 0.32];
-  const barColor = isDark ? '#fff' : '#1a1a1a';
+  const barColor = isDark ? '#1a1a1a' : '#fff';
 
   return (
     <div

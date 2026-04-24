@@ -114,7 +114,10 @@ export default function Home() {
       {/* Desktop navbar: visible >= 600px */}
       <div
         className="hidden sm:block"
-        onClick={() => setClickCount((prev) => prev + 1)}
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest('[data-parz-btn]')) return;
+          setClickCount((prev) => prev + 1);
+        }}
       >
         <DesktopNavbar
           onAskParz={handleAskParz}
@@ -127,7 +130,10 @@ export default function Home() {
       {/* Mobile navbar: visible < 600px */}
       <div
         className="sm:hidden"
-        onClick={() => setClickCount((prev) => prev + 1)}
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest('[data-parz-btn]')) return;
+          setClickCount((prev) => prev + 1);
+        }}
       >
         <MobileNavbar
           onAskParz={handleAskParz}

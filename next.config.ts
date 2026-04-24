@@ -4,9 +4,7 @@ const nextConfig: NextConfig = {
   // Enable React strict mode for better development experience
   reactStrictMode: true,
 
-  // D-02: Enable React's viewTransition integration for View Transitions API.
   // Must be inside `experimental` — top-level viewTransition: true is silently ignored.
-  // See: nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition
   experimental: {
     viewTransition: true,
   },

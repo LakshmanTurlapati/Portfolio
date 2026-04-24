@@ -1,6 +1,6 @@
 'use client';
 
-import { FaXmark, FaStop, FaComment, FaMicrophone } from 'react-icons/fa6';
+import { FaXmark, FaStop, FaComment } from 'react-icons/fa6';
 import { VoiceWave } from '@/components/voice-wave';
 
 // State dot colors from prototype styles.css
@@ -51,12 +51,12 @@ export function VoicePanel({
   onFallbackChat,
 }: VoicePanelProps) {
   const dot = STATE_DOTS[state] ?? STATE_DOTS.idle;
-  const textColor = isDark ? '#e8e4d8' : '#1a1a1a';
-  const btnBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
-  const btnBorder = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)';
+  const textColor = isDark ? '#111' : '#fff';
+  const btnBg = isDark ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)';
+  const btnBorder = isDark ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.12)';
 
   const displayCaption =
-    caption || transcript || (state === 'idle' ? 'Tap the mic and talk to me.' : '');
+    caption || transcript || (state === 'idle' ? 'Tap and talk to me.' : '');
 
   return (
     <>
@@ -71,17 +71,17 @@ export function VoicePanel({
           display: 'flex',
           alignItems: 'center',
           gap: '16px',
-          padding: '0 16px',
+          padding: '0 14px 0 22px',
           opacity: 1,
           animation: 'vmFadeIn 0.25s ease forwards',
           color: textColor,
-          cursor: state === 'listening' ? 'default' : 'pointer',
+          cursor: 'pointer',
         }}
-        onClick={state === 'idle' ? onMic : undefined}
-        role={state === 'idle' ? 'button' : undefined}
-        aria-label={state === 'idle' ? 'Start listening' : undefined}
+        onClick={onMic}
+        role="button"
+        aria-label={state === 'listening' ? 'Stop listening' : 'Start listening'}
       >
-        {/* Mic button / wave area */}
+        {/* Waveform or mic-denied banner */}
         {micDenied ? (
           <div
             onClick={(e) => { e.stopPropagation(); onMic(); }}
@@ -100,39 +100,8 @@ export function VoicePanel({
             Mic denied — click to retry
           </div>
         ) : (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onMic();
-            }}
-            aria-label={state === 'listening' ? 'Stop listening' : 'Start listening'}
-            style={{
-              width: '48px',
-              height: '48px',
-              flexShrink: 0,
-              borderRadius: '50%',
-              border: `1px solid ${btnBorder}`,
-              background:
-                state === 'listening'
-                  ? 'radial-gradient(circle at 35% 30%, rgba(255,150,150,0.5), rgba(220,80,80,0.2) 60%, rgba(200,0,0,0) 75%)'
-                  : btnBg,
-              boxShadow:
-                state === 'listening'
-                  ? '0 0 18px rgba(255,120,120,0.55), inset 0 0 14px rgba(255,255,255,0.25)'
-                  : undefined,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: textColor,
-            }}
-          >
-            <FaMicrophone size={18} />
-          </button>
+          <VoiceWave isDark={isDark} />
         )}
-
-        {/* Waveform */}
-        <VoiceWave isDark={isDark} />
 
         {/* Caption area */}
         <div

@@ -121,7 +121,7 @@ body {
   to { transform: rotate(360deg); }
 }
 .animate-spin-slow {
-  animation: spin-slow 8s linear infinite;
+  animation: spin-slow 6s linear infinite;
 }
 
 
@@ -241,6 +241,7 @@ body {
 ::view-transition-image-pair(root) {
   isolation: auto;
 }
+
 
 /* Respect prefers-reduced-motion (accessibility) */
 @media (prefers-reduced-motion: reduce) {
