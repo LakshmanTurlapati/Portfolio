@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const { messages } = (await req.json()) as { messages: UIMessage[] };
 
     const result = streamText({
-      model: xai('grok-4-1'),
+      model: xai('grok-4-1-fast-non-reasoning'),
       system: systemPrompt,
       messages: await convertToModelMessages(messages),
       maxOutputTokens: 1000,
