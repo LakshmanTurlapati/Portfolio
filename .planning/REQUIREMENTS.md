@@ -39,10 +39,14 @@
 
 ### Visual Feedback
 
-- [ ] **VFBK-01**: Viewport border glows blue pulse while voice is in listening state
-- [ ] **VFBK-02**: Viewport border glows amber while voice is executing a tool call (navigating, opening project, etc.)
-- [ ] **VFBK-03**: Viewport border flashes green on successful tool call completion
-- [ ] **VFBK-04**: Viewport border glows red on error state (API failure, mic denied, etc.)
+- [x] **VFBK-01
+**: Viewport border glows blue pulse while voice is in listening state
+- [x] **VFBK-02
+**: Viewport border glows amber while voice is executing a tool call (navigating, opening project, etc.)
+- [x] **VFBK-03
+**: Viewport border flashes green on successful tool call completion
+- [x] **VFBK-04
+**: Viewport border glows red on error state (API failure, mic denied, etc.)
 
 ### API Verification
 

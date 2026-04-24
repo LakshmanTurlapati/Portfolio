@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Voice Mode Production
 status: executing
-stopped_at: Phase 13 Plan 01 complete
-last_updated: "2026-04-24T00:00:00Z"
-last_activity: 2026-04-24 -- Phase 13 Plan 01 executed (tool callbacks and VoiceBus signals)
+stopped_at: Completed 13-02-PLAN.md (VoiceGlow component + CSS keyframes + layout mount)
+last_updated: "2026-04-25T06:37:38.783Z"
+last_activity: 2026-04-25
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
-  percent: 63
+  completed_plans: 6
+  percent: 75
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 ## Current Position
 
 Phase: 13 — EXECUTING
-Plan: 2 of 4
-Status: Plan 01 complete — tool callbacks registry and VoiceBus signals
-Last activity: 2026-04-24 -- Phase 13 Plan 01 executed (registerToolCallbacks + VoiceBus tool signals + waitForPage)
+Plan: 3 of 4
+Status: Ready to execute
+Last activity: 2026-04-25
 
 ```
 v4.0 Progress: [####                ] 25% (1/4 phases partially complete)
@@ -99,6 +99,9 @@ v4.0 Progress: [####                ] 25% (1/4 phases partially complete)
 - [13-01]: toggleTheme and openLink wired once in VoiceSessionProvider useEffect — no per-page registration needed, they have no page-specific state
 - [13-01]: waitForPage uses Promise.race with 1500ms timeout — handles both fast page-ready events and already-mounted pages where no event fires
 - [13-01]: navigate and endCall excluded from VoiceBus tool signals — internal routing, not user-facing tool calls
+- [13-02]: --glow-color CSS custom property set on glow div via inline style from resolvedTheme — avoids duplicating dark/light logic in CSS; single source of truth in component
+- [13-02]: functional setGlowState callback for VoiceBus state event — prevents executing/error glow from being wiped by intermediate thinking/speaking transitions
+- [13-02]: success reset timer (1000ms setTimeout) matches voiceGlowSuccess keyframe duration exactly — clean handoff from animation end to idle
 
 ### Pending Todos
 
@@ -113,8 +116,8 @@ v4.0 Progress: [####                ] 25% (1/4 phases partially complete)
 
 ## Session Continuity
 
-Last session: 2026-04-24
-Stopped at: Completed 13-01-PLAN.md (tool callbacks registry + VoiceBus signals)
+Last session: 2026-04-25T06:37:38.778Z
+Stopped at: Completed 13-02-PLAN.md (VoiceGlow component + CSS keyframes + layout mount)
 Resume file: None
 
 **Next:** Execute Phase 13 Plan 02
