@@ -36,12 +36,14 @@
 
 - [x] **VOIC-01
 **: Clicking Ask Parz opens voice mode where the navbar morphs into a voice control panel
-- [ ] **VOIC-02**: Voice mode uses Web Speech API (SpeechRecognition) for STT with live mic amplitude visualization
+- [x] **VOIC-02
+**: Voice mode uses Web Speech API (SpeechRecognition) for STT with live mic amplitude visualization
 - [x] **VOIC-03
 **: Voice mode uses Web Speech Synthesis for TTS with fake amplitude envelope
 - [x] **VOIC-04
 **: VoiceBus manages state (idle, listening, thinking, speaking) and drives particle mesh breathing animation
-- [ ] **VOIC-05**: User can navigate pages, switch to text chat, or stop via voice commands
+- [x] **VOIC-05
+**: User can navigate pages, switch to text chat, or stop via voice commands
 
 ### Chat & Persona
 

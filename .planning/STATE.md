@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 08-01-PLAN.md — VoiceBus foundation and TTS infrastructure
-last_updated: "2026-04-24T06:29:54.319Z"
+stopped_at: Completed 08-02-PLAN.md — Voice session logic (useVoiceController hook + voice-commands)
+last_updated: "2026-04-24T06:35:12.580Z"
 last_activity: 2026-04-24 -- Phase --phase execution started
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 12
-  completed_plans: 8
-  percent: 67
+  completed_plans: 9
+  percent: 75
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 1 of --name
 Status: Executing Phase --phase
 Last activity: 2026-04-24 -- Phase --phase execution started
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -66,6 +66,9 @@ Progress: [███████░░░] 67%
 - VoiceState/VoiceBusInstance in declare global{} (not module scope) so globally accessible without imports across all TS files
 - ElevenLabs stream() cast to ReadableStream and passed directly to Response() — for-await-of fails on ES2017 tsconfig target
 - npm install --legacy-peer-deps needed for ElevenLabs due to pre-existing ai-sdk/react peer conflict with react@19.1.0
+- SpeechRecognition typed as any — TypeScript DOM lib does not expose SpeechRecognition/SpeechRecognitionEvent/SpeechRecognitionErrorEvent even with dom lib target
+- streamTTS Promise wraps source.onended — enables sequential await speak() in tour without event emitter complexity
+- dispatchToolCall inside hook body — single dispatch for all TOUR_STEPS tool calls; openProject wired via toolCallbacks, others console.warn on miss
 
 ### Pending Todos
 
@@ -78,8 +81,8 @@ Progress: [███████░░░] 67%
 
 ## Session Continuity
 
-Last session: 2026-04-24T06:29:54.314Z
-Stopped at: Completed 08-01-PLAN.md — VoiceBus foundation and TTS infrastructure
+Last session: 2026-04-24T06:35:12.575Z
+Stopped at: Completed 08-02-PLAN.md — Voice session logic (useVoiceController hook + voice-commands)
 Resume file: None
 
 **Planned Phase:** 08 (voice-mode) — 5 plans — 2026-04-24T05:25:45.905Z
