@@ -82,6 +82,33 @@ Plans:
 
 </details>
 
+### Phase 10: Circular Reveal Fix
+**Goal**: Debug and fix the circular reveal page transition — the View Transitions API + WAAPI clip-path implementation needs deep investigation into why animations are not visible despite correct code structure. Also implement Portfolio button ↔ back button hero morph.
+**Depends on**: Phase 7
+**Requirements**: TRAN-01, TRAN-02
+**Success Criteria** (what must be TRUE):
+  1. Clicking any navigation link triggers a visible circular reveal animation expanding from the clicked element's position
+  2. The old page remains visible outside the expanding circle until it fully covers the viewport
+  3. The Portfolio button visually morphs into the back button on the destination page during the transition (Flutter Hero equivalent)
+  4. Back button click triggers a circular reveal from its position back to the home page
+  5. Works in Chrome, Edge, Firefox, and Safari
+**Plans**: TBD
+
+**UI hint**: yes
+
+### Phase 11: IframeViewer Browser Previews
+**Goal**: IframeViewer shows lightweight browser-frame previews for project links — matching the v3 design prototype's embedded web/Figma/YouTube viewers with browser chrome UI, loading states, and fallback CTAs for unembeddable hosts
+**Depends on**: Phase 5
+**Requirements**: PORT-06, PORT-07
+**Success Criteria** (what must be TRUE):
+  1. Clicking a Website link in the project detail overlay opens the IframeViewer with a browser-frame UI (address bar, close button, external link button)
+  2. Figma links embed directly via Figma's embed API; YouTube URLs convert to embed players
+  3. GitHub links show the rich GithubPreview card (already built in Phase 5)
+  4. Unembeddable hosts (Chrome Web Store, LinkedIn, etc.) show a styled fallback CTA instead of a broken iframe
+**Plans**: TBD
+
+**UI hint**: yes
+
 ---
 
 ### 🚧 v3 Portfolio Redesign (Phases 5-9)
@@ -179,8 +206,8 @@ Plans:
 ## Progress
 
 **Execution Order:**
-v1.0 phases 1-4 execute first, then v3 phases 5-9 in numeric order.
-5 → 6 → 7 → 8 → 9
+v1.0 phases 1-4 execute first, then v3 phases 5-9, then fix/polish phases 10-11.
+5 → 6 → 7 → 8 → 9 → 10 → 11
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -189,7 +216,9 @@ v1.0 phases 1-4 execute first, then v3 phases 5-9 in numeric order.
 | 3. Content Pages and Chat | v1.0 | 3/3 | Complete | 2026-04-03 |
 | 4. Page Transitions and Deployment | v1.0 | 1/2 | In progress | - |
 | 5. Portfolio Page and Data | v3 | 0/3 | Not started | - |
-| 6. Home Page and Ambient Backgrounds | v3 | 0/2 | Not started | - |
+| 6. Home Page and Ambient Backgrounds | v3 | 2/2 | Complete | 2026-04-24 |
 | 7. Circular Reveal Transition | v3 | 2/2 | Complete | 2026-04-24 |
-| 8. Voice Mode | v3 | 5/5 | Complete | 2026-04-23 |
+| 8. Voice Mode | v3 | 5/5 | Complete | 2026-04-24 |
 | 9. Chat, About, and Polish | v3 | 3/3 | Complete | 2026-04-24 |
+| 10. Circular Reveal Fix | v3 | 0/TBD | Not started | - |
+| 11. IframeViewer Browser Previews | v3 | 0/TBD | Not started | - |
