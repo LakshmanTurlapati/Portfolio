@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 06-01: GitHub Stats live data pipeline"
-last_updated: "2026-04-24T01:28:34.993Z"
+stopped_at: "Completed 06-02: ChatPopup overlay and particle cleanup audit"
+last_updated: "2026-04-24T01:33:16.044Z"
 last_activity: 2026-04-24 -- Phase --phase execution started
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
-  percent: 80
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 1 of --name
 Status: Executing Phase --phase
 Last activity: 2026-04-24 -- Phase --phase execution started
 
-Progress: [████████░░] 80%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -55,6 +55,9 @@ Progress: [████████░░] 80%
 - 05-03: PROJECT_DETAILS content ported verbatim from v3 prototype — all 21 projects covered, DATA-01 satisfied
 - Tooltip-based GitHub contribution scraping (not data-level which is 0-4 intensity; data-count removed ~2023)
 - ISR revalidate=3600 on /api/github-stats caps upstream GitHub requests to 3/hour regardless of traffic
+- ChatPopup uses useChat hook from @ai-sdk/react (same as chat/page.tsx) — no raw fetch, consistent with existing infrastructure
+- AskParzButton on mobile rendered in compact flex slot — label hidden via existing max-[760px]:hidden class on button
+- Particle cleanup audit Phase 6: all three steps confirmed correct (destroypJS → clear array → remove canvas)
 
 ### Pending Todos
 
@@ -68,8 +71,8 @@ Progress: [████████░░] 80%
 
 ## Session Continuity
 
-Last session: 2026-04-24T01:28:34.987Z
-Stopped at: Completed 06-01: GitHub Stats live data pipeline
+Last session: 2026-04-24T01:33:16.038Z
+Stopped at: Completed 06-02: ChatPopup overlay and particle cleanup audit
 Resume file: None
 
 **Planned Phase:** 6 (Home Page and Ambient Backgrounds) — 2 plans — 2026-04-24T01:22:33.682Z
