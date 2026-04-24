@@ -18,12 +18,18 @@
 
 ### Tool Callbacks
 
-- [ ] **TOOL-01**: User can say a project name and voice mode opens that project's detail view on the portfolio page
-- [ ] **TOOL-02**: User can say a page name (portfolio, about, chat) and voice mode navigates to that page
-- [ ] **TOOL-03**: User can say "scroll to experience" or "scroll to education" on the about page and the view scrolls to that section
-- [ ] **TOOL-04**: User can say "open link" and voice mode opens the referenced URL in a new tab
-- [ ] **TOOL-05**: User can say "toggle theme" or "switch to dark/light mode" and the theme changes
-- [ ] **TOOL-06**: Tour mode works end-to-end across pages -- navigates, opens projects, and speaks descriptions without race conditions
+- [x] **TOOL-01
+**: User can say a project name and voice mode opens that project's detail view on the portfolio page
+- [x] **TOOL-02
+**: User can say a page name (portfolio, about, chat) and voice mode navigates to that page
+- [x] **TOOL-03
+**: User can say "scroll to experience" or "scroll to education" on the about page and the view scrolls to that section
+- [x] **TOOL-04
+**: User can say "open link" and voice mode opens the referenced URL in a new tab
+- [x] **TOOL-05
+**: User can say "toggle theme" or "switch to dark/light mode" and the theme changes
+- [x] **TOOL-06
+**: Tour mode works end-to-end across pages -- navigates, opens projects, and speaks descriptions without race conditions
 
 ### Speech-to-Text
 

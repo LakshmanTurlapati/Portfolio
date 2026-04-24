@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Voice Mode Production
-status: planning
-stopped_at: Phase 13 UI-SPEC approved
-last_updated: "2026-04-25T06:28:51.174Z"
-last_activity: 2026-04-25
+status: executing
+stopped_at: Phase 13 Plan 01 complete
+last_updated: "2026-04-24T00:00:00Z"
+last_activity: 2026-04-24 -- Phase 13 Plan 01 executed (tool callbacks and VoiceBus signals)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 8
-  completed_plans: 4
-  percent: 50
+  completed_plans: 5
+  percent: 63
 ---
 
 # Project State
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** Phase --phase — 12
+**Current focus:** Phase --phase — 13
 
 ## Current Position
 
-Phase: 13
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-04-25
+Phase: 13 — EXECUTING
+Plan: 2 of 4
+Status: Plan 01 complete — tool callbacks registry and VoiceBus signals
+Last activity: 2026-04-24 -- Phase 13 Plan 01 executed (registerToolCallbacks + VoiceBus tool signals + waitForPage)
 
 ```
-v4.0 Progress: [                    ] 0% (0/4 phases)
+v4.0 Progress: [####                ] 25% (1/4 phases partially complete)
 ```
 
 ## Performance Metrics
@@ -95,6 +95,10 @@ v4.0 Progress: [                    ] 0% (0/4 phases)
 - VoiceSessionProvider inside VoiceBusProvider in layout.tsx — useVoiceController depends on window.VoiceBus which VoiceBusProvider initializes
 - useVoiceController has exactly one call site (voice-session-provider.tsx) — page.tsx consumes voice state via useVoiceSession() context
 - parz:open-text-chat CustomEvent listener registered in page.tsx useEffect — allows VoiceSessionProvider.openTextChat to trigger ChatPopup from layout level
+- [13-01]: toolCallbacksRef uses useRef not useState — prevents stale closure in dispatchToolCall memoization; ref object reference is stable so controller always reads fresh callbacks
+- [13-01]: toggleTheme and openLink wired once in VoiceSessionProvider useEffect — no per-page registration needed, they have no page-specific state
+- [13-01]: waitForPage uses Promise.race with 1500ms timeout — handles both fast page-ready events and already-mounted pages where no event fires
+- [13-01]: navigate and endCall excluded from VoiceBus tool signals — internal routing, not user-facing tool calls
 
 ### Pending Todos
 
@@ -109,10 +113,10 @@ v4.0 Progress: [                    ] 0% (0/4 phases)
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 13 UI-SPEC approved
-Resume file: --resume-file
+Last session: 2026-04-24
+Stopped at: Completed 13-01-PLAN.md (tool callbacks registry + VoiceBus signals)
+Resume file: None
 
-**Next:** Plan Phase 12 -- run `/gsd-plan-phase 12`
+**Next:** Execute Phase 13 Plan 02
 
 **Planned Phase:** 13 (Tool Callbacks and Visual Feedback) — 4 plans — 2026-04-25T06:28:51.169Z
