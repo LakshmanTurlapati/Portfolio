@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 9 context gathered
-last_updated: "2026-04-24T08:47:10.258Z"
-last_activity: 2026-04-24
+status: executing
+stopped_at: Phase 09 Plan 01 complete
+last_updated: "2026-04-23T00:15:00Z"
+last_activity: 2026-04-23 -- Phase 09 Plan 01 executed (chat polish + DATA_STORE names)
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 15
-  completed_plans: 12
-  percent: 80
+  completed_plans: 13
+  percent: 87
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-23)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** Phase --phase — 08
+**Current focus:** Phase --phase — 09
 
 ## Current Position
 
-Phase: 9
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-04-24
+Phase: 09 (chat-about-and-polish) — EXECUTING
+Plan: 2 of 3
+Status: Executing Phase 09
+Last activity: 2026-04-23 -- Phase 09 Plan 01 complete (chat polish + DATA_STORE names)
 
 Progress: [██████████] 100%
 
@@ -74,6 +74,8 @@ Progress: [██████████] 100%
 - ParticleContainer type alias collocated in particle-background.tsx — __vmTick is an implementation detail of breathing, not a VoiceBus concern
 - breathCancelled + breathRaf are closure-local in init() — ensures zero React re-renders; each theme-switch reinit gets an isolated breathing loop
 - All 5 VOIC requirements verified end-to-end by human visual inspection — navbar morph, STT, TTS, particle breathing, and voice commands all confirmed working
+- [09-01]: PARZ_ERRORS displayed via currentError state (useEffect on error) — never leak raw error.message to UI per T-09-01 threat mitigation
+- [09-01]: DATA_STORE project names normalized to match projects.ts displayed names exactly so Parz can answer questions about all 21 projects
 
 ### Pending Todos
 
@@ -86,8 +88,8 @@ Progress: [██████████] 100%
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 9 context gathered
-Resume file: --resume-file
+Last session: 2026-04-23T00:15:00Z
+Stopped at: Phase 09 Plan 01 complete
+Resume file: None
 
 **Planned Phase:** 09 (chat-about-and-polish) — 3 plans — 2026-04-24T08:47:10.253Z

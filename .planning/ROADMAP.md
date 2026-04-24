@@ -167,7 +167,12 @@ Plans:
   2. While waiting for a response, the user sees a rotating loading message; if the API fails, a random friendly error message appears (not a raw error string)
   3. The suggestion pool shows one small and one big question chip at the start of a conversation; chips disappear after the user sends 2 messages
   4. Moving the cursor over the About page produces a soft spotlight that follows the cursor position via CSS custom properties
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [x] 09-01-PLAN.md -- Parz error messages array, DATA_STORE project name audit (all 21 projects), verify chips and loading
+- [ ] 09-02-PLAN.md -- About page spotlight rewrite to CSS custom property approach (--mx/--my)
+- [ ] 09-03-PLAN.md -- Human visual verification of all Phase 9 changes
 
 **UI hint**: yes
 
@@ -187,4 +192,4 @@ v1.0 phases 1-4 execute first, then v3 phases 5-9 in numeric order.
 | 6. Home Page and Ambient Backgrounds | v3 | 0/2 | Not started | - |
 | 7. Circular Reveal Transition | v3 | 2/2 | Complete | 2026-04-24 |
 | 8. Voice Mode | v3 | 5/5 | Complete | 2026-04-23 |
-| 9. Chat, About, and Polish | v3 | 0/TBD | Not started | - |
+| 9. Chat, About, and Polish | v3 | 1/3 | In progress | - |
