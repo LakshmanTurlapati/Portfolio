@@ -366,20 +366,27 @@ export function useVoiceController({
             const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split('\n');
             for (const line of lines) {
-              // Text delta
+              // SSE data lines
+              if (line.startsWith('data: ')) {
+                const payload = line.slice(6);
+                if (payload === '[DONE]') continue;
+                try {
+                  const evt = JSON.parse(payload);
+                  // Text delta
+                  if (evt.type === 'text-delta' && typeof evt.delta === 'string') {
+                    responseText += evt.delta;
+                  }
+                  // Tool call complete with parsed input
+                  if (evt.type === 'tool-input-available' && evt.toolName) {
+                    toolCalls.push({ name: evt.toolName, args: evt.input || {} });
+                  }
+                } catch {}
+              }
+              // Legacy format fallback (0: prefix)
               if (line.startsWith('0:')) {
                 try {
                   const parsed = JSON.parse(line.slice(2));
                   if (typeof parsed === 'string') responseText += parsed;
-                } catch {}
-              }
-              // Tool call — AI SDK format: 9:{toolCallId, toolName, args}
-              if (line.startsWith('9:')) {
-                try {
-                  const tc = JSON.parse(line.slice(2));
-                  if (tc && tc.toolName) {
-                    toolCalls.push({ name: tc.toolName, args: tc.args || {} });
-                  }
                 } catch {}
               }
             }
