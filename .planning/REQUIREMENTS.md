@@ -108,8 +108,8 @@ All v1 migration requirements completed in milestone v1.0. See git history for d
 | HOME-01 | Phase 6 | Pending |
 | HOME-02 | Phase 6 | Pending |
 | HOME-03 | Phase 6 | Pending |
-| TRAN-01 | Phase 7 | Pending |
-| TRAN-02 | Phase 7 | Pending |
+| TRAN-01 | Phase 7 | Complete |
+| TRAN-02 | Phase 7 | Complete |
 | VOIC-01 | Phase 8 | Pending |
 | VOIC-02 | Phase 8 | Pending |
 | VOIC-03 | Phase 8 | Pending |

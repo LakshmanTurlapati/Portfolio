@@ -92,7 +92,7 @@ Plans:
   3. The Portfolio button visually morphs into the back button on the destination page during the transition (Flutter Hero equivalent)
   4. Back button click triggers a circular reveal from its position back to the home page
   5. Works in Chrome, Edge, Firefox, and Safari
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [x] 10-01-PLAN.md -- Verify fix (remove hero-nav-btn duplicates) and human visual verification of circular reveal
@@ -226,5 +226,5 @@ v1.0 phases 1-4 execute first, then v3 phases 5-9, then fix/polish phases 10-11.
 | 7. Circular Reveal Transition | v3 | 2/2 | Complete | 2026-04-24 |
 | 8. Voice Mode | v3 | 5/5 | Complete | 2026-04-24 |
 | 9. Chat, About, and Polish | v3 | 3/3 | Complete | 2026-04-24 |
-| 10. Circular Reveal Fix | v3 | 1/1 | Complete | 2026-04-24 |
+| 10. Circular Reveal Fix | v3 | 1/1 | Complete    | 2026-04-24 |
 | 11. IframeViewer Browser Previews | v3 | 1/1 | Complete    | 2026-04-24 |
