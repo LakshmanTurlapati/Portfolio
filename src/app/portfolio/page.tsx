@@ -9,7 +9,7 @@ import { PortfolioCard } from '@/components/portfolio-card';
 import { DataGrid, DEFAULT_DG_CFG } from '@/components/data-grid';
 import type { DataGridConfig } from '@/components/data-grid';
 import { ProjectDetail } from '@/components/project-detail';
-import { IframeViewer } from '@/components/iframe-viewer';
+import { IframeViewer, isUnembeddable } from '@/components/iframe-viewer';
 import { useTransition } from '@/providers/transition-provider';
 import { useMounted } from '@/hooks/use-mounted';
 
@@ -39,7 +39,26 @@ export default function PortfolioPage() {
   const [viewer, setViewer] = useState<{ url: string; label: string } | null>(null);
 
   const openProject = useCallback((project: Project) => {
-    setSelectedProject(project);
+    const links = project.links || {};
+    let url = '';
+    let label = '';
+
+    // Priority: (1) Website if embeddable, (2) Design, (3) Website even if unembeddable, (4) GitHub
+    if (links.Website && !isUnembeddable(links.Website)) {
+      url = links.Website;
+      label = 'Visit site';
+    } else if (links.Design) {
+      url = links.Design;
+      label = 'Design';
+    } else if (links.Website) {
+      url = links.Website;
+      label = 'Visit site';
+    } else if (links.GitHub) {
+      url = links.GitHub;
+      label = 'Source';
+    }
+
+    if (url) setViewer({ url, label });
   }, []);
 
   const openInViewer = useCallback((url: string, label: string) => {
