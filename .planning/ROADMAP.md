@@ -100,7 +100,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md -- GithubPreview component (PORT-08) and IframeViewer routing for GitHub URLs
+- [x] 05-01-PLAN.md -- GithubPreview component (PORT-08) and IframeViewer routing for GitHub URLs
 - [ ] 05-02-PLAN.md -- Visual audit: Instrument Serif fonts, stats grid, dash bullets, card hover polish
 - [ ] 05-03-PLAN.md -- Fill all 8 missing project detail writeups (DATA-01 complete coverage)
 

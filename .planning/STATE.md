@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Phase 5 Plan 02 complete
-last_updated: "2026-04-24T00:51:26Z"
-last_activity: 2026-04-24 — Phase 5 Plan 02 executed (project detail visual polish, card hover)
+stopped_at: Phase 5 Plan 01 complete
+last_updated: "2026-04-24T00:52:04Z"
+last_activity: 2026-04-24 — Phase 5 Plan 01 executed (GithubPreview component and IframeViewer routing)
 progress:
   total_phases: 5
   completed_phases: 0
@@ -50,6 +50,8 @@ Progress: [░░░░░░░░░░] 0% (v3 milestone)
 - [v3-session]: Several v3 components already implemented directly from design prototype (DataGrid, ProjectDetail, IframeViewer, GitHub Stats, Ask Parz, particles.js, portfolio page, project data) -- Phase 5 and 6 are validate/polish, not scratch builds
 - [v3-session]: Circular reveal transition attempted 3 times but not matching Flutter ClipPath behavior -- isolated as Phase 7 for dedicated focus
 - [v3]: Voice mode isolated as Phase 8 (largest new feature, Web Speech API, VoiceBus state machine)
+- [05-01]: GithubPreview uses inline styles (not CSS classes) to avoid globals.css scope conflicts with IframeViewer
+- [05-01]: Mermaid rendering intentionally omitted from GithubPreview (out-of-scope dependency)
 
 ### Pending Todos
 
@@ -63,8 +65,8 @@ Progress: [░░░░░░░░░░] 0% (v3 milestone)
 
 ## Session Continuity
 
-Last session: 2026-04-24T00:51:26Z
-Stopped at: Phase 5 Plan 02 complete — project detail overlay visual polish and card hover state
+Last session: 2026-04-24T00:52:04Z
+Stopped at: Phase 5 Plan 01 complete — GithubPreview component and IframeViewer GitHub routing
 Resume file: --resume-file
 
 **Planned Phase:** 5 (Portfolio Page and Data) — 3 plans — 2026-04-24T00:47:52.892Z
