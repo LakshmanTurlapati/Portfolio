@@ -28,10 +28,10 @@ Wire all voice tool callbacks (openProject, navigate, scrollTo, openLink, toggle
 
 ### Viewport Glow (FSB-inspired)
 - **D-10:** Subtle CSS box-shadow glow on the viewport/body -- NOT a thick border. Style: `0 0 30px 10px rgba(color, 0.3)` or similar soft outer glow.
-- **D-11:** Listening state (blue) uses a breathing pulse animation -- glow intensity oscillates slowly. Other states (amber/green/red) are solid or fade-in.
-- **D-12:** Glow colors: blue (#3B82F6) for listening, amber (#F59E0B) for tool executing, green (#22C55E) for success (brief flash), red (#EF4444) for error.
-- **D-13:** Glow is driven by VoiceBus state events. A new `VoiceGlow` component in layout subscribes to VoiceBus state and applies the appropriate CSS box-shadow.
-- **D-14:** Green success glow flashes briefly (0.5-1s) then fades out. Red error glow persists until voice state changes.
+- **D-11:** Glow is MONOCHROME and background-aware -- uses the opposite color of the current background for visibility. Dark mode (black bg) → white glow `rgba(255,255,255,0.3)`. Light mode (white bg) → black glow `rgba(0,0,0,0.3)`.
+- **D-12:** NO colored glows. States differentiated by animation pattern: listening → breathing pulse, tool executing → solid/steady, success → brief flash then fade, error → rapid flicker or persistent.
+- **D-13:** Glow is driven by VoiceBus state events. A new `VoiceGlow` component in layout subscribes to VoiceBus state and applies the appropriate CSS box-shadow with theme-aware color.
+- **D-14:** Success glow flashes briefly (0.5-1s) then fades out. Error glow persists until voice state changes.
 
 ### Claude's Discretion
 - Implementation of page-ready signal (CustomEvent vs DOM polling vs callback registration detection)

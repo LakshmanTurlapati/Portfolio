@@ -73,20 +73,22 @@ The project uses a dual light/dark token system via CSS custom properties in glo
 | Dominant (60%) | `#FFFFFF` | `#000000` | Page background (var(--color-bg)) |
 | Secondary (30%) | `rgba(0,0,0,0.8)` | `rgba(255,255,255,0.8)` | Navbar / panel background (var(--color-navbar-bg)) |
 | Accent (10%) | `#000000` / `#FFFFFF` | `#FFFFFF` / `#000000` | Interactive text, portfolio button |
-| Destructive | `#EF4444` | `#EF4444` | Mic denied banner (existing), error glow state |
+| Destructive | `#EF4444` | `#EF4444` | Mic denied banner (existing) |
 
 Source: globals.css token definitions.
 
 ### VoiceGlow Color Contract (new in Phase 13)
 
-Per D-12 (13-CONTEXT.md). These are the ONLY new color values introduced in this phase.
+Per D-11, D-12 (13-CONTEXT.md). Monochrome, background-aware. NO colored glows. States differentiated by animation pattern.
 
-| Glow State | Color | Hex | CSS box-shadow |
-|------------|-------|-----|----------------|
-| Listening | Blue pulse (breathing) | `#3B82F6` | `0 0 30px 10px rgba(59,130,246,0.3)` — oscillates with keyframe animation |
-| Tool executing | Amber solid | `#F59E0B` | `0 0 30px 10px rgba(245,158,11,0.3)` — steady, fade-in |
-| Success | Green flash | `#22C55E` | `0 0 30px 10px rgba(34,197,94,0.3)` — appears then fades out in 0.5–1s |
-| Error | Red steady | `#EF4444` | `0 0 30px 10px rgba(239,68,68,0.3)` — persists until voice state changes |
+| Glow State | Light Mode | Dark Mode | Animation |
+|------------|------------|-----------|-----------|
+| Listening | `0 0 30px 10px rgba(0,0,0,0.3)` | `0 0 30px 10px rgba(255,255,255,0.3)` | Breathing pulse (2s oscillation) |
+| Tool executing | `0 0 30px 10px rgba(0,0,0,0.25)` | `0 0 30px 10px rgba(255,255,255,0.25)` | Solid steady, fade-in |
+| Success | `0 0 40px 15px rgba(0,0,0,0.4)` | `0 0 40px 15px rgba(255,255,255,0.4)` | Brief flash (0.5-1s) then fade out |
+| Error | `0 0 30px 10px rgba(0,0,0,0.35)` | `0 0 30px 10px rgba(255,255,255,0.35)` | Rapid flicker or persistent |
+
+Glow uses the OPPOSITE color of the current background for visibility. No new color tokens introduced — uses existing `--color-bg` inverted.
 | Idle / voice off | None | — | No box-shadow |
 
 Implementation note: The glow is applied as `box-shadow` on the `<body>` element (or a fixed full-viewport inset-0 div). It is NOT a CSS `border`. Per D-10: subtle outer glow, not a thick border.
