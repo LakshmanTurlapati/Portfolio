@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 6 context gathered
-last_updated: "2026-04-24T01:07:06.041Z"
-last_activity: 2026-04-23 — v3 roadmap created (Phases 5-9)
+status: executing
+stopped_at: "Completed 06-01: GitHub Stats live data pipeline"
+last_updated: "2026-04-24T01:28:34.993Z"
+last_activity: 2026-04-24 -- Phase --phase execution started
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 100
+  total_plans: 5
+  completed_plans: 4
+  percent: 80
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-23)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** Phase 5 -- Portfolio Page and Data (ready to plan)
+**Current focus:** Phase --phase — 06
 
 ## Current Position
 
-Phase: 5 of 9 (Portfolio Page and Data)
-Plan: —
-Status: Ready to plan
-Last activity: 2026-04-23 — v3 roadmap created (Phases 5-9)
+Phase: --phase (06) — EXECUTING
+Plan: 1 of --name
+Status: Executing Phase --phase
+Last activity: 2026-04-24 -- Phase --phase execution started
 
-Progress: [██████████] 100%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -53,6 +53,8 @@ Progress: [██████████] 100%
 - [05-01]: GithubPreview uses inline styles (not CSS classes) to avoid globals.css scope conflicts with IframeViewer
 - [05-01]: Mermaid rendering intentionally omitted from GithubPreview (out-of-scope dependency)
 - 05-03: PROJECT_DETAILS content ported verbatim from v3 prototype — all 21 projects covered, DATA-01 satisfied
+- Tooltip-based GitHub contribution scraping (not data-level which is 0-4 intensity; data-count removed ~2023)
+- ISR revalidate=3600 on /api/github-stats caps upstream GitHub requests to 3/hour regardless of traffic
 
 ### Pending Todos
 
@@ -66,8 +68,8 @@ Progress: [██████████] 100%
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 6 context gathered
-Resume file: --resume-file
+Last session: 2026-04-24T01:28:34.987Z
+Stopped at: Completed 06-01: GitHub Stats live data pipeline
+Resume file: None
 
-**Planned Phase:** 5 (Portfolio Page and Data) — 3 plans — 2026-04-24T00:47:52.892Z
+**Planned Phase:** 6 (Home Page and Ambient Backgrounds) — 2 plans — 2026-04-24T01:22:33.682Z

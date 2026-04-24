@@ -19,7 +19,8 @@
 ### Home Page
 
 - [ ] **HOME-01**: Home page background uses a particles.js connected-node mesh with grab and push interactivity, monochrome palette, and theme-aware re-init
-- [ ] **HOME-02**: User sees a GitHub Stats pill at bottom-center showing contributions, streak, stars, and repos with an expandable hover panel
+- [x] **HOME-02
+**: User sees a GitHub Stats pill at bottom-center showing contributions, streak, stars, and repos with an expandable hover panel
 - [ ] **HOME-03**: Navbar includes an Ask Parz button with ambient blurred orbs, green status dot, and hover amplification
 
 ### Page Transitions
