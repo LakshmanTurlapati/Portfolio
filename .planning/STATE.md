@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Voice Mode Production
 status: executing
-stopped_at: Completed 13-02-PLAN.md (VoiceGlow component + CSS keyframes + layout mount)
-last_updated: "2026-04-25T06:37:38.783Z"
+stopped_at: Completed 13-03-PLAN.md (openProject + scrollTo voice callbacks + page-ready signals)
+last_updated: "2026-04-25T06:40:58.619Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
-  percent: 75
+  completed_plans: 7
+  percent: 88
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 ## Current Position
 
 Phase: 13 — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-04-25
 
@@ -102,6 +102,9 @@ v4.0 Progress: [####                ] 25% (1/4 phases partially complete)
 - [13-02]: --glow-color CSS custom property set on glow div via inline style from resolvedTheme — avoids duplicating dark/light logic in CSS; single source of truth in component
 - [13-02]: functional setGlowState callback for VoiceBus state event — prevents executing/error glow from being wiped by intermediate thinking/speaking transitions
 - [13-02]: success reset timer (1000ms setTimeout) matches voiceGlowSuccess keyframe duration exactly — clean handoff from animation end to idle
+- openProject voice callback calls setSelectedProject directly (not local openProject) — opens ProjectDetail overlay, not IframeViewer
+- scrollTo callback in about/page.tsx delegates to scrollToSection() — correctly handles scrollable div container not window scroll
+- Voice selector alias map (work→experience, education/school→academics) covers natural speech in scrollTo callback
 
 ### Pending Todos
 
@@ -116,8 +119,8 @@ v4.0 Progress: [####                ] 25% (1/4 phases partially complete)
 
 ## Session Continuity
 
-Last session: 2026-04-25T06:37:38.778Z
-Stopped at: Completed 13-02-PLAN.md (VoiceGlow component + CSS keyframes + layout mount)
+Last session: 2026-04-25T06:40:58.614Z
+Stopped at: Completed 13-03-PLAN.md (openProject + scrollTo voice callbacks + page-ready signals)
 Resume file: None
 
 **Next:** Execute Phase 13 Plan 02
