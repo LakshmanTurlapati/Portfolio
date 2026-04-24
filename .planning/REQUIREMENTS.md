@@ -53,7 +53,8 @@
 
 ### About Page
 
-- [ ] **ABUT-01**: About page has a cursor-following spotlight effect via CSS custom properties
+- [x] **ABUT-01
+**: About page has a cursor-following spotlight effect via CSS custom properties
 
 ### Data
 
