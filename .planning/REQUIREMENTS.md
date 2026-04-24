@@ -47,7 +47,8 @@
 
 ### Data
 
-- [ ] **DATA-01**: Project data includes all 21 projects with rich detail writeups for at least 13 key projects
+- [x] **DATA-01
+**: Project data includes all 21 projects with rich detail writeups for at least 13 key projects
 - [ ] **DATA-02**: Per-project hover effect mapping assigns one of 10 effect types to each project
 
 ## v1 Requirements (Validated)
