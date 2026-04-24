@@ -1,7 +1,9 @@
 'use client';
 
-import { createContext, useContext, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useRef, useEffect, type ReactNode } from 'react';
+import { useTheme } from 'next-themes';
 import { useVoiceController } from '@/lib/voice-controller';
+import type { ToolCallbacks } from '@/lib/voice-controller';
 import type { VoicePanelProps } from '@/components/voice-panel';
 import { useTransition } from '@/providers/transition-provider';
 import { usePathname } from 'next/navigation';
@@ -15,6 +17,7 @@ export interface VoiceSessionContextType {
   openVoice: () => void;
   closeVoice: () => void;
   prefersReduced: boolean;
+  registerToolCallbacks: (callbacks: ToolCallbacks) => void;  // Phase 13: per D-01
 }
 
 const VoiceSessionContext = createContext<VoiceSessionContextType | null>(null);
@@ -28,6 +31,28 @@ export function useVoiceSession(): VoiceSessionContextType {
 export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { navigateWithReveal } = useTransition();
+
+  // Phase 13 (D-01, D-05, D-04): tool callback registry via ref so dispatchToolCall reads fresh values.
+  // useRef not useState — prevents stale closure in dispatchToolCall memoization.
+  const toolCallbacksRef = useRef<ToolCallbacks>({});
+
+  // registerToolCallbacks merges incoming callbacks into the shared ref (per Pattern 2, RESEARCH.md).
+  // Pages call this on mount; pass {} to deregister on unmount.
+  const registerToolCallbacks = useCallback((callbacks: ToolCallbacks) => {
+    toolCallbacksRef.current = { ...toolCallbacksRef.current, ...callbacks };
+  }, []);
+
+  // Phase 13 (D-05, D-04): toggleTheme and openLink have no page-specific state.
+  // Wire them here once, never deregistered.
+  const { resolvedTheme, setTheme } = useTheme();
+  useEffect(() => {
+    toolCallbacksRef.current.toggleTheme = () => {
+      setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+    };
+    toolCallbacksRef.current.openLink = ({ url }: { url: string }) => {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    };
+  }, [resolvedTheme, setTheme]);
 
   const goPage = useCallback(
     (page: string) => {
@@ -64,11 +89,12 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     goPage,
     openTextChat,
     currentPage,
+    toolCallbacks: toolCallbacksRef.current,
   });
 
   return (
     <VoiceSessionContext.Provider
-      value={{ voiceActive, voiceProps, micDenied, openVoice, closeVoice, prefersReduced }}
+      value={{ voiceActive, voiceProps, micDenied, openVoice, closeVoice, prefersReduced, registerToolCallbacks }}
     >
       {children}
     </VoiceSessionContext.Provider>
