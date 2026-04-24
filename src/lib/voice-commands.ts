@@ -1,0 +1,51 @@
+// src/lib/voice-commands.ts
+// Per D-15: matchNavIntent regex router (ported from voice_mode.jsx lines 354-362)
+// Per D-20: TOUR_STEPS array (from VOICE_HANDOFF.md section 4)
+// No 'use client' — pure TypeScript utility, no React imports.
+
+export interface NavIntent {
+  page: 'home' | 'portfolio' | 'about';
+  say: string;
+}
+
+export interface TourStep {
+  page: 'home' | 'portfolio' | 'about';
+  say: string;
+  highlight?: string;
+  call?: [string, Record<string, unknown>];
+}
+
+// Port verbatim from voice_mode.jsx lines 354-362
+export function matchNavIntent(u: string): NavIntent | null {
+  if (/(open|show|take me to|go to).*portfolio|show.*work|my work|projects page/.test(u))
+    return { page: 'portfolio', say: 'Opening the portfolio.' };
+  if (/(open|show|take me to|go to).*about|who are you|about page|bio/.test(u))
+    return { page: 'about', say: "Here's the about page." };
+  if (/home|back|main page|landing/.test(u))
+    return { page: 'home', say: 'Back home.' };
+  return null;
+}
+
+// Port from VOICE_HANDOFF.md section 4 (per D-20)
+export const TOUR_STEPS: TourStep[] = [
+  { page: 'home',      say: "This is the landing. I'm Lakshman's digital twin — ask me anything.", highlight: '.hero' },
+  { page: 'home',      say: "Those floating particles? They react when I'm thinking.", highlight: '#pf-particles' },
+  { page: 'portfolio', say: "Here's the portfolio — projects across AI, Flutter, and web.", highlight: '.portfolio-grid' },
+  { page: 'portfolio', say: "Parz-AI is my favorite — a self-hostable LLM persona.", call: ['openProject', { slug: 'Parz-AI' }] },
+  { page: 'about',     say: "And the about page if you want the human version.", call: ['navigate', { page: 'about' }] },
+];
+
+// Tour trigger detection
+export function isTourIntent(u: string): boolean {
+  return /give me a tour|show me around|take me on a tour|tour/.test(u);
+}
+
+// Stop/exit intent
+export function isStopIntent(u: string): boolean {
+  return /^(stop|shut up|quiet|cancel|exit|close|bye)/.test(u);
+}
+
+// Text mode switch intent (per D-16)
+export function isTextModeIntent(u: string): boolean {
+  return /switch to (text|chat)|text mode|open chat|type instead/.test(u);
+}
