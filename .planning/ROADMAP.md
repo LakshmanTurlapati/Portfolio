@@ -114,7 +114,11 @@ Plans:
   1. Home page background is a monochrome connected-node mesh (particles.js) with grab and push mouse interactivity that reinitializes correctly when the user switches dark/light theme
   2. A GitHub Stats pill at bottom-center displays live contribution count, streak, star count, and repo count; hovering expands a detail panel
   3. Navbar shows an Ask Parz button with ambient blurred orbs, a green status dot, and hover amplification on both desktop and mobile
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 06-01-PLAN.md -- GitHub Stats live data pipeline: /api/github-stats route + wire github-stats.tsx to live fetch
+- [ ] 06-02-PLAN.md -- ChatPopup component, Ask Parz wiring (desktop + mobile), particle-background audit
 
 **UI hint**: yes
 
@@ -169,7 +173,7 @@ v1.0 phases 1-4 execute first, then v3 phases 5-9 in numeric order.
 | 3. Content Pages and Chat | v1.0 | 3/3 | Complete | 2026-04-03 |
 | 4. Page Transitions and Deployment | v1.0 | 1/2 | In progress | - |
 | 5. Portfolio Page and Data | v3 | 0/3 | Not started | - |
-| 6. Home Page and Ambient Backgrounds | v3 | 0/TBD | Not started | - |
+| 6. Home Page and Ambient Backgrounds | v3 | 0/2 | Not started | - |
 | 7. Circular Reveal Transition | v3 | 0/TBD | Not started | - |
 | 8. Voice Mode | v3 | 0/TBD | Not started | - |
 | 9. Chat, About, and Polish | v3 | 0/TBD | Not started | - |
