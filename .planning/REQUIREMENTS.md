@@ -12,8 +12,10 @@
 - [ ] **PORT-03**: User can open a grid controls panel (H key) to adjust all DataGrid parameters and randomize (R key)
 - [ ] **PORT-04**: Hovering a project card triggers a signature visual effect on the DataGrid (one of 10 types mapped per project)
 - [ ] **PORT-05**: User can click a project card to open a slide-in detail overlay with tagline, year, role, stack, stats, highlights, and sections
-- [ ] **PORT-06**: User can click Website/GitHub/Design links in the detail overlay to open an IframeViewer modal
-- [ ] **PORT-07**: IframeViewer embeds Figma and web links, converts YouTube URLs to embeds, and shows a fallback CTA for unembeddable hosts
+- [x] **PORT-06
+**: User can click Website/GitHub/Design links in the detail overlay to open an IframeViewer modal
+- [x] **PORT-07
+**: IframeViewer embeds Figma and web links, converts YouTube URLs to embeds, and shows a fallback CTA for unembeddable hosts
 - [ ] **PORT-08**: GitHub links render a rich repo preview card with README, contributors, languages, and repo metadata via the GitHub API
 
 ### Home Page

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 09-03-PLAN.md (Phase 9 complete)
-last_updated: "2026-04-24T19:22:02.001Z"
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-04-24T19:25:06.997Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 7
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 16
-  completed_plans: 15
-  percent: 94
+  completed_plans: 16
+  percent: 100
 ---
 
 # Project State
@@ -78,6 +78,8 @@ Progress: [██████████] 100%
 - [09-01]: DATA_STORE project names normalized to match projects.ts displayed names exactly so Parz can answer questions about all 21 projects
 - SpotlightEffect uses CSS custom properties --mx/--my updated synchronously on mousemove -- eliminates setInterval/lerp overhead; opacity transition for show/hide; 500px radius matching v3 prototype
 - [09-03]: All 4 Phase 9 requirements (CHAT-01, CHAT-02, CHAT-03, ABUT-01) confirmed working by human visual inspection — Phase 9 complete
+- isUnembeddable exported directly from iframe-viewer.tsx — single source of truth for embeddability checks shared with portfolio/page.tsx
+- openProject calls setViewer directly on card click — matches v3 D-01/D-02; ProjectDetail retained for secondary access via onOpenLink (D-03)
 
 ### Pending Todos
 
@@ -90,8 +92,8 @@ Progress: [██████████] 100%
 
 ## Session Continuity
 
-Last session: 2026-04-24T09:15:00.000Z
-Stopped at: Completed 09-03-PLAN.md (Phase 9 complete)
+Last session: 2026-04-24T19:25:06.991Z
+Stopped at: Completed 11-01-PLAN.md
 Resume file: None
 
 **Planned Phase:** 11 (iframeviewer-browser-previews) — 1 plans — 2026-04-24T19:22:01.996Z
