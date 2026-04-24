@@ -569,7 +569,7 @@ openLink: ({ url }) => {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **VoiceState union extension for 'executing' state**
    - What we know: VoiceState is `'idle' | 'listening' | 'thinking' | 'speaking'` in the global declare. VoiceBus.setState() has a fallback level map keyed on this union.
