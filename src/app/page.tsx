@@ -5,19 +5,25 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { useMounted } from '@/hooks/use-mounted';
 import { DesktopNavbar } from '@/components/desktop-navbar';
 import { MobileNavbar } from '@/components/mobile-navbar';
+import { ChatPopup } from '@/components/chat-popup';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { AuthorName } from '@/components/author-name';
 import { ParticleBackground } from '@/components/particle-background';
-import { SnowfallEffect } from '@/components/snowfall';
+
 import { DotMatrix } from '@/components/dot-matrix';
 import { RotatingCircularText } from '@/components/rotating-circular-text';
 import { SpotlightEffect } from '@/components/spotlight';
 import { ScrollingText } from '@/components/scrolling-text';
+import { GitHubStats } from '@/components/github-stats';
+import { useTheme } from 'next-themes';
 
 export default function Home() {
   const [clickCount, setClickCount] = useState(0);
+  const [chatOpen, setChatOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 599px)');
   const mounted = useMounted();
+  const { resolvedTheme } = useTheme();
+  const isDark = mounted && resolvedTheme === 'dark';
 
   if (!mounted) {
     // SSR placeholder - render minimal structure to prevent hydration mismatch
@@ -26,13 +32,10 @@ export default function Home() {
 
   return (
     <main className="bg-gradient-main min-h-screen relative overflow-hidden">
-      {/* Layer 2: z-10 -- Particle Background */}
+      {/* Layer 1: z-1 -- Particle Background (particles.js connected mesh) */}
       <ParticleBackground />
 
-      {/* Layer 3: z-15 -- Snowfall */}
-      <SnowfallEffect />
-
-      {/* Layer 4: z-20 -- Scrolling Text (focal point) */}
+      {/* Layer 2: z-20 -- Scrolling Text (focal point) */}
       <div
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
         style={{ zIndex: 20 }}
@@ -76,7 +79,7 @@ export default function Home() {
         className="hidden sm:block"
         onClick={() => setClickCount((prev) => prev + 1)}
       >
-        <DesktopNavbar />
+        <DesktopNavbar onAskParz={() => setChatOpen(true)} />
       </div>
 
       {/* Mobile navbar: visible < 600px */}
@@ -84,19 +87,11 @@ export default function Home() {
         className="sm:hidden"
         onClick={() => setClickCount((prev) => prev + 1)}
       >
-        <MobileNavbar />
+        <MobileNavbar onAskParz={() => setChatOpen(true)} />
       </div>
 
-      {/* Layer 8: z-30 -- Chat placeholder (Phase 3 scope, position only) */}
-      {!isMobile && (
-        <div
-          className="absolute left-0 right-0 flex justify-center"
-          style={{ zIndex: 30, bottom: '20px' }}
-        >
-          {/* Phase 3 will add ChatPlaceholder component here */}
-          <div style={{ width: 200 }} />
-        </div>
-      )}
+      {/* Layer 8: z-30 -- GitHub Stats */}
+      {!isMobile && <GitHubStats isDark={isDark} />}
 
       {/* Layer 9: z-35 -- Spotlight */}
       <SpotlightEffect />
@@ -120,6 +115,11 @@ export default function Home() {
       <div className="sm:hidden fixed top-5 left-5 z-40">
         <AuthorName variant="mobile" />
       </div>
+
+      {/* Layer 12: z-40/z-50 -- Chat Popup (gated on mount to avoid hydration mismatch) */}
+      {mounted && chatOpen && (
+        <ChatPopup isDark={isDark} onClose={() => setChatOpen(false)} />
+      )}
     </main>
   );
 }

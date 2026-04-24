@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes';
 import { FaGithub, FaLinkedin, FaXTwitter } from 'react-icons/fa6';
 import { useMounted } from '@/hooks/use-mounted';
 import { PortfolioButton } from '@/components/portfolio-button';
+import { AskParzButton } from '@/components/ask-parz-button';
 import { useTransition } from '@/providers/transition-provider';
 
 const SOCIAL_LINKS = [
@@ -13,7 +14,11 @@ const SOCIAL_LINKS = [
   { icon: FaXTwitter, url: 'https://x.com/parzival1213', label: 'X (Twitter) profile' },
 ] as const;
 
-export function DesktopNavbar() {
+interface DesktopNavbarProps {
+  onAskParz: () => void;
+}
+
+export function DesktopNavbar({ onAskParz }: DesktopNavbarProps) {
   const mounted = useMounted();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -58,6 +63,9 @@ export function DesktopNavbar() {
           About Me
         </button>
       </div>
+
+      {/* Ask Parz button */}
+      <AskParzButton isDark={isDark} onClick={onAskParz} />
 
       {/* Right: Social icons */}
       <div className="flex items-center gap-[8px] pr-[12px]">
