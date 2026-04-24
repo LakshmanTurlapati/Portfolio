@@ -11,6 +11,7 @@
   "dependencies": {
     "@ai-sdk/react": "^3.0.147",
     "@ai-sdk/xai": "^3.0.77",
+    "@elevenlabs/elevenlabs-js": "^2.44.0",
     "@gsap/react": "^2",
     "@tailwindcss/postcss": "^4",
     "ai": "^6.0.145",

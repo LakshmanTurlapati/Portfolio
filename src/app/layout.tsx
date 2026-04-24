@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Lato, Instrument_Serif } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { TransitionProvider } from '@/providers/transition-provider';
+import { VoiceBusProvider } from '@/providers/voice-bus-provider';
 import './globals.css';
 
 const lato = Lato({
@@ -52,7 +53,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-[family-name:var(--font-lato)] bg-[var(--color-bg)] text-[var(--color-text)]">
         <ThemeProvider>
           <TransitionProvider>
-            {children}
+            <VoiceBusProvider>
+              {children}
+            </VoiceBusProvider>
           </TransitionProvider>
         </ThemeProvider>
       </body>
