@@ -24,6 +24,17 @@ const loadingMessages = [
   'Generating response',
 ];
 
+// Parz-persona error messages (random, never show technical error.message)
+const PARZ_ERRORS = [
+  "Ah, my brain glitched for a sec. Try again?",
+  "Server's taking a nap. Give it another shot.",
+  "Something's off on my end, hit me again.",
+  "Whoops, lost my train of thought. One more time?",
+  "Got a hiccup on my side. Try that again.",
+  "Ran into a wall there. Mind asking again?",
+  "My gears jammed. One more try should do it.",
+];
+
 function getRandomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -72,6 +83,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
   const [userMessageCount, setUserMessageCount] = useState(0);
   const [suggestionClicked, setSuggestionClicked] = useState(false);
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
+  const [currentError, setCurrentError] = useState<string | null>(null);
 
   // Randomly pick suggestion chips on mount (1 small + 1 big)
   const [suggestions] = useState(() => ({
@@ -104,6 +116,15 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
     }, 3000);
     return () => clearInterval(interval);
   }, [isLoading]);
+
+  // Pick a random Parz error message when error state changes
+  useEffect(() => {
+    if (error) {
+      setCurrentError(getRandomItem(PARZ_ERRORS));
+    } else {
+      setCurrentError(null);
+    }
+  }, [error]);
 
   // Focus input on open
   useEffect(() => {
@@ -347,7 +368,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
           )}
 
           {/* Error display */}
-          {error && (
+          {currentError && (
             <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
               <div
                 style={{
@@ -361,7 +382,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
                   fontSize: '14px',
                 }}
               >
-                {error.message}
+                {currentError}
               </div>
             </div>
           )}

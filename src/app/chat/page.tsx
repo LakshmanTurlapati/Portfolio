@@ -26,6 +26,17 @@ const loadingMessages = [
   'Generating response',
 ];
 
+// Parz-persona error messages (random, never show technical error.message)
+const PARZ_ERRORS = [
+  "Ah, my brain glitched for a sec. Try again?",
+  "Server's taking a nap. Give it another shot.",
+  "Something's off on my end, hit me again.",
+  "Whoops, lost my train of thought. One more time?",
+  "Got a hiccup on my side. Try that again.",
+  "Ran into a wall there. Mind asking again?",
+  "My gears jammed. One more try should do it.",
+];
+
 function getRandomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -71,6 +82,7 @@ export default function ChatPage() {
   const [userMessageCount, setUserMessageCount] = useState(0);
   const [suggestionClicked, setSuggestionClicked] = useState(false);
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
+  const [currentError, setCurrentError] = useState<string | null>(null);
 
   // Randomly pick suggestion chips on mount (1 small + 1 big)
   const [suggestions] = useState(() => ({
@@ -86,6 +98,15 @@ export default function ChatPage() {
 
   const isLoading = status === 'submitted' || status === 'streaming';
   const showSuggestions = isDesktop && !suggestionClicked && userMessageCount < 2;
+
+  // Pick a random Parz error message when error state changes
+  useEffect(() => {
+    if (error) {
+      setCurrentError(getRandomItem(PARZ_ERRORS));
+    } else {
+      setCurrentError(null);
+    }
+  }, [error]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -237,7 +258,7 @@ export default function ChatPage() {
         )}
 
         {/* Error display */}
-        {error && (
+        {currentError && (
           <div className="flex justify-start mb-4">
             <div
               className="max-w-[80%] sm:max-w-[65%] rounded-2xl rounded-bl-md px-4 py-3"
@@ -247,7 +268,7 @@ export default function ChatPage() {
                 color: 'var(--color-text)',
               }}
             >
-              <p className="text-sm">{error.message}</p>
+              <p className="text-sm">{currentError}</p>
             </div>
           </div>
         )}
