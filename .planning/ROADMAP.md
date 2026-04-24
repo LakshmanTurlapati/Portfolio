@@ -3,7 +3,8 @@
 ## Milestones
 
 - ✅ **v1.0 Migration** - Phases 1-4 (in progress — Phase 4 partially complete)
-- 🚧 **v3 Portfolio Redesign** - Phases 5-9 (in progress)
+- ✅ **v3 Portfolio Redesign** - Phases 5-11 (complete)
+- 🚧 **v4.0 Voice Mode Production** - Phases 12-15 (in progress)
 
 ## Phases
 
@@ -82,46 +83,10 @@ Plans:
 
 </details>
 
-### Phase 10: Circular Reveal Fix
-**Goal**: Debug and fix the circular reveal page transition — the View Transitions API + WAAPI clip-path implementation needs deep investigation into why animations are not visible despite correct code structure. Also implement Portfolio button ↔ back button hero morph.
-**Depends on**: Phase 7
-**Requirements**: TRAN-01, TRAN-02
-**Success Criteria** (what must be TRUE):
-  1. Clicking any navigation link triggers a visible circular reveal animation expanding from the clicked element's position
-  2. The old page remains visible outside the expanding circle until it fully covers the viewport
-  3. The Portfolio button visually morphs into the back button on the destination page during the transition (Flutter Hero equivalent)
-  4. Back button click triggers a circular reveal from its position back to the home page
-  5. Works in Chrome, Edge, Firefox, and Safari
-**Plans:** 1/1 plans complete
+<details>
+<summary>✅ v3 Portfolio Redesign (Phases 5-11)</summary>
 
-Plans:
-- [x] 10-01-PLAN.md -- Verify fix (remove hero-nav-btn duplicates) and human visual verification of circular reveal
-
-**UI hint**: yes
-
-### Phase 11: IframeViewer Browser Previews
-**Goal**: IframeViewer shows lightweight browser-frame previews for project links — matching the v3 design prototype's embedded web/Figma/YouTube viewers with browser chrome UI, loading states, and fallback CTAs for unembeddable hosts
-**Depends on**: Phase 5
-**Requirements**: PORT-06, PORT-07
-**Success Criteria** (what must be TRUE):
-  1. Clicking a Website link in the project detail overlay opens the IframeViewer with a browser-frame UI (address bar, close button, external link button)
-  2. Figma links embed directly via Figma's embed API; YouTube URLs convert to embed players
-  3. GitHub links show the rich GithubPreview card (already built in Phase 5)
-  4. Unembeddable hosts (Chrome Web Store, LinkedIn, etc.) show a styled fallback CTA instead of a broken iframe
-**Plans:** 1/1 plans complete
-
-Plans:
-- [x] 11-01-PLAN.md -- Export isUnembeddable, rewrite openProject to open IframeViewer directly with link-priority routing
-
-**UI hint**: yes
-
----
-
-### 🚧 v3 Portfolio Redesign (Phases 5-9)
-
-**Milestone Goal:** Implement the v3 design overhaul -- interactive DataGrid portfolio, voice AI mode, faithful circular reveal transition, ambient home page backgrounds, and chat/about polish.
-
-#### Phase 5: Portfolio Page and Data
+### Phase 5: Portfolio Page and Data
 **Goal**: Users can interact with a fully polished v3 portfolio -- DataGrid canvas background, per-project hover effects, slide-in detail overlays, and IframeViewer previews
 **Depends on**: Phase 3
 **Requirements**: PORT-01, PORT-02, PORT-03, PORT-04, PORT-05, PORT-06, PORT-07, PORT-08, DATA-01, DATA-02
@@ -139,7 +104,7 @@ Plans:
 
 **UI hint**: yes
 
-#### Phase 6: Home Page and Ambient Backgrounds
+### Phase 6: Home Page and Ambient Backgrounds
 **Goal**: Users see a particles.js connected-node mesh on the home page and a GitHub Stats pill, and the navbar offers the Ask Parz entry point with ambient orbs
 **Depends on**: Phase 2
 **Requirements**: HOME-01, HOME-02, HOME-03
@@ -155,7 +120,7 @@ Plans:
 
 **UI hint**: yes
 
-#### Phase 7: Circular Reveal Transition
+### Phase 7: Circular Reveal Transition
 **Goal**: Navigating between pages produces a circular reveal that clips the incoming page content expanding from the origin point, matching Flutter's ClipPath behavior
 **Depends on**: Phase 4
 **Requirements**: TRAN-01, TRAN-02
@@ -171,7 +136,7 @@ Plans:
 
 **UI hint**: yes
 
-#### Phase 8: Voice Mode
+### Phase 8: Voice Mode
 **Goal**: Users can speak to Parz -- voice mode activates from the navbar, the navbar morphs into a voice panel, and the full speech-to-text/text-to-speech pipeline runs with visual feedback
 **Depends on**: Phase 6
 **Requirements**: VOIC-01, VOIC-02, VOIC-03, VOIC-04, VOIC-05
@@ -191,7 +156,7 @@ Plans:
 
 **UI hint**: yes
 
-#### Phase 9: Chat, About, and Polish
+### Phase 9: Chat, About, and Polish
 **Goal**: Chat uses the full Parz persona with complete data store, quality-of-life improvements are live, and the About page has a cursor spotlight effect
 **Depends on**: Phase 5, Phase 6, Phase 7, Phase 8
 **Requirements**: CHAT-01, CHAT-02, CHAT-03, ABUT-01
@@ -209,11 +174,104 @@ Plans:
 
 **UI hint**: yes
 
+### Phase 10: Circular Reveal Fix
+**Goal**: Debug and fix the circular reveal page transition -- the View Transitions API + WAAPI clip-path implementation needs deep investigation into why animations are not visible despite correct code structure. Also implement Portfolio button to back button hero morph.
+**Depends on**: Phase 7
+**Requirements**: TRAN-01, TRAN-02
+**Success Criteria** (what must be TRUE):
+  1. Clicking any navigation link triggers a visible circular reveal animation expanding from the clicked element's position
+  2. The old page remains visible outside the expanding circle until it fully covers the viewport
+  3. The Portfolio button visually morphs into the back button on the destination page during the transition (Flutter Hero equivalent)
+  4. Back button click triggers a circular reveal from its position back to the home page
+  5. Works in Chrome, Edge, Firefox, and Safari
+**Plans:** 1/1 plans complete
+
+Plans:
+- [x] 10-01-PLAN.md -- Verify fix (remove hero-nav-btn duplicates) and human visual verification of circular reveal
+
+**UI hint**: yes
+
+### Phase 11: IframeViewer Browser Previews
+**Goal**: IframeViewer shows lightweight browser-frame previews for project links -- matching the v3 design prototype's embedded web/Figma/YouTube viewers with browser chrome UI, loading states, and fallback CTAs for unembeddable hosts
+**Depends on**: Phase 5
+**Requirements**: PORT-06, PORT-07
+**Success Criteria** (what must be TRUE):
+  1. Clicking a Website link in the project detail overlay opens the IframeViewer with a browser-frame UI (address bar, close button, external link button)
+  2. Figma links embed directly via Figma's embed API; YouTube URLs convert to embed players
+  3. GitHub links show the rich GithubPreview card (already built in Phase 5)
+  4. Unembeddable hosts (Chrome Web Store, LinkedIn, etc.) show a styled fallback CTA instead of a broken iframe
+**Plans:** 1/1 plans complete
+
+Plans:
+- [x] 11-01-PLAN.md -- Export isUnembeddable, rewrite openProject to open IframeViewer directly with link-priority routing
+
+**UI hint**: yes
+
+</details>
+
+---
+
+## v4.0 Voice Mode Production (Phases 12-15)
+
+**Milestone Goal:** Make voice mode fully functional and production-ready -- persistent overlay across navigation, wired tool callbacks, ElevenLabs STT upgrade, and verified API connectivity on Amplify.
+
+- [ ] **Phase 12: Persistent Voice Overlay** - Lift voice session to layout level so it survives page navigation
+- [ ] **Phase 13: Tool Callbacks and Visual Feedback** - Wire all tool actions to real page effects and add viewport glow states
+- [ ] **Phase 14: ElevenLabs STT Upgrade** - Replace Web Speech API with Scribe v2 for cross-browser transcription
+- [ ] **Phase 15: API Verification and Deployment** - Confirm all API routes and keys work in Amplify production
+
+## Phase Details
+
+### Phase 12: Persistent Voice Overlay
+**Goal**: Voice session survives page navigation -- activating voice on any page and navigating keeps the overlay open, state intact, and Ask Parz reachable everywhere
+**Depends on**: Phase 11
+**Requirements**: OVLY-01, OVLY-02, OVLY-03, OVLY-04
+**Success Criteria** (what must be TRUE):
+  1. User opens voice mode on the home page, navigates to portfolio, and the VoicePanel stays rendered with its previous state (listening/thinking/speaking) -- no reset or disappearance
+  2. Ask Parz button is visible and functional in the navbar on home, portfolio, about, and chat pages -- clicking it from any page activates voice mode
+  3. Switching from voice to text mode on any page opens ChatPopup in-place without navigating away
+  4. VoiceBus state machine (idle, listening, thinking, speaking) does not reset mid-session when the route changes
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 13: Tool Callbacks and Visual Feedback
+**Goal**: Voice commands produce real effects -- spoken tool intents execute on-screen actions and the viewport border communicates voice state through color-coded glows
+**Depends on**: Phase 12
+**Requirements**: TOOL-01, TOOL-02, TOOL-03, TOOL-04, TOOL-05, TOOL-06, VFBK-01, VFBK-02, VFBK-03, VFBK-04
+**Success Criteria** (what must be TRUE):
+  1. Saying a project name opens that project's detail view on the portfolio page; the tour step navigates to portfolio, opens the project, and speaks the description without a race condition
+  2. Saying "go to about" (or any page name) navigates to that page; saying "scroll to experience" on the about page scrolls to that section
+  3. Saying "open link" opens the referenced URL in a new tab; saying "toggle theme" or "switch to dark mode" applies the theme change immediately
+  4. Viewport border glows blue while listening, amber while a tool call is executing, green on successful completion, and red on error -- each glow state is visually distinct and resolves cleanly
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 14: ElevenLabs STT Upgrade
+**Goal**: Speech recognition uses ElevenLabs Scribe v2 over a secure server-issued token, works in all major browsers, and no longer depends on the Chrome-only Web Speech API
+**Depends on**: Phase 12
+**Requirements**: STT-01, STT-02, STT-03
+**Success Criteria** (what must be TRUE):
+  1. Speaking into the mic in Firefox and Safari produces a recognized transcript -- voice mode is not silently broken in non-Chrome browsers
+  2. The ElevenLabs API key is never present in the browser bundle or network requests from the client; the browser uses a 15-minute single-use token fetched from /api/stt-token
+  3. Transcription latency is perceptibly lower than Web Speech API and partial transcripts appear while the user is still speaking
+**Plans**: TBD
+
+### Phase 15: API Verification and Deployment
+**Goal**: All voice and chat API routes return real AI responses in Amplify production -- no 503s from missing env vars and both ElevenLabs keys verified working end-to-end
+**Depends on**: Phase 14
+**Requirements**: API-01, API-02
+**Success Criteria** (what must be TRUE):
+  1. Sending a text chat message and making a voice query both return real Grok-3-mini responses (not fallback errors) in the deployed Amplify environment
+  2. POST /api/stt-token returns 200 with a token in production; POST /api/tts returns audio in production -- confirming ElevenLabs keys are injected into the Lambda runtime
+**Plans**: TBD
+
+---
+
 ## Progress
 
 **Execution Order:**
-v1.0 phases 1-4 execute first, then v3 phases 5-9, then fix/polish phases 10-11.
-5 → 6 → 7 → 8 → 9 → 10 → 11
+v1.0 phases 1-4, then v3 phases 5-11, then v4.0 phases 12-15.
+12 → 13 → 14 → 15
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -226,5 +284,9 @@ v1.0 phases 1-4 execute first, then v3 phases 5-9, then fix/polish phases 10-11.
 | 7. Circular Reveal Transition | v3 | 2/2 | Complete | 2026-04-24 |
 | 8. Voice Mode | v3 | 5/5 | Complete | 2026-04-24 |
 | 9. Chat, About, and Polish | v3 | 3/3 | Complete | 2026-04-24 |
-| 10. Circular Reveal Fix | v3 | 1/1 | Complete    | 2026-04-24 |
-| 11. IframeViewer Browser Previews | v3 | 1/1 | Complete    | 2026-04-24 |
+| 10. Circular Reveal Fix | v3 | 1/1 | Complete | 2026-04-24 |
+| 11. IframeViewer Browser Previews | v3 | 1/1 | Complete | 2026-04-24 |
+| 12. Persistent Voice Overlay | v4.0 | 0/? | Not started | - |
+| 13. Tool Callbacks and Visual Feedback | v4.0 | 0/? | Not started | - |
+| 14. ElevenLabs STT Upgrade | v4.0 | 0/? | Not started | - |
+| 15. API Verification and Deployment | v4.0 | 0/? | Not started | - |

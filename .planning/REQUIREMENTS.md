@@ -92,31 +92,31 @@ All v3 redesign requirements completed in milestone v3. See git history for deta
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OVLY-01 | — | Pending |
-| OVLY-02 | — | Pending |
-| OVLY-03 | — | Pending |
-| OVLY-04 | — | Pending |
-| TOOL-01 | — | Pending |
-| TOOL-02 | — | Pending |
-| TOOL-03 | — | Pending |
-| TOOL-04 | — | Pending |
-| TOOL-05 | — | Pending |
-| TOOL-06 | — | Pending |
-| STT-01 | — | Pending |
-| STT-02 | — | Pending |
-| STT-03 | — | Pending |
-| VFBK-01 | — | Pending |
-| VFBK-02 | — | Pending |
-| VFBK-03 | — | Pending |
-| VFBK-04 | — | Pending |
-| API-01 | — | Pending |
-| API-02 | — | Pending |
+| OVLY-01 | Phase 12 | Pending |
+| OVLY-02 | Phase 12 | Pending |
+| OVLY-03 | Phase 12 | Pending |
+| OVLY-04 | Phase 12 | Pending |
+| TOOL-01 | Phase 13 | Pending |
+| TOOL-02 | Phase 13 | Pending |
+| TOOL-03 | Phase 13 | Pending |
+| TOOL-04 | Phase 13 | Pending |
+| TOOL-05 | Phase 13 | Pending |
+| TOOL-06 | Phase 13 | Pending |
+| VFBK-01 | Phase 13 | Pending |
+| VFBK-02 | Phase 13 | Pending |
+| VFBK-03 | Phase 13 | Pending |
+| VFBK-04 | Phase 13 | Pending |
+| STT-01 | Phase 14 | Pending |
+| STT-02 | Phase 14 | Pending |
+| STT-03 | Phase 14 | Pending |
+| API-01 | Phase 15 | Pending |
+| API-02 | Phase 15 | Pending |
 
 **Coverage:**
 - v4.0 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19 ⚠️
+- Mapped to phases: 19
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-24*
-*Last updated: 2026-04-24 after initial definition*
+*Last updated: 2026-04-24 after roadmap creation (Phases 12-15)*
