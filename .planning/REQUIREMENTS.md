@@ -102,8 +102,8 @@ All v1 migration requirements completed in milestone v1.0. See git history for d
 | PORT-03 | Phase 5 | Pending |
 | PORT-04 | Phase 5 | Pending |
 | PORT-05 | Phase 5 | Pending |
-| PORT-06 | Phase 5 | Pending |
-| PORT-07 | Phase 5 | Pending |
+| PORT-06 | Phase 5 | Complete |
+| PORT-07 | Phase 5 | Complete |
 | PORT-08 | Phase 5 | Pending |
 | HOME-01 | Phase 6 | Pending |
 | HOME-02 | Phase 6 | Pending |

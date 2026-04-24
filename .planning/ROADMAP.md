@@ -105,10 +105,10 @@ Plans:
   2. Figma links embed directly via Figma's embed API; YouTube URLs convert to embed players
   3. GitHub links show the rich GithubPreview card (already built in Phase 5)
   4. Unembeddable hosts (Chrome Web Store, LinkedIn, etc.) show a styled fallback CTA instead of a broken iframe
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 11-01-PLAN.md -- Export isUnembeddable, rewrite openProject to open IframeViewer directly with link-priority routing
+- [x] 11-01-PLAN.md -- Export isUnembeddable, rewrite openProject to open IframeViewer directly with link-priority routing
 
 **UI hint**: yes
 
@@ -224,4 +224,4 @@ v1.0 phases 1-4 execute first, then v3 phases 5-9, then fix/polish phases 10-11.
 | 8. Voice Mode | v3 | 5/5 | Complete | 2026-04-24 |
 | 9. Chat, About, and Polish | v3 | 3/3 | Complete | 2026-04-24 |
 | 10. Circular Reveal Fix | v3 | 0/TBD | Not started | - |
-| 11. IframeViewer Browser Previews | v3 | 0/1 | Not started | - |
+| 11. IframeViewer Browser Previews | v3 | 1/1 | Complete    | 2026-04-24 |
