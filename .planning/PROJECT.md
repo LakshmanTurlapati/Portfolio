@@ -50,7 +50,7 @@ A visually striking, interactive portfolio that showcases projects with rich det
 - [x] GitHub Stats pill on home page -- Validated in Phase 6
 - [x] Ask Parz button in navbar -- Validated in Phase 6
 - [x] particles.js connected-node mesh -- Validated in Phase 6
-- [ ] Circular reveal page transition fix
+- [x] Circular reveal page transition fix -- Validated in Phase 7 (View Transitions API)
 - [ ] Voice mode (VoiceBus, speech recognition, TTS)
 - [ ] About page spotlight cursor effect updates
 - [ ] Updated project data with 21 projects and detail writeups
@@ -69,7 +69,7 @@ A visually striking, interactive portfolio that showcases projects with rich det
 - Current stack: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4
 - v3 design prototype provided as HTML/React bundle from Claude Design
 - Several v3 components already implemented: DataGrid, ProjectDetail, IframeViewer, GitHub Stats, Ask Parz, particles.js, portfolio page redesign, updated project data
-- Circular reveal transition needs rework -- current overlay-based approach doesn't match Flutter's ClipPath behavior
+- Circular reveal transition complete -- uses View Transitions API with clip-path on ::view-transition-new(root), matching Flutter's ClipPath behavior
 - Voice mode is the largest new feature -- requires Web Speech API integration
 - Deployed at audienclature.com on AWS Amplify
 
@@ -93,7 +93,7 @@ A visually striking, interactive portfolio that showcases projects with rich det
 | AWS Amplify deployment | User preference for hosting platform | ✓ Good |
 | particles.js for home bg | Connected-node mesh with grab/push interactivity, theme-aware | ✓ Good |
 | DataGrid for portfolio bg | Canvas-based pulsing dots with 10 hover effect types | -- Pending |
-| Overlay-based reveal | Needs rework to match Flutter's ClipPath approach | ⚠️ Revisit |
+| View Transitions API reveal | Replaced overlay with View Transitions API + clip-path, matches Flutter | ✓ Good |
 
 ## Evolution
 
@@ -113,4 +113,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after Phase 6 complete*
+*Last updated: 2026-04-24 after Phase 7 complete*
