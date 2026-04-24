@@ -145,9 +145,16 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Clicking Ask Parz activates voice mode and the navbar visually morphs into a voice control panel showing current state (idle, listening, thinking, speaking)
   2. In listening state, the mic captures speech via Web Speech API and displays a live amplitude waveform visualization; the recognized transcript is visible before submission
-  3. After a voice query, Parz responds with synthesized speech (Web Speech Synthesis TTS) with a pulsing amplitude envelope animation; the particles mesh breathes in sync with VoiceBus state
+  3. After a voice query, Parz responds with synthesized speech (ElevenLabs eleven_turbo_v2_5 via /api/tts proxy) with a real amplitude envelope animation; the particles mesh breathes in sync with VoiceBus state
   4. User can say a page name to navigate, say "text" or click to switch to the chat text interface, or say "stop" / click to exit voice mode
-**Plans**: TBD
+**Plans:** 5 plans
+
+Plans:
+- [ ] 08-01-PLAN.md -- VoiceBus types, init module, provider, and ElevenLabs TTS proxy route
+- [ ] 08-02-PLAN.md -- Voice controller hook: STT, AI agent loop, voice commands, tour, barge-in, memory, accessibility
+- [ ] 08-03-PLAN.md -- VoiceWave + VoicePanel components, desktop GSAP Flip morph, mobile CSS morph, page.tsx wiring
+- [ ] 08-04-PLAN.md -- Particle breathing rAF loop integration in ParticleBackground
+- [ ] 08-05-PLAN.md -- Human visual verification of full voice mode
 
 **UI hint**: yes
 
@@ -179,5 +186,5 @@ v1.0 phases 1-4 execute first, then v3 phases 5-9 in numeric order.
 | 5. Portfolio Page and Data | v3 | 0/3 | Not started | - |
 | 6. Home Page and Ambient Backgrounds | v3 | 0/2 | Not started | - |
 | 7. Circular Reveal Transition | v3 | 2/2 | Complete | 2026-04-24 |
-| 8. Voice Mode | v3 | 0/TBD | Not started | - |
+| 8. Voice Mode | v3 | 0/5 | Not started | - |
 | 9. Chat, About, and Polish | v3 | 0/TBD | Not started | - |
