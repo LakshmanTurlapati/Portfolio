@@ -150,11 +150,11 @@ Plans:
 **Plans:** 5 plans
 
 Plans:
-- [ ] 08-01-PLAN.md -- VoiceBus types, init module, provider, and ElevenLabs TTS proxy route
-- [ ] 08-02-PLAN.md -- Voice controller hook: STT, AI agent loop, voice commands, tour, barge-in, memory, accessibility
-- [ ] 08-03-PLAN.md -- VoiceWave + VoicePanel components, desktop GSAP Flip morph, mobile CSS morph, page.tsx wiring
-- [ ] 08-04-PLAN.md -- Particle breathing rAF loop integration in ParticleBackground
-- [ ] 08-05-PLAN.md -- Human visual verification of full voice mode
+- [x] 08-01-PLAN.md -- VoiceBus types, init module, provider, and ElevenLabs TTS proxy route
+- [x] 08-02-PLAN.md -- Voice controller hook: STT, AI agent loop, voice commands, tour, barge-in, memory, accessibility
+- [x] 08-03-PLAN.md -- VoiceWave + VoicePanel components, desktop GSAP Flip morph, mobile CSS morph, page.tsx wiring
+- [x] 08-04-PLAN.md -- Particle breathing rAF loop integration in ParticleBackground
+- [x] 08-05-PLAN.md -- Human visual verification of full voice mode
 
 **UI hint**: yes
 
@@ -186,5 +186,5 @@ v1.0 phases 1-4 execute first, then v3 phases 5-9 in numeric order.
 | 5. Portfolio Page and Data | v3 | 0/3 | Not started | - |
 | 6. Home Page and Ambient Backgrounds | v3 | 0/2 | Not started | - |
 | 7. Circular Reveal Transition | v3 | 2/2 | Complete | 2026-04-24 |
-| 8. Voice Mode | v3 | 0/5 | Not started | - |
+| 8. Voice Mode | v3 | 5/5 | Complete | 2026-04-23 |
 | 9. Chat, About, and Polish | v3 | 0/TBD | Not started | - |
