@@ -97,7 +97,12 @@ Plans:
   2. Hovering a project card triggers that project's assigned signature effect on the DataGrid (each of 21 projects has a distinct effect type mapped)
   3. Clicking a project card slides in a detail overlay showing tagline, year, role, stack, stats, highlights, and rich sections -- content is filled for at least 13 key projects
   4. Clicking Website, GitHub, or Design links in the overlay opens the IframeViewer: Figma and web links embed directly, YouTube URLs convert to embed players, GitHub links show a rich repo card with README and metadata, and unembeddable hosts show a fallback CTA
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md -- GithubPreview component (PORT-08) and IframeViewer routing for GitHub URLs
+- [ ] 05-02-PLAN.md -- Visual audit: Instrument Serif fonts, stats grid, dash bullets, card hover polish
+- [ ] 05-03-PLAN.md -- Fill all 8 missing project detail writeups (DATA-01 complete coverage)
 
 **UI hint**: yes
 
@@ -163,7 +168,7 @@ v1.0 phases 1-4 execute first, then v3 phases 5-9 in numeric order.
 | 2. Home Page and Canvas Animations | v1.0 | 4/4 | Complete | 2026-04-03 |
 | 3. Content Pages and Chat | v1.0 | 3/3 | Complete | 2026-04-03 |
 | 4. Page Transitions and Deployment | v1.0 | 1/2 | In progress | - |
-| 5. Portfolio Page and Data | v3 | 0/TBD | Not started | - |
+| 5. Portfolio Page and Data | v3 | 0/3 | Not started | - |
 | 6. Home Page and Ambient Backgrounds | v3 | 0/TBD | Not started | - |
 | 7. Circular Reveal Transition | v3 | 0/TBD | Not started | - |
 | 8. Voice Mode | v3 | 0/TBD | Not started | - |
