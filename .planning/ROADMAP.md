@@ -130,7 +130,11 @@ Plans:
   1. Clicking any navigation link triggers a circular reveal: the new page content is clipped inside an expanding circle that originates from the clicked element's screen position
   2. The old page remains visible outside the expanding circle throughout the animation -- it is not hidden, faded, or replaced until the circle fully covers the viewport
   3. The transition works for all navigation paths (home, portfolio, about, chat) and does not break on rapid successive clicks or browser back navigation
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 07-01-PLAN.md -- Rewrite TransitionProvider with View Transitions API + CSS reset + Next.js config flag
+- [ ] 07-02-PLAN.md -- Human visual verification of circular reveal across all navigation paths
 
 **UI hint**: yes
 
@@ -174,6 +178,6 @@ v1.0 phases 1-4 execute first, then v3 phases 5-9 in numeric order.
 | 4. Page Transitions and Deployment | v1.0 | 1/2 | In progress | - |
 | 5. Portfolio Page and Data | v3 | 0/3 | Not started | - |
 | 6. Home Page and Ambient Backgrounds | v3 | 0/2 | Not started | - |
-| 7. Circular Reveal Transition | v3 | 0/TBD | Not started | - |
+| 7. Circular Reveal Transition | v3 | 0/2 | Not started | - |
 | 8. Voice Mode | v3 | 0/TBD | Not started | - |
 | 9. Chat, About, and Polish | v3 | 0/TBD | Not started | - |

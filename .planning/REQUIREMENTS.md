@@ -27,8 +27,10 @@
 
 ### Page Transitions
 
-- [ ] **TRAN-01**: Navigating between pages triggers a circular reveal that clips the NEW page content, expanding from the clicked element's position (matching Flutter ClipPath)
-- [ ] **TRAN-02**: The old page remains visible around the expanding circle until the reveal covers the viewport
+- [x] **TRAN-01
+**: Navigating between pages triggers a circular reveal that clips the NEW page content, expanding from the clicked element's position (matching Flutter ClipPath)
+- [x] **TRAN-02
+**: The old page remains visible around the expanding circle until the reveal covers the viewport
 
 ### Voice Mode
 
