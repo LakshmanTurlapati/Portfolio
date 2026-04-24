@@ -224,3 +224,30 @@ body {
   0%, 100% { box-shadow: 0 0 0 0 rgba(169,227,75,0.55); }
   50% { box-shadow: 0 0 0 6px rgba(169,227,75,0); }
 }
+
+/* ─── Phase 7: View Transitions API ───────────────────────────────────────── */
+
+/* Suppress browser default cross-fade — custom clip-path animation takes over.
+   Without animation:none, default AND custom animations run simultaneously,
+   causing the old page to fade out instead of remaining static. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  display: block;
+}
+
+/* Allow clip-path to compose correctly without isolation interference */
+::view-transition-image-pair(root) {
+  isolation: auto;
+}
+
+/* Respect prefers-reduced-motion (accessibility) */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-group(root) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
