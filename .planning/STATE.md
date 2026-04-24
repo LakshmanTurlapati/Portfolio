@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 08-03-PLAN.md — Voice UI layer (VoiceWave, VoicePanel, navbar morphs, page.tsx wiring)
-last_updated: "2026-04-24T06:41:39.194Z"
+stopped_at: Completed 08-04-PLAN.md — VoiceBus breathing rAF loop in ParticleBackground
+last_updated: "2026-04-24T06:44:56.183Z"
 last_activity: 2026-04-24 -- Phase --phase execution started
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 12
-  completed_plans: 10
-  percent: 83
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 1 of --name
 Status: Executing Phase --phase
 Last activity: 2026-04-24 -- Phase --phase execution started
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -71,6 +71,8 @@ Progress: [████████░░] 83%
 - dispatchToolCall inside hook body — single dispatch for all TOUR_STEPS tool calls; openProject wired via toolCallbacks, others console.warn on miss
 - Import Flip from gsap/all to avoid macOS case-insensitive FS TS1149 casing conflict between gsap/Flip and gsap/flip
 - VoiceNavProps = Omit<VoicePanelProps, 'isDark' | 'micDenied'> in navbars — controller voiceProps excludes theme/mic fields that navbars inject themselves
+- ParticleContainer type alias collocated in particle-background.tsx — __vmTick is an implementation detail of breathing, not a VoiceBus concern
+- breathCancelled + breathRaf are closure-local in init() — ensures zero React re-renders; each theme-switch reinit gets an isolated breathing loop
 
 ### Pending Todos
 
@@ -83,8 +85,8 @@ Progress: [████████░░] 83%
 
 ## Session Continuity
 
-Last session: 2026-04-24T06:41:39.189Z
-Stopped at: Completed 08-03-PLAN.md — Voice UI layer (VoiceWave, VoicePanel, navbar morphs, page.tsx wiring)
+Last session: 2026-04-24T06:44:56.178Z
+Stopped at: Completed 08-04-PLAN.md — VoiceBus breathing rAF loop in ParticleBackground
 Resume file: None
 
 **Planned Phase:** 08 (voice-mode) — 5 plans — 2026-04-24T05:25:45.905Z
