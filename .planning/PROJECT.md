@@ -51,7 +51,7 @@ A visually striking, interactive portfolio that showcases projects with rich det
 - [x] Ask Parz button in navbar -- Validated in Phase 6
 - [x] particles.js connected-node mesh -- Validated in Phase 6
 - [x] Circular reveal page transition fix -- Validated in Phase 7 (View Transitions API)
-- [ ] Voice mode (VoiceBus, speech recognition, TTS)
+- [x] Voice mode (VoiceBus, speech recognition, TTS) -- Validated in Phase 8 (ElevenLabs + Web Speech API)
 - [ ] About page spotlight cursor effect updates
 - [ ] Updated project data with 21 projects and detail writeups
 - [ ] Chat persona updates (full Parz system prompt)
@@ -113,4 +113,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after Phase 7 complete*
+*Last updated: 2026-04-24 after Phase 8 complete*
