@@ -5,6 +5,7 @@ import { TransitionProvider } from '@/providers/transition-provider';
 import { VoiceBusProvider } from '@/providers/voice-bus-provider';
 import { VoiceSessionProvider } from '@/providers/voice-session-provider';
 import { VoiceOverlay } from '@/components/voice-overlay';
+import { VoiceGlow } from '@/components/voice-glow';
 import './globals.css';
 
 const lato = Lato({
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <VoiceSessionProvider>
                 {children}
                 <VoiceOverlay />
+                <VoiceGlow />
               </VoiceSessionProvider>
             </VoiceBusProvider>
           </TransitionProvider>
