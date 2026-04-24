@@ -252,3 +252,46 @@ body {
     animation-delay: 0s !important;
   }
 }
+
+/* ─── Phase 13: VoiceGlow ─────────────────────────────────────────────────── */
+/* Glow is MONOCHROME (D-11, D-12). --glow-color is set by VoiceGlow component */
+/* via inline style: dark mode = 255,255,255  |  light mode = 0,0,0             */
+
+/* Listening state — breathing pulse */
+@keyframes voiceGlowBreath {
+  0%, 100% { box-shadow: 0 0 20px 6px rgba(var(--glow-color), 0.15); }
+  50%       { box-shadow: 0 0 40px 14px rgba(var(--glow-color), 0.35); }
+}
+
+/* Success state — fires once then class is removed by JS */
+@keyframes voiceGlowSuccess {
+  0%   { box-shadow: 0 0 30px 10px rgba(var(--glow-color), 0); }
+  15%  { box-shadow: 0 0 30px 10px rgba(var(--glow-color), 0.35); }
+  60%  { box-shadow: 0 0 30px 10px rgba(var(--glow-color), 0.3); }
+  100% { box-shadow: 0 0 30px 10px rgba(var(--glow-color), 0); }
+}
+
+.voice-glow-listening {
+  animation: voiceGlowBreath 2s ease-in-out infinite;
+}
+
+.voice-glow-executing {
+  box-shadow: 0 0 30px 10px rgba(var(--glow-color), 0.25);
+  transition: box-shadow 200ms ease;
+}
+
+.voice-glow-success {
+  animation: voiceGlowSuccess 1000ms ease forwards;
+}
+
+.voice-glow-error {
+  box-shadow: 0 0 30px 10px rgba(var(--glow-color), 0.35);
+  transition: box-shadow 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-glow-listening {
+    animation: none;
+    box-shadow: 0 0 30px 10px rgba(var(--glow-color), 0.25);
+  }
+}
