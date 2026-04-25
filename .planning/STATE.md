@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Voice Mode Production
 status: executing
-stopped_at: Phase 14 Plan 01 complete
-last_updated: "2026-04-25T23:10:58Z"
-last_activity: 2026-04-25 -- Phase 14 Plan 01 executed (stt-token route + pcm-processor.js)
+stopped_at: Phase 14 Plan 02 complete
+last_updated: "2026-04-25T23:15:20Z"
+last_activity: 2026-04-25 -- Phase 14 Plan 02 executed (ElevenLabs Scribe v2 STT in voice-controller.ts)
 progress:
   total_phases: 4
   completed_phases: 2
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-24)
 ## Current Position
 
 Phase: 14 (ElevenLabs STT Upgrade) — EXECUTING
-Plan: 2 of 3
-Status: Plan 14-01 complete, executing Plan 14-02 next
-Last activity: 2026-04-25 -- Phase 14 Plan 01 executed (stt-token route + pcm-processor.js)
+Plan: 3 of 3
+Status: Plan 14-02 complete, executing Plan 14-03 next
+Last activity: 2026-04-25 -- Phase 14 Plan 02 executed (ElevenLabs Scribe v2 STT in voice-controller.ts)
 
 ```
 v4.0 Progress: [###########         ] 55% (2 of 4 phases complete, phase 14 in progress)
@@ -108,6 +108,10 @@ v4.0 Progress: [###########         ] 55% (2 of 4 phases complete, phase 14 in p
 - [14-01]: Response.json() shorthand used in stt-token route — lighter than new Response + JSON.stringify + headers
 - [14-01]: POST handler has no req parameter since token minting takes no request body
 - [14-01]: pcm-processor.js placed in public/ so Next.js serves it at /pcm-processor.js (required for audioWorklet.addModule URL)
+- [14-02]: startListeningFallback declared before startListening — required by useCallback dependency order
+- [14-02]: sttCtx AudioContext created before first await in startListening — AudioContext autoplay policy compliance (Pitfall 3)
+- [14-02]: void guard used on startListening() call sites — startListening is now async; prevents unhandled rejection when offline
+- [14-02]: Barge-in threshold raised from 0.15 to 0.35 — ElevenLabs TTS amplitude is consistently higher than Web Speech API synthesis
 
 ### Pending Todos
 
@@ -122,10 +126,10 @@ v4.0 Progress: [###########         ] 55% (2 of 4 phases complete, phase 14 in p
 
 ## Session Continuity
 
-Last session: 2026-04-25T23:10:58Z
-Stopped at: Phase 14 Plan 01 complete
-Resume file: .planning/phases/14-elevenlabs-stt-upgrade/14-01-SUMMARY.md
+Last session: 2026-04-25T23:15:20Z
+Stopped at: Phase 14 Plan 02 complete
+Resume file: .planning/phases/14-elevenlabs-stt-upgrade/14-02-SUMMARY.md
 
-**Next:** Execute Phase 14 Plan 02
+**Next:** Execute Phase 14 Plan 03
 
 **Planned Phase:** 14 (ElevenLabs STT Upgrade) — 3 plans — 2026-04-25T23:05:01.720Z
