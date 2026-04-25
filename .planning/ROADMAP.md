@@ -267,7 +267,12 @@ Plans:
   1. Speaking into the mic in Firefox and Safari produces a recognized transcript -- voice mode is not silently broken in non-Chrome browsers
   2. The ElevenLabs API key is never present in the browser bundle or network requests from the client; the browser uses a 15-minute single-use token fetched from /api/stt-token
   3. Transcription latency is perceptibly lower than Web Speech API and partial transcripts appear while the user is still speaking
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [x] 14-01-PLAN.md -- /api/stt-token server route and public/pcm-processor.js AudioWorklet
+- [ ] 14-02-PLAN.md -- voice-controller.ts: replace startListening() with ElevenLabs Scribe v2 + silent fallback
+- [ ] 14-03-PLAN.md -- Human verification: STT-01, STT-02, STT-03 confirmed in browser
 
 ### Phase 15: API Verification and Deployment
 **Goal**: All voice and chat API routes return real AI responses in Amplify production -- no 503s from missing env vars and both ElevenLabs keys verified working end-to-end
@@ -301,5 +306,5 @@ v1.0 phases 1-4, then v3 phases 5-11, then v4.0 phases 12-15.
 | 11. IframeViewer Browser Previews | v3 | 1/1 | Complete | 2026-04-24 |
 | 12. Persistent Voice Overlay | v4.0 | 4/4 | Complete    | 2026-04-25 |
 | 13. Tool Callbacks and Visual Feedback | v4.0 | 4/4 | Complete    | 2026-04-25 |
-| 14. ElevenLabs STT Upgrade | v4.0 | 0/? | Not started | - |
+| 14. ElevenLabs STT Upgrade | v4.0 | 1/3 | In progress | - |
 | 15. API Verification and Deployment | v4.0 | 0/? | Not started | - |

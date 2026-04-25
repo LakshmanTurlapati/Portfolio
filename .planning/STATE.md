@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Voice Mode Production
-status: planning
-stopped_at: Phase 14 context gathered
-last_updated: "2026-04-25T09:18:47.427Z"
-last_activity: 2026-04-25
+status: executing
+stopped_at: Phase 14 Plan 01 complete
+last_updated: "2026-04-25T23:10:58Z"
+last_activity: 2026-04-25 -- Phase 14 Plan 01 executed (stt-token route + pcm-processor.js)
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_plans: 11
+  completed_plans: 9
+  percent: 82
 ---
 
 # Project State
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** Phase --phase — 13
+**Current focus:** Phase 14 — ElevenLabs STT Upgrade
 
 ## Current Position
 
-Phase: 14
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-04-25
+Phase: 14 (ElevenLabs STT Upgrade) — EXECUTING
+Plan: 2 of 3
+Status: Plan 14-01 complete, executing Plan 14-02 next
+Last activity: 2026-04-25 -- Phase 14 Plan 01 executed (stt-token route + pcm-processor.js)
 
 ```
-v4.0 Progress: [####                ] 25% (1/4 phases partially complete)
+v4.0 Progress: [###########         ] 55% (2 of 4 phases complete, phase 14 in progress)
 ```
 
 ## Performance Metrics
@@ -105,6 +105,9 @@ v4.0 Progress: [####                ] 25% (1/4 phases partially complete)
 - openProject voice callback calls setSelectedProject directly (not local openProject) — opens ProjectDetail overlay, not IframeViewer
 - scrollTo callback in about/page.tsx delegates to scrollToSection() — correctly handles scrollable div container not window scroll
 - Voice selector alias map (work→experience, education/school→academics) covers natural speech in scrollTo callback
+- [14-01]: Response.json() shorthand used in stt-token route — lighter than new Response + JSON.stringify + headers
+- [14-01]: POST handler has no req parameter since token minting takes no request body
+- [14-01]: pcm-processor.js placed in public/ so Next.js serves it at /pcm-processor.js (required for audioWorklet.addModule URL)
 
 ### Pending Todos
 
@@ -119,10 +122,10 @@ v4.0 Progress: [####                ] 25% (1/4 phases partially complete)
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 14 context gathered
-Resume file: --resume-file
+Last session: 2026-04-25T23:10:58Z
+Stopped at: Phase 14 Plan 01 complete
+Resume file: .planning/phases/14-elevenlabs-stt-upgrade/14-01-SUMMARY.md
 
-**Next:** Execute Phase 13 Plan 02
+**Next:** Execute Phase 14 Plan 02
 
-**Planned Phase:** 13 (Tool Callbacks and Visual Feedback) — 4 plans — 2026-04-25T06:28:51.169Z
+**Planned Phase:** 14 (ElevenLabs STT Upgrade) — 3 plans — 2026-04-25T23:05:01.720Z
