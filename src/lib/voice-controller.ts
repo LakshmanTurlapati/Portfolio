@@ -10,6 +10,8 @@ import {
   isStopIntent,
   TOUR_STEPS,
 } from './voice-commands';
+import { Scribe, RealtimeEvents, CommitStrategy } from '@elevenlabs/client';
+import type { RealtimeConnection } from '@elevenlabs/client';
 
 // ToolCallbacks carries App-level handlers for tool calls named in TOUR_STEPS and AI responses.
 // All fields are optional so callers can wire only what they support this phase.
@@ -73,8 +75,7 @@ export function useVoiceController({
       : false;
 
   // Refs for non-reactive mutable state
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recogRef = useRef<any>(null);
+  const connectionRef = useRef<RealtimeConnection | null>(null);
   const speakingRef = useRef(false);
   const detachMicRef = useRef<(() => void) | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
@@ -184,7 +185,8 @@ export function useVoiceController({
 
   // stopAll — cancel all ongoing audio/speech/recognition
   const stopAll = useCallback(() => {
-    try { recogRef.current?.stop(); } catch {}
+    try { connectionRef.current?.close(); } catch {}
+    connectionRef.current = null;
     try {
       audioSourceRef.current?.stop();
       audioSourceRef.current = null;
@@ -455,8 +457,8 @@ export function useVoiceController({
     [goPage, openTextChat, speak, stopAll, dispatchToolCall, startTour, waitForPage]
   );
 
-  // startListening — Web Speech API STT (per D-05, D-06)
-  const startListening = useCallback(() => {
+  // startListeningFallback — existing Web Speech API STT, called when ElevenLabs fails (per D-02)
+  const startListeningFallback = useCallback(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
@@ -465,7 +467,7 @@ export function useVoiceController({
       return;
     }
 
-    try { recogRef.current?.stop(); } catch {}
+    try { connectionRef.current?.close(); } catch {}
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const r = new SR() as any;
@@ -476,9 +478,7 @@ export function useVoiceController({
     r.onstart = () => {
       window.VoiceBus.setState('listening');
       setCaption('Listening\u2026');
-      // Per D-06: attach mic for live RMS — only after recognition has started
       window.VoiceBus.attachMic().then((detach: () => void) => {
-        // If recognition ended before mic attached, detach immediately
         if (window.VoiceBus.state !== 'listening') {
           try { detach(); } catch {}
           return;
@@ -504,7 +504,6 @@ export function useVoiceController({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     r.onerror = (e: any) => {
       if (e.error === 'not-allowed') {
-        // Per D-25: mic-permission-denied state
         setMicDenied(true);
         setCaption('Mic access denied. Click to retry.');
       } else {
@@ -523,11 +522,89 @@ export function useVoiceController({
       }
     };
 
-    recogRef.current = r;
+    connectionRef.current = r as unknown as RealtimeConnection;
     try { r.start(); } catch (e) {
       setCaption("Couldn't start mic: " + (e as Error).message);
     }
   }, [handleUserTurn]);
+
+  // startListening — ElevenLabs Scribe v2 primary STT, Web Speech API fallback (per D-01, D-02)
+  const startListening = useCallback(async () => {
+    window.VoiceBus.setState('listening');
+    setCaption('Listening\u2026');
+
+    // Create sttCtx BEFORE first await — keeps creation in user gesture frame
+    // (RESEARCH.md Pitfall 3: AudioContext autoplay policy blocks creation after await)
+    // Per D-06: separate 16kHz AudioContext avoids TTS echo on VoiceBus._ctx
+    const sttCtx = new AudioContext({ sampleRate: 16000 });
+
+    try {
+      // 1. Fetch single-use token — never cache, fresh per session (per D-03, D-04)
+      const res = await fetch('/api/stt-token', { method: 'POST' });
+      if (!res.ok) throw new Error(`stt-token ${res.status}`);
+      const { token } = await res.json() as { token: string };
+
+      // 2. Connect Scribe — SDK manages getUserMedia internally (per D-05)
+      const connection = Scribe.connect({
+        token,
+        modelId: 'scribe_v2_realtime',
+        commitStrategy: CommitStrategy.VAD,
+        vadSilenceThresholdSecs: 1.2,
+        languageCode: 'en',
+        microphone: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      // 3. Wire transcript events
+      connection.on(RealtimeEvents.SESSION_STARTED, () => {
+        // Per D-06: attach VoiceBus mic AFTER session confirmed — mirrors existing r.onstart pattern
+        window.VoiceBus.attachMic().then((detach: () => void) => {
+          if (window.VoiceBus.state !== 'listening') { detach(); return; }
+          detachMicRef.current = detach;
+        });
+      });
+
+      connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
+        setTranscript((data as { text: string }).text);
+        setCaption((data as { text: string }).text);
+      });
+
+      connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
+        const text = (data as { text: string }).text.trim();
+        if (text) handleUserTurn(text);
+      });
+
+      connection.on(RealtimeEvents.AUTH_ERROR, () => {
+        setMicDenied(true);
+        setCaption('Mic access denied. Click to retry.');
+        window.VoiceBus.setState('idle');
+        connection.close();
+      });
+
+      connection.on(RealtimeEvents.ERROR, () => {
+        window.VoiceBus.setState('idle');
+        connection.close();
+        startListeningFallback(); // per D-02: silent fallback, no user notification
+      });
+
+      connection.on(RealtimeEvents.CLOSE, () => {
+        sttCtx.close().catch(() => {});
+        detachMicRef.current?.();
+        detachMicRef.current = null;
+        if (window.VoiceBus.state === 'listening') window.VoiceBus.setState('idle');
+      });
+
+      connectionRef.current = connection;
+
+    } catch {
+      // Token fetch failed or SDK unavailable — silent fallback to Web Speech API (per D-02)
+      sttCtx.close().catch(() => {});
+      startListeningFallback();
+    }
+  }, [handleUserTurn, startListeningFallback]);
 
   // bargeIn — energy-threshold barge-in during speaking state (per D-21)
   const bargeIn = useCallback(() => {
@@ -535,7 +612,7 @@ export function useVoiceController({
     audioSourceRef.current = null;
     window.VoiceBus._stopLoop();
     window.VoiceBus.setState('listening');
-    startListening();
+    void startListening(); // void guard: startListening is now async
   }, [startListening]);
 
   // Subscribe to VoiceBus 'level' events for barge-in detection (per D-21)
@@ -548,8 +625,8 @@ export function useVoiceController({
       // Per D-24: cap level to 0.2 when prefers-reduced-motion
       const effectiveLevel = prefersReduced ? Math.min(level, 0.2) : level;
 
-      // Barge-in: if speaking and energy exceeds threshold, interrupt TTS
-      if (window.VoiceBus.state === 'speaking' && effectiveLevel > 0.15) {
+      // Raised from 0.15 to 0.35 — ElevenLabs TTS has consistent high amplitude; prevents self-interruption
+      if (window.VoiceBus.state === 'speaking' && effectiveLevel > 0.35) {
         bargeIn();
       }
     });
@@ -588,7 +665,7 @@ export function useVoiceController({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && window.VoiceBus.state !== 'listening') {
         e.preventDefault();
-        startListening();
+        void startListening(); // startListening is now async — void guard prevents unhandled rejection
       }
       if (e.code === 'Escape') {
         close();
@@ -597,7 +674,8 @@ export function useVoiceController({
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
-        recogRef.current?.stop();
+        connectionRef.current?.close();
+        connectionRef.current = null;
       }
     };
 
