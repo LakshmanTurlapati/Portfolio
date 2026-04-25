@@ -551,17 +551,13 @@ const stopAll = useCallback(() => {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does `Scribe.connect({ microphone: {} })` work alongside `VoiceBus.attachMic()` on the same audio device?**
-   - What we know: Two AudioContext sources on the same MediaStreamTrack is valid Web Audio API (MDN-confirmed)
-   - What's unclear: Whether `@elevenlabs/client`'s internal `getUserMedia` call and VoiceBus's separate `getUserMedia` call both resolve to the same underlying MediaStream track, or whether browsers serialize them
-   - Recommendation: Test on first integration. If conflict occurs, VoiceBus.attachMic() can be deferred — the amplitude visualization will fall back to the fake level system already implemented in VoiceBus.setState()
+   RESOLVED: Plans accept both outcomes. If conflict occurs, VoiceBus.attachMic() falls back to fake level system (already implemented). Test empirically during Plan 14-02 execution.
 
 2. **`@elevenlabs/client` adds `livekit-client` as a transitive dependency — is this acceptable for AWS Amplify?**
-   - What we know: `livekit-client` is ~200KB minified (WebRTC library). It installs cleanly. The Scribe feature likely doesn't use WebRTC (it's direct WebSocket), but the package ships it.
-   - What's unclear: Whether this increases Lambda cold-start time or bundle size beyond acceptable limits
-   - Recommendation: If bundle size is a concern, fall back to the raw WebSocket approach (no `@elevenlabs/client` install needed, manual PCM chunking required)
+   RESOLVED: Acceptable for Phase 14. If bundle size causes issues in Phase 15 API verification, fall back to raw WebSocket path (documented in Alternatives section). Phase 15 handles Amplify verification.
 
 ---
 
