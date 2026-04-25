@@ -22,7 +22,7 @@ export function VoiceOverlay() {
       {/* Desktop: hidden on mobile — matches sm: breakpoint (640px, project uses 600px) */}
       <div className="hidden sm:block">
         <div
-          className="fixed top-[10px] left-1/2 -translate-x-1/2 w-[760px] h-[72px] rounded-[25px] z-50 relative overflow-hidden"
+          className="fixed top-[10px] left-1/2 -translate-x-1/2 w-[760px] h-[72px] rounded-[25px] z-50 overflow-hidden"
           style={{ backgroundColor: 'var(--color-navbar-bg)' }}
         >
           <VoicePanel {...voiceProps} isDark={isDark} micDenied={micDenied} />
@@ -31,7 +31,7 @@ export function VoiceOverlay() {
       {/* Mobile: hidden on desktop */}
       <div className="sm:hidden">
         <div
-          className="fixed bottom-[20px] left-[20px] right-[20px] h-[72px] rounded-[25px] z-50 relative overflow-hidden"
+          className="fixed bottom-[20px] left-[20px] right-[20px] h-[72px] rounded-[25px] z-50 overflow-hidden"
           style={{ backgroundColor: 'var(--color-navbar-bg)' }}
         >
           <VoicePanel {...voiceProps} isDark={isDark} micDenied={micDenied} />
