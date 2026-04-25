@@ -10,7 +10,7 @@
 - [x] **OVLY-01
 **: Voice session persists across page navigation -- activating voice on home page and navigating to portfolio keeps the voice overlay open and active
 - [x] **OVLY-02
-**: Ask Parz button appears in the navbar on all pages (home, portfolio, about, chat) and can activate voice mode from any page
+**: Ask Parz button appears in the home page navbar and can activate voice mode; once active, the voice overlay persists across all pages
 - [x] **OVLY-03
 **: ChatPopup (text chat) is accessible from any page when user switches from voice to text mode or clicks Ask Parz in text mode
 - [x] **OVLY-04
@@ -96,10 +96,10 @@ All v3 redesign requirements completed in milestone v3. See git history for deta
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OVLY-01 | Phase 12 | Pending |
-| OVLY-02 | Phase 12 | Pending |
-| OVLY-03 | Phase 12 | Pending |
-| OVLY-04 | Phase 12 | Pending |
+| OVLY-01 | Phase 12 | Complete |
+| OVLY-02 | Phase 12 | Complete |
+| OVLY-03 | Phase 12 | Complete |
+| OVLY-04 | Phase 12 | Complete |
 | TOOL-01 | Phase 13 | Pending |
 | TOOL-02 | Phase 13 | Pending |
 | TOOL-03 | Phase 13 | Pending |

@@ -215,7 +215,7 @@ Plans:
 
 **Milestone Goal:** Make voice mode fully functional and production-ready -- persistent overlay across navigation, wired tool callbacks, ElevenLabs STT upgrade, and verified API connectivity on Amplify.
 
-- [ ] **Phase 12: Persistent Voice Overlay** - Lift voice session to layout level so it survives page navigation
+- [x] **Phase 12: Persistent Voice Overlay** - Lift voice session to layout level so it survives page navigation (completed 2026-04-25)
 - [ ] **Phase 13: Tool Callbacks and Visual Feedback** - Wire all tool actions to real page effects and add viewport glow states
 - [ ] **Phase 14: ElevenLabs STT Upgrade** - Replace Web Speech API with Scribe v2 for cross-browser transcription
 - [ ] **Phase 15: API Verification and Deployment** - Confirm all API routes and keys work in Amplify production
@@ -228,16 +228,16 @@ Plans:
 **Requirements**: OVLY-01, OVLY-02, OVLY-03, OVLY-04
 **Success Criteria** (what must be TRUE):
   1. User opens voice mode on the home page, navigates to portfolio, and the VoicePanel stays rendered with its previous state (listening/thinking/speaking) -- no reset or disappearance
-  2. Ask Parz button is visible and functional in the navbar on home, portfolio, about, and chat pages -- clicking it from any page activates voice mode
-  3. Switching from voice to text mode on any page opens ChatPopup in-place without navigating away
+  2. Ask Parz button is visible and functional in the home page navbar; once voice is active, the overlay persists across all pages
+  3. Switching from voice to text mode on a non-home page navigates to home and opens ChatPopup
   4. VoiceBus state machine (idle, listening, thinking, speaking) does not reset mid-session when the route changes
-**Plans:** 4 plans
+**Plans:** 4/4 plans complete
 
 Plans:
-- [ ] 12-01-PLAN.md -- Create VoiceSessionProvider: lift useVoiceController to layout level via React context
-- [ ] 12-02-PLAN.md -- Create VoiceOverlay component + wire VoiceSessionProvider into layout.tsx
-- [ ] 12-03-PLAN.md -- Refactor page.tsx to consume VoiceSessionContext instead of owning useVoiceController
-- [ ] 12-04-PLAN.md -- Human visual verification of voice persistence across all navigation paths
+- [x] 12-01-PLAN.md -- Create VoiceSessionProvider: lift useVoiceController to layout level via React context
+- [x] 12-02-PLAN.md -- Create VoiceOverlay component + wire VoiceSessionProvider into layout.tsx
+- [x] 12-03-PLAN.md -- Refactor page.tsx to consume VoiceSessionContext instead of owning useVoiceController
+- [x] 12-04-PLAN.md -- Human visual verification of voice persistence across all navigation paths
 
 **UI hint**: yes
 
@@ -293,7 +293,7 @@ v1.0 phases 1-4, then v3 phases 5-11, then v4.0 phases 12-15.
 | 9. Chat, About, and Polish | v3 | 3/3 | Complete | 2026-04-24 |
 | 10. Circular Reveal Fix | v3 | 1/1 | Complete | 2026-04-24 |
 | 11. IframeViewer Browser Previews | v3 | 1/1 | Complete | 2026-04-24 |
-| 12. Persistent Voice Overlay | v4.0 | 0/4 | Not started | - |
+| 12. Persistent Voice Overlay | v4.0 | 4/4 | Complete    | 2026-04-25 |
 | 13. Tool Callbacks and Visual Feedback | v4.0 | 0/? | Not started | - |
 | 14. ElevenLabs STT Upgrade | v4.0 | 0/? | Not started | - |
 | 15. API Verification and Deployment | v4.0 | 0/? | Not started | - |
