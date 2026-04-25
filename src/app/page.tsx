@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useMounted } from '@/hooks/use-mounted';
 import { DesktopNavbar } from '@/components/desktop-navbar';
@@ -16,8 +16,7 @@ import { SpotlightEffect } from '@/components/spotlight';
 import { ScrollingText } from '@/components/scrolling-text';
 import { GitHubStats } from '@/components/github-stats';
 import { useTheme } from 'next-themes';
-import { useVoiceController } from '@/lib/voice-controller';
-import { useTransition } from '@/providers/transition-provider';
+import { useVoiceSession } from '@/providers/voice-session-provider';
 
 export default function Home() {
   const [clickCount, setClickCount] = useState(0);
@@ -26,32 +25,15 @@ export default function Home() {
   const mounted = useMounted();
   const { resolvedTheme } = useTheme();
   const isDark = mounted && resolvedTheme === 'dark';
-  const { navigateWithReveal } = useTransition();
+  const { voiceActive, voiceProps, micDenied, openVoice, closeVoice } = useVoiceSession();
 
-  const goPage = useCallback(
-    (page: string) => {
-      const paths: Record<string, string> = { home: '/', portfolio: '/portfolio', about: '/about' };
-      const path = paths[page] ?? '/';
-      navigateWithReveal(path, window.innerWidth / 2, window.innerHeight / 2);
-    },
-    [navigateWithReveal]
-  );
-
-  const openTextChat = useCallback((_initialText?: string) => {
-    setChatOpen(true);
+  // Per D-06 + Pattern 3 (RESEARCH.md): receive parz:open-text-chat signal from VoiceSessionProvider.openTextChat
+  // when user says "switch to text" on a non-home page — navigates home first, then this listener fires.
+  useEffect(() => {
+    const handler = () => setChatOpen(true);
+    window.addEventListener('parz:open-text-chat', handler);
+    return () => window.removeEventListener('parz:open-text-chat', handler);
   }, []);
-
-  const {
-    active: voiceActive,
-    open: openVoice,
-    close: closeVoice,
-    micDenied,
-    voiceProps,
-  } = useVoiceController({
-    goPage,
-    openTextChat,
-    currentPage: 'home',
-  });
 
   // AskParz button toggles voice mode (per D-16 integration)
   const handleAskParz = useCallback(() => {
