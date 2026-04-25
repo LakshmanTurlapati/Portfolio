@@ -314,6 +314,13 @@ export function useVoiceController({
   // handleUserTurn — ALL utterances go to Grok (except local stop for instant response)
   const handleUserTurn = useCallback(
     async (utterance: string) => {
+      // Close Scribe connection immediately to prevent TTS echo feedback loop.
+      // Without this, Scribe hears Parz's TTS response via the mic and transcribes
+      // it as another user utterance, causing double/overlapping speech.
+      try { connectionRef.current?.close(); } catch {}
+      connectionRef.current = null;
+      try { detachMicRef.current?.(); detachMicRef.current = null; } catch {}
+
       window.VoiceBus.setState('thinking');
       setCaption('Thinking\u2026');
 
