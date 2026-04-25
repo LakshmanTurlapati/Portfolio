@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Voice Mode Production
-status: planning
-stopped_at: Phase 12 UI-SPEC approved
-last_updated: "2026-04-25T01:42:25.868Z"
-last_activity: 2026-04-24 -- v4.0 roadmap created (Phases 12-15)
+status: executing
+stopped_at: "Completed 12-01-PLAN.md: VoiceSessionProvider created"
+last_updated: "2026-04-25T02:00:36.970Z"
+last_activity: 2026-04-25 -- Phase --phase execution started
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 25
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** Phase 12 -- Persistent Voice Overlay (v4.0 start)
+**Current focus:** Phase --phase — 12
 
 ## Current Position
 
-Phase: 12 (Persistent Voice Overlay)
-Plan: Not started
-Status: Roadmap complete, ready to plan Phase 12
-Last activity: 2026-04-24 -- v4.0 roadmap created (Phases 12-15)
+Phase: --phase (12) — EXECUTING
+Plan: 1 of --name
+Status: Executing Phase --phase
+Last activity: 2026-04-25 -- Phase --phase execution started
 
 ```
 v4.0 Progress: [                    ] 0% (0/4 phases)
@@ -89,6 +89,8 @@ v4.0 Progress: [                    ] 0% (0/4 phases)
 - [v4.0-roadmap]: @elevenlabs/client v1.3.1 is the browser-safe STT SDK (ScribeRealtime in elevenlabs-js is Node.js-only -- confirmed from type declarations)
 - [v4.0-roadmap]: Separate sttCtx (16kHz AudioContext) mandatory -- sharing VoiceBus._ctx with STT creates TTS echo feedback loop
 - [v4.0-roadmap]: /api/stt-token route issues 15-minute single-use tokens -- NEXT_PUBLIC_ELEVENLABS_API_KEY must never be used
+- openTextChat dispatches parz:open-text-chat CustomEvent with 400ms delay for View Transitions API compatibility
+- currentPage derived dynamically from usePathname() in VoiceSessionProvider — not hardcoded as 'home'
 
 ### Pending Todos
 
@@ -103,9 +105,9 @@ v4.0 Progress: [                    ] 0% (0/4 phases)
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 12 UI-SPEC approved
-Resume file: --resume-file
+Last session: 2026-04-25T02:00:36.965Z
+Stopped at: Completed 12-01-PLAN.md: VoiceSessionProvider created
+Resume file: None
 
 **Next:** Plan Phase 12 -- run `/gsd-plan-phase 12`
 

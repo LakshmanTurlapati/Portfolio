@@ -231,7 +231,14 @@ Plans:
   2. Ask Parz button is visible and functional in the navbar on home, portfolio, about, and chat pages -- clicking it from any page activates voice mode
   3. Switching from voice to text mode on any page opens ChatPopup in-place without navigating away
   4. VoiceBus state machine (idle, listening, thinking, speaking) does not reset mid-session when the route changes
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 12-01-PLAN.md -- Create VoiceSessionProvider: lift useVoiceController to layout level via React context
+- [ ] 12-02-PLAN.md -- Create VoiceOverlay component + wire VoiceSessionProvider into layout.tsx
+- [ ] 12-03-PLAN.md -- Refactor page.tsx to consume VoiceSessionContext instead of owning useVoiceController
+- [ ] 12-04-PLAN.md -- Human visual verification of voice persistence across all navigation paths
+
 **UI hint**: yes
 
 ### Phase 13: Tool Callbacks and Visual Feedback
@@ -286,7 +293,7 @@ v1.0 phases 1-4, then v3 phases 5-11, then v4.0 phases 12-15.
 | 9. Chat, About, and Polish | v3 | 3/3 | Complete | 2026-04-24 |
 | 10. Circular Reveal Fix | v3 | 1/1 | Complete | 2026-04-24 |
 | 11. IframeViewer Browser Previews | v3 | 1/1 | Complete | 2026-04-24 |
-| 12. Persistent Voice Overlay | v4.0 | 0/? | Not started | - |
+| 12. Persistent Voice Overlay | v4.0 | 0/4 | Not started | - |
 | 13. Tool Callbacks and Visual Feedback | v4.0 | 0/? | Not started | - |
 | 14. ElevenLabs STT Upgrade | v4.0 | 0/? | Not started | - |
 | 15. API Verification and Deployment | v4.0 | 0/? | Not started | - |
