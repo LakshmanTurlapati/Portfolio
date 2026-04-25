@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Voice Mode Production
 status: executing
-stopped_at: "Completed 12-02-PLAN.md: VoiceOverlay created and layout.tsx wired"
-last_updated: "2026-04-25T02:03:21.402Z"
+stopped_at: "Completed 12-03-PLAN.md: page.tsx refactored to consume VoiceSessionContext"
+last_updated: "2026-04-25T02:06:42.301Z"
 last_activity: 2026-04-25 -- Phase --phase execution started
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
-  percent: 50
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -93,6 +93,8 @@ v4.0 Progress: [                    ] 0% (0/4 phases)
 - currentPage derived dynamically from usePathname() in VoiceSessionProvider — not hardcoded as 'home'
 - VoiceOverlay returns null on pathname === '/' to prevent double panel — home page renders its own VoicePanel inside navbar morph
 - VoiceSessionProvider inside VoiceBusProvider in layout.tsx — useVoiceController depends on window.VoiceBus which VoiceBusProvider initializes
+- useVoiceController has exactly one call site (voice-session-provider.tsx) — page.tsx consumes voice state via useVoiceSession() context
+- parz:open-text-chat CustomEvent listener registered in page.tsx useEffect — allows VoiceSessionProvider.openTextChat to trigger ChatPopup from layout level
 
 ### Pending Todos
 
@@ -107,8 +109,8 @@ v4.0 Progress: [                    ] 0% (0/4 phases)
 
 ## Session Continuity
 
-Last session: 2026-04-25T02:03:21.397Z
-Stopped at: Completed 12-02-PLAN.md: VoiceOverlay created and layout.tsx wired
+Last session: 2026-04-25T02:06:42.296Z
+Stopped at: Completed 12-03-PLAN.md: page.tsx refactored to consume VoiceSessionContext
 Resume file: None
 
 **Next:** Plan Phase 12 -- run `/gsd-plan-phase 12`
