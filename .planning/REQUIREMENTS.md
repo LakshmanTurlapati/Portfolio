@@ -9,8 +9,10 @@
 
 - [x] **OVLY-01
 **: Voice session persists across page navigation -- activating voice on home page and navigating to portfolio keeps the voice overlay open and active
-- [ ] **OVLY-02**: Ask Parz button appears in the navbar on all pages (home, portfolio, about, chat) and can activate voice mode from any page
-- [ ] **OVLY-03**: ChatPopup (text chat) is accessible from any page when user switches from voice to text mode or clicks Ask Parz in text mode
+- [x] **OVLY-02
+**: Ask Parz button appears in the navbar on all pages (home, portfolio, about, chat) and can activate voice mode from any page
+- [x] **OVLY-03
+**: ChatPopup (text chat) is accessible from any page when user switches from voice to text mode or clicks Ask Parz in text mode
 - [x] **OVLY-04
 **: VoiceBus state machine (idle, listening, thinking, speaking) maintains its state across route changes without resetting
 

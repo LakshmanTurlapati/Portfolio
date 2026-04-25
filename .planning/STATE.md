@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Voice Mode Production
 status: executing
-stopped_at: "Completed 12-01-PLAN.md: VoiceSessionProvider created"
-last_updated: "2026-04-25T02:00:36.970Z"
+stopped_at: "Completed 12-02-PLAN.md: VoiceOverlay created and layout.tsx wired"
+last_updated: "2026-04-25T02:03:21.402Z"
 last_activity: 2026-04-25 -- Phase --phase execution started
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
-  percent: 25
+  completed_plans: 2
+  percent: 50
 ---
 
 # Project State
@@ -91,6 +91,8 @@ v4.0 Progress: [                    ] 0% (0/4 phases)
 - [v4.0-roadmap]: /api/stt-token route issues 15-minute single-use tokens -- NEXT_PUBLIC_ELEVENLABS_API_KEY must never be used
 - openTextChat dispatches parz:open-text-chat CustomEvent with 400ms delay for View Transitions API compatibility
 - currentPage derived dynamically from usePathname() in VoiceSessionProvider — not hardcoded as 'home'
+- VoiceOverlay returns null on pathname === '/' to prevent double panel — home page renders its own VoicePanel inside navbar morph
+- VoiceSessionProvider inside VoiceBusProvider in layout.tsx — useVoiceController depends on window.VoiceBus which VoiceBusProvider initializes
 
 ### Pending Todos
 
@@ -105,8 +107,8 @@ v4.0 Progress: [                    ] 0% (0/4 phases)
 
 ## Session Continuity
 
-Last session: 2026-04-25T02:00:36.965Z
-Stopped at: Completed 12-01-PLAN.md: VoiceSessionProvider created
+Last session: 2026-04-25T02:03:21.397Z
+Stopped at: Completed 12-02-PLAN.md: VoiceOverlay created and layout.tsx wired
 Resume file: None
 
 **Next:** Plan Phase 12 -- run `/gsd-plan-phase 12`
