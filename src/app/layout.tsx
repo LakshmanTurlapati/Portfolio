@@ -3,6 +3,8 @@ import { Lato, Instrument_Serif } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { TransitionProvider } from '@/providers/transition-provider';
 import { VoiceBusProvider } from '@/providers/voice-bus-provider';
+import { VoiceSessionProvider } from '@/providers/voice-session-provider';
+import { VoiceOverlay } from '@/components/voice-overlay';
 import './globals.css';
 
 const lato = Lato({
@@ -54,7 +56,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <TransitionProvider>
             <VoiceBusProvider>
-              {children}
+              <VoiceSessionProvider>
+                {children}
+                <VoiceOverlay />
+              </VoiceSessionProvider>
             </VoiceBusProvider>
           </TransitionProvider>
         </ThemeProvider>
