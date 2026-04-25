@@ -41,9 +41,12 @@ Declared values (must be multiples of 4):
 | 2xl | 48px | Not used in this phase |
 | 3xl | 64px | Not used in this phase |
 
-Exceptions:
+Exceptions (touch target only):
 - Voice panel action buttons: 36×36px (touch target, matches existing VoicePanel)
-- Fixed overlay bar vertical position: top-[10px] desktop (matches existing desktop-navbar.tsx), bottom-[20px] mobile (matches mobile-navbar.tsx)
+
+Inherited positional values (not new spacing tokens — do not modify):
+- Desktop fixed overlay bar: `top` position inherited from existing desktop-navbar.tsx. Do not redeclare; match the existing component's computed position exactly.
+- Mobile fixed overlay bar: `bottom`, `left`, `right` positions inherited from existing mobile-navbar.tsx. Do not redeclare; match the existing component's computed position exactly.
 - Desktop navbar width voice-active: 760px × 72px (existing, do not change)
 - Mobile navbar height voice-active: 140px (existing, do not change)
 - Non-home fixed overlay bar: same 760px × 72px desktop / full-width−40px × 72px mobile (matches navbar dimensions for visual continuity)
@@ -115,12 +118,12 @@ This phase has two distinct rendering modes for VoicePanel, driven by current ro
 
 ### Mode 2: Non-Home Pages (new in Phase 12)
 
-- Desktop: Fixed-position capsule, `top-[10px]`, horizontally centered, `w-[760px] h-[72px]`, `rounded-[25px]`, `z-50`
+- Desktop: Fixed-position capsule, horizontally centered, `w-[760px] h-[72px]`, `rounded-[25px]`, `z-50`. Vertical position matches existing desktop-navbar.tsx `top` value (inherited, not redeclared).
   - Background: `var(--color-navbar-bg)` (same as navbar backdrop)
   - Appears when voice session is active and user has navigated away from home
   - No morph animation — renders directly in active state (appears at full size)
   - Entrance: opacity fade-in at 0.25s ease (same `vmFadeIn` as VoicePanel interior)
-- Mobile: Fixed-position capsule, `bottom-[20px]`, `left-[20px]`, `right-[20px]`, `h-[72px]`, `rounded-[25px]`, `z-50`
+- Mobile: Fixed-position capsule, `h-[72px]`, `rounded-[25px]`, `z-50`. Horizontal and vertical offsets match existing mobile-navbar.tsx values (inherited, not redeclared).
   - Background: `var(--color-navbar-bg)`
   - Same entrance: opacity fade-in 0.25s ease
   - Non-home pages have no navbar row — overlay is voice content only at 72px height
