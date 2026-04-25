@@ -33,9 +33,9 @@
 
 ### Speech-to-Text
 
-- [ ] **STT-01**: Speech-to-text uses ElevenLabs Scribe v2 instead of Web Speech API for recognition
-- [ ] **STT-02**: STT works in Chrome, Firefox, Safari, and Edge (cross-browser, no vendor prefix dependency)
-- [ ] **STT-03**: Server-side /api/stt-token endpoint issues single-use tokens so the API key never reaches the browser
+- [x] **STT-01**: Speech-to-text uses ElevenLabs Scribe v2 instead of Web Speech API for recognition
+- [x] **STT-02**: STT works in Chrome, Firefox, Safari, and Edge (cross-browser, no vendor prefix dependency)
+- [x] **STT-03**: Server-side /api/stt-token endpoint issues single-use tokens so the API key never reaches the browser
 
 ### Visual Feedback
 
@@ -120,9 +120,9 @@ All v3 redesign requirements completed in milestone v3. See git history for deta
 | VFBK-02 | Phase 13 | Complete |
 | VFBK-03 | Phase 13 | Complete |
 | VFBK-04 | Phase 13 | Complete |
-| STT-01 | Phase 14 | Pending |
-| STT-02 | Phase 14 | Pending |
-| STT-03 | Phase 14 | Pending |
+| STT-01 | Phase 14 | Complete |
+| STT-02 | Phase 14 | Complete |
+| STT-03 | Phase 14 | Complete |
 | API-01 | Phase 15 | Pending |
 | API-02 | Phase 15 | Pending |
 
