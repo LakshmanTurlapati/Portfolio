@@ -22,7 +22,7 @@ status: passed
 |-------------|----------|--------|
 | FSB-01 | `SiteControlProvider` wraps `navigate`, `openProject`, `scrollTo`, `closeBrowser`, `openCurrentProjectExternal`, and `unsupportedIframeControl` with `runWithControlOverlay`; `FsbControlOverlay` renders the monochrome scan/grid/corner/crosshair layer while active. | passed |
 | FSB-02 | `src/components/fsb-control-overlay.tsx` renders exact badge copy `powered by FSB`. | passed |
-| FSB-03 | Overlay root includes `pointer-events-none`, and CSS uses a non-blocking fixed layer below the inbuilt browser z-index; no modal/input interception was added. | passed |
+| FSB-03 | Overlay root includes `pointer-events-none`, and CSS uses a non-blocking fixed layer above the inbuilt browser z-index so project-open feedback stays visible without input interception. | passed |
 
 ## Grep Verification
 

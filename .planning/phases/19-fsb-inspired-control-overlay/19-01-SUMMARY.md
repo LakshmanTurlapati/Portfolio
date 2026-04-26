@@ -23,7 +23,7 @@ key-files:
 
 key-decisions:
   - "Overlay lifecycle lives in SiteControlProvider so text and voice Parz actions share one trigger path."
-  - "Overlay remains pointer-events-none and below the inbuilt browser layer so controls stay usable."
+  - "Overlay remains pointer-events-none and above the inbuilt browser layer so project-open actions stay visible while controls remain usable."
   - "Reduced-motion users keep static overlay marks and badge without scan animation."
 
 patterns-established:
@@ -69,6 +69,7 @@ completed: 2026-04-26
 ## Decisions Made
 
 - Used a provider-owned lifecycle rather than VoiceBus-only events so text chat and voice controls behave identically.
+- Kept the overlay above the inbuilt browser surface because project-open actions mount the browser immediately; `pointer-events-none` preserves close/external controls.
 - Kept cross-page `scrollTo` from calling `navigate()` internally to avoid triggering nested overlay timers for one command.
 - Used a 900ms minimum visible duration to avoid flicker while still clearing cleanly after action results.
 
@@ -92,10 +93,18 @@ completed: 2026-04-26
 - **Verification:** `npm run lint` and `npm run build` pass.
 - **Committed in:** `8ba215a`
 
+**3. Browser visibility z-index correction**
+- **Found during:** Code review
+- **Issue:** Rendering the overlay below the full-screen inbuilt browser would make project-open feedback hard or impossible to see once the browser mounted.
+- **Fix:** Raised `.fsb-control-overlay` to `z-index: 120` while preserving `pointer-events-none` so controls remain usable.
+- **Files modified:** `src/app/globals.css`
+- **Verification:** `npm run lint` and `npm run build` pass.
+- **Committed in:** `2a9988a`
+
 ---
 
-**Total deviations:** 2 auto-fixed (1 type fix, 1 lifecycle refinement)
-**Impact on plan:** Both changes preserve the planned scope and improve correctness.
+**Total deviations:** 3 auto-fixed (1 type fix, 1 lifecycle refinement, 1 visual layering fix)
+**Impact on plan:** These changes preserve the planned scope and improve correctness.
 
 ## Issues Encountered
 
