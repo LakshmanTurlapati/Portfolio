@@ -74,7 +74,7 @@ export function ProjectDetail({ project, isDark, onClose, onOpenLink }: ProjectD
         </button>
 
         {/* Hero section */}
-        <header className="px-14 pt-14 pb-6">
+        <header className="px-4 md:px-8 lg:px-14 pt-14 pb-6">
           <div className="flex gap-2 flex-wrap mb-5">
             {detail.year && (
               <span
@@ -157,7 +157,7 @@ export function ProjectDetail({ project, isDark, onClose, onOpenLink }: ProjectD
 
         {/* Cover image */}
         <div
-          className="mt-4 mx-14 mb-8 rounded-[14px] overflow-hidden aspect-video"
+          className="mt-4 -mx-4 md:mx-8 lg:mx-14 mb-8 rounded-none md:rounded-[14px] overflow-hidden aspect-video"
           style={{
             border: `1px solid ${isDark ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'}`,
             background: isDark ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)',
@@ -173,7 +173,7 @@ export function ProjectDetail({ project, isDark, onClose, onOpenLink }: ProjectD
         </div>
 
         {/* Body */}
-        <div className="px-14 pb-10">
+        <div className="px-4 md:px-8 lg:px-14 pb-10">
           {detail.overview && (
             <p className="text-[22px] leading-[1.45] opacity-[0.92] mb-8 max-w-[62ch] font-[family-name:var(--font-instrument-serif)]">{detail.overview}</p>
           )}
@@ -250,7 +250,7 @@ export function ProjectDetail({ project, isDark, onClose, onOpenLink }: ProjectD
         </div>
 
         {/* Footer */}
-        <footer className="px-14 mt-8" style={{ paddingTop: '24px', paddingBottom: '48px' }}>
+        <footer className="px-4 md:px-8 lg:px-14 mt-8" style={{ paddingTop: '24px', paddingBottom: '48px' }}>
           <button
             className="text-sm font-medium inline-flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity"
             onClick={onClose}
