@@ -3,6 +3,8 @@ export interface Project {
   image: string;
   links: Record<string, string>;
   useIframe?: boolean;
+  aliases?: string[];
+  preferredTarget?: keyof Project['links'];
 }
 
 export interface ProjectDetail {
@@ -47,9 +49,27 @@ export const PROJECT_EFFECTS: Record<string, HoverEffect> = {
 
 // First project is pinned (always shown first), rest are shuffled on each render
 export const pinnedProjects: Project[] = [
-  { name: "FSB / Full Self Browsing", image: "/assets/fsb.png", links: { Website: "https://www.full-selfbrowsing.com", GitHub: "https://github.com/LakshmanTurlapati/FSB" } },
-  { name: "GitFly", image: "", links: { Website: "https://gitfly.ai" } },
-  { name: "Review Gate", image: "/assets/review_gate.webp", links: { GitHub: "https://github.com/LakshmanTurlapati/Review-Gate" } },
+  {
+    name: "FSB / Full Self Browsing",
+    image: "/assets/fsb.png",
+    links: { Website: "https://www.full-selfbrowsing.com", GitHub: "https://github.com/LakshmanTurlapati/FSB" },
+    aliases: ["FSB", "Full Self Browsing", "full-selfbrowsing", "full self browsing"],
+    preferredTarget: "Website",
+  },
+  {
+    name: "GitFly",
+    image: "",
+    links: { Website: "https://gitfly.ai" },
+    aliases: ["git fly", "gitfly.ai"],
+    preferredTarget: "Website",
+  },
+  {
+    name: "Review Gate",
+    image: "/assets/review_gate.webp",
+    links: { GitHub: "https://github.com/LakshmanTurlapati/Review-Gate" },
+    aliases: ["ReviewGate", "review-gate"],
+    preferredTarget: "GitHub",
+  },
 ];
 
 export const shuffleableProjects: Project[] = [
@@ -62,9 +82,9 @@ export const shuffleableProjects: Project[] = [
   { name: "X-Read", image: "", links: { GitHub: "https://github.com/LakshmanTurlapati/DCTE-Script" }, useIframe: true },
   { name: "Heartline", image: "/assets/heartline.png", links: { GitHub: "https://github.com/LakshmanTurlapati/Heartline" } },
   { name: "Lucent", image: "/assets/lucent.png", links: { Website: "https://monumental-granita-08d2f5.netlify.app", GitHub: "https://github.com/LakshmanTurlapati/Lucent" } },
-  { name: "Parz-AI", image: "/assets/parz_ai.png", links: { GitHub: "https://github.com/LakshmanTurlapati/Parz-AI" } },
+  { name: "Parz-AI", image: "/assets/parz_ai.png", links: { GitHub: "https://github.com/LakshmanTurlapati/Parz-AI" }, aliases: ["Parz AI", "Parz", "parz ai"], preferredTarget: "GitHub" },
   { name: "awsxUTD-Hackathon", image: "/assets/hackathon.png", links: { GitHub: "https://github.com/LakshmanTurlapati/awsxUTD-Hackathon" } },
-  { name: "T2S CLI", image: "/assets/t2s_cli.png", links: { GitHub: "https://github.com/LakshmanTurlapati/t2s-cli" } },
+  { name: "T2S CLI", image: "/assets/t2s_cli.png", links: { GitHub: "https://github.com/LakshmanTurlapati/t2s-cli" }, aliases: ["T2S", "text to sql", "text-to-sql"], preferredTarget: "GitHub" },
   { name: "Star-Trail-Flutter", image: "/assets/startrail.jpg", links: { GitHub: "https://github.com/LakshmanTurlapati/Star-Trail-Flutter" } },
   { name: "awsxutd", image: "/assets/awsxutd.png", links: { Website: "https://marvelous-sopapillas-cf2910.netlify.app", GitHub: "https://github.com/LakshmanTurlapati/awsxutd" } },
   { name: "Open-API", image: "/assets/open_api.png", links: { GitHub: "https://github.com/LakshmanTurlapati/open-api" } },
@@ -73,6 +93,51 @@ export const shuffleableProjects: Project[] = [
   { name: "ProKeys", image: "/assets/prokeys.png", links: { GitHub: "https://github.com/LakshmanTurlapati/ProKeys" } },
   { name: "SmolLM Flutter", image: "/assets/smollm_flutter.png", links: { GitHub: "https://github.com/LakshmanTurlapati/SmolLm-Flutter" } },
 ];
+
+export const allProjects: Project[] = [...pinnedProjects, ...shuffleableProjects];
+
+function normalizeProjectKey(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+export function resolveProject(input: string): Project | null {
+  const normalizedInput = normalizeProjectKey(input);
+  if (!normalizedInput) return null;
+
+  return allProjects.find((project) => {
+    const keys = [project.name, ...(project.aliases || [])];
+    return keys.some((key) => normalizeProjectKey(key) === normalizedInput);
+  }) || null;
+}
+
+export function isApprovedProjectUrl(url: string): boolean {
+  return allProjects.some((project) =>
+    Object.values(project.links).some((approvedUrl) => approvedUrl === url)
+  );
+}
+
+export function getProjectBrowserTarget(project: Project): { url: string; label: string } | null {
+  const targetOrder = [project.preferredTarget, 'Website', 'Design', 'GitHub'].filter(Boolean) as string[];
+  const targetKey = targetOrder.find((key) => project.links[key]);
+
+  if (!targetKey) return null;
+
+  const url = project.links[targetKey];
+  if (!url || !isApprovedProjectUrl(url)) return null;
+
+  const labels: Record<string, string> = {
+    Website: 'Visit site',
+    Design: 'Design',
+    GitHub: 'Source',
+  };
+
+  return { url, label: labels[targetKey] || targetKey };
+}
 
 export const PROJECT_DETAILS: Record<string, ProjectDetail> = {
   "FSB / Full Self Browsing": {

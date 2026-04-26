@@ -3,13 +3,12 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { FaArrowLeft, FaSliders } from 'react-icons/fa6';
 import { useTheme } from 'next-themes';
-import { pinnedProjects, shuffleableProjects } from '@/data/projects';
+import { getProjectBrowserTarget, pinnedProjects, resolveProject, shuffleableProjects } from '@/data/projects';
 import type { Project } from '@/data/projects';
 import { PortfolioCard } from '@/components/portfolio-card';
 import { DataGrid, DEFAULT_DG_CFG } from '@/components/data-grid';
 import type { DataGridConfig } from '@/components/data-grid';
-import { ProjectDetail } from '@/components/project-detail';
-import { IframeViewer, isUnembeddable } from '@/components/iframe-viewer';
+import { IframeViewer } from '@/components/iframe-viewer';
 import { useTransition } from '@/providers/transition-provider';
 import { useMounted } from '@/hooks/use-mounted';
 import { useVoiceSession } from '@/providers/voice-session-provider';
@@ -37,30 +36,11 @@ export default function PortfolioPage() {
 
   const [dgCfg, setDgCfg] = useState<DataGridConfig>(DEFAULT_DG_CFG);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [viewer, setViewer] = useState<{ url: string; label: string } | null>(null);
 
   const openProject = useCallback((project: Project) => {
-    const links = project.links || {};
-    let url = '';
-    let label = '';
-
-    // Priority: (1) Website if embeddable, (2) Design, (3) Website even if unembeddable, (4) GitHub
-    if (links.Website && !isUnembeddable(links.Website)) {
-      url = links.Website;
-      label = 'Visit site';
-    } else if (links.Design) {
-      url = links.Design;
-      label = 'Design';
-    } else if (links.Website) {
-      url = links.Website;
-      label = 'Visit site';
-    } else if (links.GitHub) {
-      url = links.GitHub;
-      label = 'Source';
-    }
-
-    if (url) setViewer({ url, label });
+    const target = getProjectBrowserTarget(project);
+    if (target) setViewer(target);
   }, []);
 
   const openInViewer = useCallback((url: string, label: string) => {
@@ -86,23 +66,21 @@ export default function PortfolioPage() {
     }));
   }, []);
 
-  // Phase 13 (D-01, D-02, TOOL-01): register openProject voice callback on mount.
-  // The voice callback bridges slug → Project → setSelectedProject (opens the ProjectDetail overlay).
-  // NOTE: This is NOT the local openProject function (which opens the iframe viewer).
-  // Using setSelectedProject directly — matches PATTERNS.md Key Observation #2.
+  // Phase 17: resolve spoken aliases to approved project records, then open the browser path directly.
   useEffect(() => {
     registerToolCallbacks({
       openProject: ({ slug }) => {
-        // Case-sensitive first (per D-09), case-insensitive fallback per RESEARCH.md Pitfall 5
-        const project = projects.find(
-          (p) => p.name === slug || p.name.toLowerCase() === slug.toLowerCase()
-        );
-        if (project) setSelectedProject(project);
+        const project = resolveProject(slug);
+        if (project) {
+          openProject(project);
+          return;
+        }
+        console.warn(`[PortfolioPage] Unknown project requested: ${slug}`);
       },
     });
     // Deregister on unmount — prevents stale callbacks when navigating away
     return () => registerToolCallbacks({});
-  }, [registerToolCallbacks, projects]);
+  }, [openProject, registerToolCallbacks]);
 
   // Phase 13 (D-08, TOOL-06): emit 'page-ready' after mount so the tour's waitForPage resolves.
   // Empty deps — fires once after first mount. Guards for VoiceBus availability (SSR safety).
@@ -194,19 +172,6 @@ export default function PortfolioPage() {
           isDark={isDark}
           onClose={() => setPanelOpen(false)}
           onRandomize={randomize}
-        />
-      )}
-
-      {/* Project detail overlay */}
-      {selectedProject && (
-        <ProjectDetail
-          project={selectedProject}
-          isDark={isDark}
-          onClose={() => setSelectedProject(null)}
-          onOpenLink={(url, label) => {
-            setSelectedProject(null);
-            openInViewer(url, label);
-          }}
         />
       )}
 

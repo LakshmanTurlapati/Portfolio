@@ -13,7 +13,7 @@ const errorMessages = [
 const voiceToolInstructions = `
 You have access to tools that control the portfolio website. Use them when appropriate:
 - navigate: Use when the user wants to go to a page (portfolio, about, home). Say something brief THEN call the tool.
-- openProject: Use when the user mentions a specific project name. Navigate to portfolio first if needed, then open the project.
+- openProject: Use when the user mentions a specific project name or approved alias. Open the approved inbuilt-browser target for that project; do not invent project URLs.
 - scrollTo: Use when the user wants to see a specific section on the about page (experience, education/academics, about).
 - toggleTheme: Use when the user asks to switch, toggle, or change the theme/mode (dark/light).
 - openLink: Use when the user asks to open a specific URL.
@@ -32,9 +32,9 @@ const voiceTools = {
     }),
   }),
   openProject: tool({
-    description: 'Open a specific project detail view on the portfolio page. Use the project name as it appears in the portfolio.',
+    description: 'Open a specific approved project target in the portfolio browser. Use a project name or alias from the portfolio, not an arbitrary URL.',
     inputSchema: z.object({
-      name: z.string().describe('The project name to open, e.g. "Parz-AI", "FSB", "Amogus"'),
+      name: z.string().describe('The project name or alias to open, e.g. "Parz-AI", "FSB", "GitFly", "Review Gate", "T2S"'),
     }),
   }),
   scrollTo: tool({
