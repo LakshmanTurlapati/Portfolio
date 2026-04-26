@@ -52,7 +52,7 @@ See `milestones/v3-ROADMAP.md` (merged with v3 carry-forward).
 
 **Milestone Goal:** Close out v4.1's deferred items — voice reliability hardening, mobile UX gaps, FSB overlay polish, and a chat UI redesign — without regressing shipped behavior.
 
-- [ ] **Phase 25: Voice Wave 2 Hardening** — Close the five P1 audit findings (F-05..F-09) so voice survives slow networks, Safari quirks, page navigation, and throwing tool callbacks
+- [x] **Phase 25: Voice Wave 2 Hardening** — Close the five P1 audit findings (F-05..F-09) so voice survives slow networks, Safari quirks, page navigation, and throwing tool callbacks (completed 2026-04-26)
 - [ ] **Phase 26: Mobile UX Pass** — Smooth particles on mobile, sane iOS keyboard handling for chat input, readable project-detail layout on small screens
 - [ ] **Phase 27: FSB Overlay Polish** — Dynamic action captions in the overlay during Parz tool runs, plus a mobile-tuned overlay treatment
 - [ ] **Phase 28: Chat UI Redesign** — Run a UI-SPEC against `chat-popup.tsx`, then ship the visual / UX polish on top of the Phase 26 mobile baseline
@@ -69,7 +69,12 @@ See `milestones/v3-ROADMAP.md` (merged with v3 carry-forward).
   3. User on Safari (or any browser where SpeechSynthesis silently no-ops) sees voice exit `speaking` state in worst-case proportional time, never permanently stuck (VOICE-07).
   4. User who navigates between pages does not accumulate stale voice tool callbacks; each page's callbacks are deregistered on unmount and dispatch only invokes live handlers (VOICE-08).
   5. User triggering a tool whose callback throws sees the voice turn continue with a `tool-error` glow instead of an aborted turn — every callback is wrapped (VOICE-09).
-**Plans**: TBD
+**Plans**: 5 plans
+- [x] 25-01-PLAN.md — VOICE-09: Add runTool helper and refactor dispatchToolCall (Wave 1)
+- [x] 25-02-PLAN.md — VOICE-08: registerToolCallbacks returns deregister fn (Wave 2)
+- [x] 25-03-PLAN.md — VOICE-05: page-ready event in transition-provider + openTextChat listener (Wave 3)
+- [x] 25-04-PLAN.md — VOICE-06: 5s Scribe SESSION_STARTED guard with fallback (Wave 2)
+- [x] 25-05-PLAN.md — VOICE-07: SpeechSynthesis worst-case timeout (Wave 3)
 
 ### Phase 26: Mobile UX Pass
 **Goal**: User experiences smooth animations, sane keyboard handling, and uncramped layouts across the three known mobile pain points
@@ -121,7 +126,7 @@ Phases execute in numeric order: 25 → 26 → 27 → 28
 | 22. Voice Audio Serialization               | v4.1 | 1/1 | Complete    | 2026-04-26 |
 | 23. Dynamic Voice Output + R-1 Hotfix       | v4.1 | 1/1 | Complete    | 2026-04-26 |
 | 24. Mobile Pass + Voice Stabilization       | v4.1 | 1/1 | Complete    | 2026-04-26 |
-| 25. Voice Wave 2 Hardening                  | v4.2 | 0/TBD | Not started | -          |
+| 25. Voice Wave 2 Hardening                  | v4.2 | 5/5 | Complete    | 2026-04-26 |
 | 26. Mobile UX Pass                          | v4.2 | 0/TBD | Not started | -          |
 | 27. FSB Overlay Polish                      | v4.2 | 0/TBD | Not started | -          |
 | 28. Chat UI Redesign                        | v4.2 | 0/TBD | Not started | -          |
