@@ -3,6 +3,7 @@
 import { useRef, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { useMounted } from '@/hooks/use-mounted';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 // Declare particles.js global types (extended with particle array for VoiceBus breathing)
 declare global {
@@ -52,6 +53,7 @@ export function ParticleBackground() {
   const mounted = useMounted();
   const { resolvedTheme } = useTheme();
   const isDark = mounted && resolvedTheme === 'dark';
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   useEffect(() => {
     if (!mounted) return;
@@ -81,7 +83,7 @@ export function ParticleBackground() {
 
       window.particlesJS('pf-particles', {
         particles: {
-          number: { value: 90, density: { enable: true, value_area: 900 } },
+          number: { value: isMobile ? 45 : 90, density: { enable: true, value_area: 900 } },
           color: { value: palette.particles },
           shape: { type: 'circle', stroke: { width: 0.5, color: palette.accent } },
           opacity: { value: isDark ? 0.45 : 0.55, random: true, anim: { enable: true, speed: 0.6, opacity_min: 0.15 } },
@@ -200,7 +202,7 @@ export function ParticleBackground() {
       destroyed = true;
       try { (containerRef.current as ParticleContainer).__vmTick?.(); } catch { /* ignore */ }
     };
-  }, [isDark, mounted]);
+  }, [isDark, mounted, isMobile]);
 
   return (
     <div
