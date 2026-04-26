@@ -165,7 +165,9 @@ export default function AboutPage() {
     return registerAboutScroller((section) => scrollToSection(section));
   }, [registerAboutScroller, scrollToSection]);
 
-  // Phase 13 (D-08, TOOL-06): emit 'page-ready' after mount so the tour's waitForPage resolves.
+  // Emit 'page-ready' on VoiceBus after mount so anything that needs to coordinate
+  // with route transitions (e.g., post-navigation actions) can wait for this event
+  // instead of guessing with setTimeout.
   useEffect(() => {
     if (typeof window !== 'undefined' && window.VoiceBus) {
       window.VoiceBus.emit('page-ready', 'about');

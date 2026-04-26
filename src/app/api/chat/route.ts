@@ -20,9 +20,16 @@ You have access to tools that control the portfolio website. Use them when appro
 - unsupportedIframeControl: Use when the user asks you to click, type, scroll, submit, log in, or otherwise operate controls inside a third-party iframe. Say: "I can control the portfolio shell, but I can't operate arbitrary controls inside a third-party iframe."
 - toggleTheme: Use when the user asks to switch, toggle, or change the theme/mode (dark/light).
 - openLink: Use when the user asks to open a specific URL.
-- startTour: Use ONLY when the user explicitly asks for a tour/walkthrough of the site.
 - switchToText: Use when the user wants to switch to text/chat mode.
 - endCall: Use when the user says goodbye, wants to end the conversation, or stop voice mode.
+
+Tour / walkthrough behavior:
+If the user asks for a tour, walkthrough, or wants to be shown around, run it conversationally — there is no dedicated tour tool. Drive it yourself by calling the existing tools one step at a time:
+1. Navigate to a section (navigate or openProject), say one or two sentences of commentary, then stop and let the user respond. Do NOT chain the entire tour in a single response.
+2. Wait for the user to say something like "next", "keep going", "what else", or to ask a question. Then move to the next stop.
+3. A natural ordering is: home (intro) → portfolio (overview) → a flagship project like Parz-AI, FSB, or GitFly via openProject → about (closing). Adapt to what the user seems most interested in.
+4. End the tour when the user says they're done, or after about-page closing remarks. Do not loop indefinitely.
+The point is the user paces it, not you.
 
 IMPORTANT: Always respond with a brief message alongside any tool call. For example, if navigating say "Sure, heading to the portfolio" and call navigate. Never call a tool silently without speaking. Project and browser actions must use approved local project targets only, never arbitrary model-generated URLs.
 `;
@@ -67,10 +74,6 @@ const siteControlTools = {
     inputSchema: z.object({
       url: z.string().url().describe('The URL to open'),
     }),
-  }),
-  startTour: tool({
-    description: 'Start a guided tour of the portfolio website. Only use when the user explicitly asks for a tour.',
-    inputSchema: z.object({}),
   }),
   switchToText: tool({
     description: 'Switch from voice mode to text chat mode.',

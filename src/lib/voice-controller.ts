@@ -1,31 +1,28 @@
 'use client';
 
 // src/lib/voice-controller.ts
-// Per D-05, D-06, D-18, D-19, D-20, D-21, D-22, D-23, D-24, D-25:
-// Full voice session state machine — STT, ElevenLabs TTS, AI agent loop,
-// voice commands, scripted tour, barge-in, persistent memory, accessibility shortcuts.
+// Full voice session state machine — STT (ElevenLabs Scribe + Web Speech fallback),
+// ElevenLabs TTS, AI agent loop, barge-in, persistent memory, accessibility shortcuts.
+// Tours / walkthroughs are driven by the LLM via tool calls (no hardcoded script).
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  isStopIntent,
-  TOUR_STEPS,
-} from './voice-commands';
+import { isStopIntent } from './voice-commands';
 import { Scribe, RealtimeEvents, CommitStrategy } from '@elevenlabs/client';
 import type { RealtimeConnection } from '@elevenlabs/client';
 import type { ControlResult } from '@/providers/site-control-provider';
 
-// ToolCallbacks carries App-level handlers for tool calls named in TOUR_STEPS and AI responses.
+// ToolCallbacks carries App-level handlers for tool calls in AI responses.
 // All fields are optional so callers can wire only what they support this phase.
 // Un-wired tools log a console.warn and are no-ops — they do NOT silently succeed.
 export interface ToolCallbacks {
-  openProject?: (args: { slug: string }) => ControlResult | void;   // Required for tour step 4 (Parz-AI)
+  openProject?: (args: { slug: string }) => ControlResult | void;
   scrollTo?: (args: { selector: string }) => ControlResult | void;
   closeBrowser?: () => ControlResult;
   openCurrentProjectExternal?: () => ControlResult;
   unsupportedIframeControl?: () => ControlResult;
   openLink?: (args: { url: string }) => void;
   toggleTheme?: () => void;
-  // navigate and tourStep are handled internally by goPage / startTour; not in ToolCallbacks.
+  // navigate is handled internally by goPage; not in ToolCallbacks.
   // endCall is handled internally by close(); not in ToolCallbacks.
 }
 
@@ -85,6 +82,19 @@ export function useVoiceController({
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const historyRef = useRef<HistoryMessage[]>([]);
   const activeRef = useRef(false);  // shadow ref to read active in callbacks
+
+  // Audio-serialization refs (Phase 22 — overlap fix).
+  // speakResolverRef holds the resolver of the in-flight speak() Promise so cancelAllAudio
+  // can unblock any pending awaiter (otherwise old handleUserTurn calls hang forever).
+  // speakAbortRef cancels in-flight /api/tts fetches so a new speak doesn't race the old.
+  // speechUtteranceRef tracks the current SpeechSynthesisUtterance for identity checks
+  // in onend so a stale fallback utterance doesn't reset state on the new speak.
+  // turnGenerationRef increments at the start of every handleUserTurn — older turns
+  // bail at await checkpoints when the counter has moved on.
+  const speakResolverRef = useRef<(() => void) | null>(null);
+  const speakAbortRef = useRef<AbortController | null>(null);
+  const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const turnGenerationRef = useRef(0);
 
   // Keep activeRef in sync with state
   useEffect(() => {
@@ -197,51 +207,65 @@ export function useVoiceController({
     [toolCallbacks, goPage]
   );
 
-  // Phase 13 (D-08): replace hardcoded 500ms with VoiceBus 'page-ready' event wait.
-  // Pages emit VoiceBus.emit('page-ready', pageName) in their mount useEffect.
-  // Falls back to 1500ms if the page does not emit the event (e.g., already mounted).
-  const waitForPage = useCallback((targetPage: string): Promise<void> => {
-    if (typeof window === 'undefined' || !window.VoiceBus) {
-      return new Promise<void>((r) => setTimeout(r, 500));
+  // cancelAllAudio — single source of truth for stopping in-flight TTS, including
+  // BufferSource playback, queued SpeechSynthesis utterances, and any /api/tts fetch
+  // that is still in flight. Also unblocks any awaiter on speak() so old handleUserTurn
+  // calls don't hang. Does NOT change VoiceBus state — the caller decides the new state.
+  const cancelAllAudio = useCallback(() => {
+    // Abort any in-flight /api/tts fetch so a stale .then doesn't create another source
+    try { speakAbortRef.current?.abort(); } catch {}
+    speakAbortRef.current = null;
+
+    // Stop the current BufferSource. Identity checks in onended skip stale state mutations.
+    const src = audioSourceRef.current;
+    audioSourceRef.current = null;
+    if (src) {
+      try { src.stop(); } catch {}
     }
-    return Promise.race([
-      new Promise<void>((resolve) => {
-        const unsub = window.VoiceBus.on('page-ready', (page) => {
-          if (page === targetPage) {
-            (unsub as () => void)();
-            resolve();
-          }
-        });
-      }),
-      new Promise<void>((resolve) => setTimeout(resolve, 1500)),
-    ]);
+
+    // Drop the tracked utterance and cancel the synth queue
+    speechUtteranceRef.current = null;
+    try { window.speechSynthesis?.cancel(); } catch {}
+
+    // Unblock any awaiter so an old `await speak()` returns instead of hanging
+    const r = speakResolverRef.current;
+    speakResolverRef.current = null;
+    if (r) {
+      try { r(); } catch {}
+    }
+
+    window.VoiceBus._stopLoop();
+    speakingRef.current = false;
   }, []);
 
   // stopAll — cancel all ongoing audio/speech/recognition
   const stopAll = useCallback(() => {
     try { connectionRef.current?.close(); } catch {}
     connectionRef.current = null;
-    try {
-      audioSourceRef.current?.stop();
-      audioSourceRef.current = null;
-    } catch {}
-    try { window.speechSynthesis?.cancel(); } catch {}
+    cancelAllAudio();
     try {
       detachMicRef.current?.();
       detachMicRef.current = null;
     } catch {}
-    window.VoiceBus._stopLoop();
     window.VoiceBus.setState('idle');
-    speakingRef.current = false;
     setCaption('');
     setTranscript('');
-  }, []);
+  }, [cancelAllAudio]);
 
-  // streamTTS — ElevenLabs streaming TTS via /api/tts (per D-01, D-04)
-  // Returns a Promise that resolves when audio playback ends (for tour sequencing).
+  // streamTTS — ElevenLabs streaming TTS via /api/tts (per D-01, D-04).
+  // Phase 22: cancels any prior in-flight TTS at entry, tracks an AbortController so
+  // a cancel-mid-fetch doesn't strand a stale .then, and identity-checks in onended
+  // so a cancelled source doesn't reset state on top of the new one.
   const streamTTS = useCallback(
     (text: string): Promise<void> => {
       return new Promise<void>((resolve) => {
+        // Cancel any prior speak before starting a new one — closes overlap modes O-1, O-5.
+        cancelAllAudio();
+
+        speakResolverRef.current = resolve;
+        const ac = new AbortController();
+        speakAbortRef.current = ac;
+
         window.VoiceBus.setState('speaking');
         setCaption(text);
 
@@ -249,13 +273,17 @@ export function useVoiceController({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text, voiceId: 'dMWVPH9DSxWOMrrrUso3' }),
+          signal: ac.signal,
         })
           .then(async (res) => {
+            if (ac.signal.aborted) return;
             if (!res.ok) throw new Error(`TTS fetch failed: ${res.status}`);
             const buffer = await res.arrayBuffer();
+            if (ac.signal.aborted) return;
             const ctx = window.VoiceBus._getCtx();
             if (!ctx) throw new Error('AudioContext unavailable');
             const decoded = await ctx.decodeAudioData(buffer);
+            if (ac.signal.aborted) return;
 
             const source = ctx.createBufferSource();
             source.buffer = decoded;
@@ -266,17 +294,22 @@ export function useVoiceController({
             source.connect(analyser);
             analyser.connect(ctx.destination);
 
-            // Store source for barge-in cancel
             audioSourceRef.current = source;
 
             // Start RMS loop — hooks live audio level into VoiceBus (per D-06)
             window.VoiceBus._startLoop(analyser, 1.4);
 
             source.onended = () => {
-              window.VoiceBus._stopLoop();
-              window.VoiceBus.setState('idle');
-              speakingRef.current = false;
-              audioSourceRef.current = null;
+              // Identity check: only mutate state if THIS source is still current.
+              // A cancelled source whose onended fires late must not touch state.
+              if (audioSourceRef.current === source) {
+                window.VoiceBus._stopLoop();
+                window.VoiceBus.setState('idle');
+                speakingRef.current = false;
+                audioSourceRef.current = null;
+                speakAbortRef.current = null;
+                if (speakResolverRef.current === resolve) speakResolverRef.current = null;
+              }
               resolve();
             };
 
@@ -284,37 +317,47 @@ export function useVoiceController({
             source.start();
           })
           .catch((err) => {
+            // Cancelled by us — do not fall back to synth, do not resolve here
+            // (cancelAllAudio already resolved this Promise via speakResolverRef).
+            if (ac.signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
             console.warn('[VoiceController] streamTTS failed, falling back to SpeechSynthesis:', err);
             // Fallback to SpeechSynthesisUtterance with fake amplitude
             const synth = window.speechSynthesis;
             if (!synth) {
               window.VoiceBus.setState('idle');
               speakingRef.current = false;
+              if (speakResolverRef.current === resolve) speakResolverRef.current = null;
+              speakAbortRef.current = null;
               resolve();
               return;
             }
+            // Cancel any queued utterances before starting ours
+            try { synth.cancel(); } catch {}
             const u = new SpeechSynthesisUtterance(text);
             u.rate = 1.05;
             u.pitch = 1.0;
             u.volume = 1.0;
+            speechUtteranceRef.current = u;
             window.VoiceBus.setState('speaking');
             window.VoiceBus.attachTTSFake(u);
-            u.onend = () => {
-              window.VoiceBus.setState('idle');
-              speakingRef.current = false;
+            const finishSynth = () => {
+              if (speechUtteranceRef.current === u) {
+                window.VoiceBus.setState('idle');
+                speakingRef.current = false;
+                speechUtteranceRef.current = null;
+                speakAbortRef.current = null;
+                if (speakResolverRef.current === resolve) speakResolverRef.current = null;
+              }
               resolve();
             };
-            u.onerror = () => {
-              window.VoiceBus.setState('idle');
-              speakingRef.current = false;
-              resolve();
-            };
+            u.onend = finishSynth;
+            u.onerror = finishSynth;
             speakingRef.current = true;
             synth.speak(u);
           });
       });
     },
-    []
+    [cancelAllAudio]
   );
 
   // speak — public wrapper around streamTTS
@@ -326,24 +369,6 @@ export function useVoiceController({
     [streamTTS]
   );
 
-  // startTour — iterate TOUR_STEPS sequentially, await each speak(), dispatch tool calls
-  const startTour = useCallback(async () => {
-    for (const step of TOUR_STEPS) {
-      if (!activeRef.current) break;
-
-      if (step.page !== currentPage) {
-        goPage(step.page);
-        await waitForPage(step.page);
-      }
-
-      await speak(step.say);
-
-      if (step.call) {
-        dispatchToolCall(step.call[0], step.call[1]);
-      }
-    }
-  }, [currentPage, goPage, speak, dispatchToolCall, waitForPage]);
-
   // handleUserTurn — ALL utterances go to Grok (except local stop for instant response)
   const handleUserTurn = useCallback(
     async (utterance: string) => {
@@ -353,6 +378,16 @@ export function useVoiceController({
       try { connectionRef.current?.close(); } catch {}
       connectionRef.current = null;
       try { detachMicRef.current?.(); detachMicRef.current = null; } catch {}
+
+      // Phase 22: cancel any in-flight TTS/fetch from a prior turn so a slow previous
+      // response doesn't keep talking over this one. Closes overlap mode O-4.
+      cancelAllAudio();
+
+      // Phase 22: bump the turn generation. Older parallel turns (e.g. Web Speech
+      // multi-final firing handleUserTurn twice — overlap mode O-3) check this and
+      // bail at await checkpoints once a newer turn has started.
+      turnGenerationRef.current += 1;
+      const myTurn = turnGenerationRef.current;
 
       window.VoiceBus.setState('thinking');
       setCaption('Thinking\u2026');
@@ -401,41 +436,52 @@ export function useVoiceController({
         let responseText = '';
         const toolCalls: { name: string; args: Record<string, unknown> }[] = [];
 
+        // F-01: keep a leftover buffer between reads so JSON events that span
+        // chunk boundaries are not silently dropped by JSON.parse inside the catch.
+        const handleLine = (line: string) => {
+          if (line.startsWith('data: ')) {
+            const payload = line.slice(6);
+            if (payload === '[DONE]') return;
+            try {
+              const evt = JSON.parse(payload);
+              if (evt.type === 'text-delta' && typeof evt.delta === 'string') {
+                responseText += evt.delta;
+              }
+              if (evt.type === 'tool-input-available' && evt.toolName) {
+                toolCalls.push({ name: evt.toolName, args: evt.input || {} });
+              }
+            } catch {}
+            return;
+          }
+          if (line.startsWith('0:')) {
+            try {
+              const parsed = JSON.parse(line.slice(2));
+              if (typeof parsed === 'string') responseText += parsed;
+            } catch {}
+          }
+        };
+
         if (reader) {
+          let buffer = '';
           while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
-            for (const line of lines) {
-              // SSE data lines
-              if (line.startsWith('data: ')) {
-                const payload = line.slice(6);
-                if (payload === '[DONE]') continue;
-                try {
-                  const evt = JSON.parse(payload);
-                  // Text delta
-                  if (evt.type === 'text-delta' && typeof evt.delta === 'string') {
-                    responseText += evt.delta;
-                  }
-                  // Tool call complete with parsed input
-                  if (evt.type === 'tool-input-available' && evt.toolName) {
-                    toolCalls.push({ name: evt.toolName, args: evt.input || {} });
-                  }
-                } catch {}
-              }
-              // Legacy format fallback (0: prefix)
-              if (line.startsWith('0:')) {
-                try {
-                  const parsed = JSON.parse(line.slice(2));
-                  if (typeof parsed === 'string') responseText += parsed;
-                } catch {}
-              }
+            if (done) {
+              buffer += decoder.decode();
+              if (buffer) handleLine(buffer);
+              break;
             }
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() ?? '';
+            for (const line of lines) handleLine(line);
           }
         }
 
         const clean = responseText.trim();
+
+        // Phase 22: bail if a newer turn started while we were fetching — closes O-3.
+        // Don't dispatch tools or speak; the user moved on to a different utterance.
+        if (myTurn !== turnGenerationRef.current) return;
 
         // Append assistant response to history (text portion)
         if (clean) {
@@ -473,9 +519,6 @@ export function useVoiceController({
             case 'unsupportedIframeControl':
               dispatchToolCall('unsupportedIframeControl', {});
               break;
-            case 'startTour':
-              startTour();
-              break;
             case 'switchToText':
               stopAll();
               openTextChat();
@@ -499,8 +542,7 @@ export function useVoiceController({
         await speak("My server's glitching. Give me a sec and try again.");
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [goPage, openTextChat, speak, stopAll, dispatchToolCall, startTour, waitForPage]
+    [goPage, openTextChat, speak, stopAll, dispatchToolCall, cancelAllAudio]
   );
 
   // startListeningFallback — existing Web Speech API STT, called when ElevenLabs fails (per D-02)
@@ -654,25 +696,23 @@ export function useVoiceController({
 
   // bargeIn — energy-threshold barge-in during speaking state (per D-21)
   const bargeIn = useCallback(() => {
-    try { audioSourceRef.current?.stop(); } catch {}
-    audioSourceRef.current = null;
-    window.VoiceBus._stopLoop();
+    cancelAllAudio();
     window.VoiceBus.setState('listening');
     void startListening(); // void guard: startListening is now async
-  }, [startListening]);
+  }, [cancelAllAudio, startListening]);
 
-  // Subscribe to VoiceBus 'level' events for barge-in detection (per D-21)
-  // When speaking and energy > 0.15, cancel TTS and switch to listening.
+  // Subscribe to VoiceBus 'level' events for barge-in detection (per D-21).
+  // F-03: threshold scales with the prefers-reduced-motion cap so a11y users
+  // keep functional barge-in. The 0.35 baseline (raised from 0.15) handles
+  // ElevenLabs TTS's consistently high amplitude and prevents self-interruption.
   useEffect(() => {
     if (typeof window === 'undefined' || !window.VoiceBus) return;
 
     const unsubLevel = window.VoiceBus.on('level', (lvl) => {
       const level = lvl as number;
-      // Per D-24: cap level to 0.2 when prefers-reduced-motion
       const effectiveLevel = prefersReduced ? Math.min(level, 0.2) : level;
-
-      // Raised from 0.15 to 0.35 — ElevenLabs TTS has consistent high amplitude; prevents self-interruption
-      if (window.VoiceBus.state === 'speaking' && effectiveLevel > 0.35) {
+      const threshold = prefersReduced ? 0.15 : 0.35;
+      if (window.VoiceBus.state === 'speaking' && effectiveLevel > threshold) {
         bargeIn();
       }
     });
@@ -680,10 +720,17 @@ export function useVoiceController({
     return unsubLevel as () => void;
   }, [bargeIn, prefersReduced]);
 
-  // open — activate voice mode and greet after morph settles
+  // open — activate voice mode and greet after morph settles.
+  // Phase 22: guard the timer so a fast user (push-to-talk before 480ms) doesn't
+  // hear the greeting overlap their answer (overlap mode O-2). Skip greet if voice
+  // was closed in the interim, if a speak is already in flight, or if state has
+  // already moved on (listening / thinking / speaking).
   const open = useCallback(() => {
     setActive(true);
     setTimeout(() => {
+      if (!activeRef.current) return;
+      if (speakingRef.current) return;
+      if (typeof window !== 'undefined' && window.VoiceBus && window.VoiceBus.state !== 'idle') return;
       const greetMessage =
         currentPage === 'home'
           ? "Hey, I'm Parz. I can give you a tour, or just chat. What are we doing?"
@@ -708,10 +755,20 @@ export function useVoiceController({
   useEffect(() => {
     if (!active) return;
 
+    // F-04: don't hijack Space when the user is typing — Space inside a text
+    // field must add a space, not push-to-talk. Same guard on keyup so a stray
+    // release inside a field doesn't tear down an unrelated active connection.
+    const isTypingTarget = (target: EventTarget | null): boolean => {
+      const el = target as HTMLElement | null;
+      if (!el) return false;
+      const tag = el.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable === true;
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && window.VoiceBus.state !== 'listening') {
+      if (e.code === 'Space' && !isTypingTarget(e.target) && window.VoiceBus.state !== 'listening') {
         e.preventDefault();
-        void startListening(); // startListening is now async — void guard prevents unhandled rejection
+        void startListening();
       }
       if (e.code === 'Escape') {
         close();
@@ -719,7 +776,7 @@ export function useVoiceController({
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
+      if (e.code === 'Space' && !isTypingTarget(e.target)) {
         connectionRef.current?.close();
         connectionRef.current = null;
       }

@@ -73,8 +73,9 @@ export default function PortfolioPage() {
     }));
   }, []);
 
-  // Phase 13 (D-08, TOOL-06): emit 'page-ready' after mount so the tour's waitForPage resolves.
-  // Empty deps — fires once after first mount. Guards for VoiceBus availability (SSR safety).
+  // Emit 'page-ready' on VoiceBus after mount so anything that needs to coordinate
+  // with route transitions (e.g., post-navigation actions) can wait for this event
+  // instead of guessing with setTimeout. Empty deps — fires once on first mount.
   useEffect(() => {
     if (typeof window !== 'undefined' && window.VoiceBus) {
       window.VoiceBus.emit('page-ready', 'portfolio');
