@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** Phase 16 — Public-Safe Persona and Content Refresh
+**Current focus:** Phase 17 — Direct Inbuilt Project Browser
 
 ## Current Position
 
@@ -74,6 +74,6 @@ Last session: 2026-04-26
 Stopped at: Phase 16 complete; ready to discuss Phase 17
 Resume file: .planning/phases/16-public-safe-persona-and-content-refresh/16-VERIFICATION.md
 
-**Next:** Run `/gsd-plan-phase 16`.
+**Next:** Run `/gsd-discuss-phase 17 --auto`.
 
 **Planned Phase:** 16 (Public-Safe Persona and Content Refresh) — 3 plans — 2026-04-26T03:06:58.935Z
