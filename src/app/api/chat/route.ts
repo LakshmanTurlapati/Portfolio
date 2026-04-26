@@ -86,7 +86,9 @@ const siteControlTools = {
 };
 
 export async function POST(req: Request) {
+  const t0 = Date.now();
   if (!hasEnvVar('XAI_API_KEY')) {
+    console.warn('[chat] 503 — XAI_API_KEY missing');
     return new Response(
       JSON.stringify({ error: 'Chat service is not configured. Please try again later.' }),
       { status: 503, headers: { 'Content-Type': 'application/json' } }
@@ -100,6 +102,11 @@ export async function POST(req: Request) {
       enableSiteControl?: boolean;
     };
     const toolsEnabled = Boolean(isVoice || enableSiteControl);
+    const lastMsg = messages?.[messages.length - 1];
+    const lastText = (lastMsg && typeof lastMsg.parts?.[0] === 'object' && 'text' in (lastMsg.parts[0] as Record<string, unknown>))
+      ? String((lastMsg.parts[0] as { text: unknown }).text).slice(0, 80)
+      : '';
+    console.warn(`[chat] in: msgs=${messages?.length ?? 0} isVoice=${!!isVoice} tools=${toolsEnabled} last="${lastText}"`);
 
     const system = toolsEnabled
       ? systemPrompt + siteControlToolInstructions
@@ -114,8 +121,10 @@ export async function POST(req: Request) {
       ...(toolsEnabled ? { tools: siteControlTools } : {}),
     });
 
+    console.warn(`[chat] out: streaming, ${Date.now() - t0}ms`);
     return result.toUIMessageStreamResponse();
-  } catch {
+  } catch (err) {
+    console.warn(`[chat] error after ${Date.now() - t0}ms:`, err instanceof Error ? err.message : err);
     const message = errorMessages[Math.floor(Math.random() * errorMessages.length)];
     return new Response(
       JSON.stringify({ error: message }),
