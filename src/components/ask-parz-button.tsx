@@ -14,9 +14,17 @@ interface Orb {
 interface AskParzButtonProps {
   isDark: boolean;
   onClick: () => void;
+  /**
+   * Layout variant. 'desktop' (default) anchors the button absolutely inside the
+   * top desktop navbar (right: 132, top-1/2). 'mobile' makes it a regular inline
+   * button so it can sit inside a flex slot in the mobile navbar without escaping
+   * its container.
+   */
+  variant?: 'desktop' | 'mobile';
 }
 
-export function AskParzButton({ isDark, onClick }: AskParzButtonProps) {
+export function AskParzButton({ isDark, onClick, variant = 'desktop' }: AskParzButtonProps) {
+  const isMobile = variant === 'mobile';
   const btnRef = useRef<HTMLButtonElement>(null);
   const [orbs, setOrbs] = useState<Orb[]>([]);
   const [hover, setHover] = useState(false);
@@ -52,10 +60,12 @@ export function AskParzButton({ isDark, onClick }: AskParzButtonProps) {
     <button
       ref={btnRef}
       data-parz-btn
-      className="absolute top-1/2 flex items-center gap-[7px] h-12 rounded-[20px] text-[13px] font-semibold cursor-pointer overflow-hidden isolate transition-all duration-250"
+      className={`flex items-center gap-[7px] h-12 rounded-[20px] text-[13px] font-semibold cursor-pointer overflow-hidden isolate transition-all duration-250 ${isMobile ? 'relative' : 'absolute top-1/2'}`}
       style={{
-        right: 132,
-        transform: hover ? 'translateY(-50%) scale(1.04)' : 'translateY(-50%)',
+        ...(isMobile ? {} : { right: 132 }),
+        transform: isMobile
+          ? (hover ? 'scale(1.04)' : 'none')
+          : (hover ? 'translateY(-50%) scale(1.04)' : 'translateY(-50%)'),
         padding: '0 16px 0 13px',
         background: isDark
           ? (hover ? 'rgba(0,0,0,0.10)' : 'rgba(0,0,0,0.05)')
@@ -105,8 +115,10 @@ export function AskParzButton({ isDark, onClick }: AskParzButtonProps) {
         }}
       />
 
-      {/* Label */}
-      <span className="relative z-[1] whitespace-nowrap max-[760px]:hidden">Parz</span>
+      {/* Label — always shown in the mobile variant (dedicated flex slot);
+          hidden on narrow desktop widths in the desktop variant where the label
+          would crowd the navbar. */}
+      <span className={`relative z-[1] whitespace-nowrap ${isMobile ? '' : 'max-[760px]:hidden'}`}>Parz</span>
     </button>
   );
 }

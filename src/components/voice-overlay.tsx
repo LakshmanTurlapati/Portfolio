@@ -28,13 +28,17 @@ export function VoiceOverlay() {
           <VoicePanel {...voiceProps} isDark={isDark} micDenied={micDenied} />
         </div>
       </div>
-      {/* Mobile: hidden on desktop */}
+      {/* Mobile: hidden on desktop. Bottom uses max(20px, env(safe-area-inset-bottom))
+          so notched iOS devices don't put the home indicator over the panel. */}
       <div className="sm:hidden">
         <div
-          className="fixed bottom-[20px] left-[20px] right-[20px] h-[72px] rounded-[25px] z-50 overflow-hidden"
-          style={{ backgroundColor: 'var(--color-navbar-bg)' }}
+          className="fixed left-[20px] right-[20px] h-[72px] rounded-[25px] z-50 overflow-hidden"
+          style={{
+            backgroundColor: 'var(--color-navbar-bg)',
+            bottom: 'max(20px, env(safe-area-inset-bottom))',
+          }}
         >
-          <VoicePanel {...voiceProps} isDark={isDark} micDenied={micDenied} />
+          <VoicePanel {...voiceProps} isDark={isDark} micDenied={micDenied} compact />
         </div>
       </div>
     </div>

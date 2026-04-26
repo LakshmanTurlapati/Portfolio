@@ -37,6 +37,8 @@ export interface VoicePanelProps {
   onStop: () => void;
   onClose: () => void;
   onFallbackChat: () => void;
+  /** Tighter padding + smaller wave for mobile-sized containers. */
+  compact?: boolean;
 }
 
 export function VoicePanel({
@@ -49,6 +51,7 @@ export function VoicePanel({
   onStop,
   onClose,
   onFallbackChat,
+  compact = false,
 }: VoicePanelProps) {
   const dot = STATE_DOTS[state] ?? STATE_DOTS.idle;
   const textColor = isDark ? '#111' : '#fff';
@@ -70,8 +73,8 @@ export function VoicePanel({
           inset: 0,
           display: 'flex',
           alignItems: 'center',
-          gap: '16px',
-          padding: '0 14px 0 22px',
+          gap: compact ? '10px' : '16px',
+          padding: compact ? '0 10px 0 14px' : '0 14px 0 22px',
           opacity: 1,
           animation: 'vmFadeIn 0.25s ease forwards',
           color: textColor,
@@ -100,7 +103,7 @@ export function VoicePanel({
             Mic denied — click to retry
           </div>
         ) : (
-          <VoiceWave isDark={isDark} />
+          <VoiceWave isDark={isDark} compact={compact} />
         )}
 
         {/* Caption area */}

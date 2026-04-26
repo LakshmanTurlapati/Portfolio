@@ -5,9 +5,11 @@ import { useMounted } from '@/hooks/use-mounted';
 
 interface VoiceWaveProps {
   isDark: boolean;
+  /** Compact size for mobile/cramped containers (60×32 instead of 88×40). */
+  compact?: boolean;
 }
 
-export function VoiceWave({ isDark }: VoiceWaveProps) {
+export function VoiceWave({ isDark, compact = false }: VoiceWaveProps) {
   const mounted = useMounted();
   const [level, setLevel] = useState(0);
   const [t, setT] = useState(0);
@@ -38,15 +40,19 @@ export function VoiceWave({ isDark }: VoiceWaveProps) {
   const baseHeights = [0.32, 0.62, 1.0, 0.62, 0.32];
   const barColor = isDark ? '#1a1a1a' : '#fff';
 
+  const dims = compact
+    ? { gap: '5px', height: '32px', width: '60px', barWidth: '6px' }
+    : { gap: '7px', height: '40px', width: '88px', barWidth: '8px' };
+
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '7px',
-        height: '40px',
-        width: '88px',
+        gap: dims.gap,
+        height: dims.height,
+        width: dims.width,
         flexShrink: 0,
       }}
     >
@@ -59,7 +65,7 @@ export function VoiceWave({ isDark }: VoiceWaveProps) {
             key={i}
             style={{
               display: 'block',
-              width: '8px',
+              width: dims.barWidth,
               height: '100%',
               background: barColor,
               borderRadius: '9999px',

@@ -43,19 +43,23 @@ export function MobileNavbar({ onAskParz, voiceActive, voiceProps, micDenied }: 
   );
 
   if (!mounted) {
-    // SSR placeholder matching mobile navbar dimensions
+    // SSR placeholder matching mobile navbar dimensions.
+    // Bottom uses max(20px, safe-area-inset-bottom) so iOS notched devices
+    // don't have the home indicator overlap the navbar.
     return (
       <div
-        className="fixed bottom-[20px] left-[20px] right-[20px] h-[70px] rounded-[25px] z-50"
+        className="fixed left-[20px] right-[20px] h-[70px] rounded-[25px] z-50"
+        style={{ bottom: 'max(20px, env(safe-area-inset-bottom))' }}
       />
     );
   }
 
   return (
     <nav
-      className={`fixed bottom-[20px] left-[20px] right-[20px] rounded-[25px] z-50 flex flex-col items-center relative overflow-hidden ${voiceActive ? 'h-[140px]' : 'h-[70px]'}`}
+      className={`fixed left-[20px] right-[20px] rounded-[25px] z-50 flex flex-col items-center relative overflow-hidden ${voiceActive ? 'h-[140px]' : 'h-[70px]'}`}
       style={{
         backgroundColor: 'var(--color-navbar-bg)',
+        bottom: 'max(20px, env(safe-area-inset-bottom))',
         transition: 'height 0.45s cubic-bezier(.22,1,.36,1)',
       }}
     >
@@ -82,9 +86,10 @@ export function MobileNavbar({ onAskParz, voiceActive, voiceProps, micDenied }: 
           </button>
         </div>
 
-        {/* Ask Parz button (flex: 2) */}
+        {/* Ask Parz button (flex: 2) — mobile variant uses static positioning so
+            it sits inside its flex slot instead of escaping to desktop coords. */}
         <div className="flex-[2] flex items-center justify-center">
-          <AskParzButton isDark={isDark} onClick={onAskParz} />
+          <AskParzButton isDark={isDark} onClick={onAskParz} variant="mobile" />
         </div>
 
         {/* Right (flex: 3): Social icons */}
@@ -108,7 +113,7 @@ export function MobileNavbar({ onAskParz, voiceActive, voiceProps, micDenied }: 
       {/* Voice capsule area — visible when voice mode is active */}
       {voiceActive && voiceProps && (
         <div className="w-full flex-1 relative">
-          <VoicePanel {...voiceProps} isDark={isDark} micDenied={micDenied ?? false} />
+          <VoicePanel {...voiceProps} isDark={isDark} micDenied={micDenied ?? false} compact />
         </div>
       )}
     </nav>
