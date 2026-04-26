@@ -18,7 +18,7 @@ export interface VoiceSessionContextType {
   openVoice: () => void;
   closeVoice: () => void;
   prefersReduced: boolean;
-  registerToolCallbacks: (callbacks: ToolCallbacks) => void;  // Phase 13: per D-01
+  registerToolCallbacks: (callbacks: ToolCallbacks) => () => void;  // VOICE-08: returns deregister fn
 }
 
 const VoiceSessionContext = createContext<VoiceSessionContextType | null>(null);
@@ -38,10 +38,19 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   // useRef not useState — prevents stale closure in dispatchToolCall memoization.
   const toolCallbacksRef = useRef<ToolCallbacks>({});
 
-  // registerToolCallbacks merges incoming callbacks into the shared ref (per Pattern 2, RESEARCH.md).
-  // Pages call this on mount; pass {} to deregister on unmount.
-  const registerToolCallbacks = useCallback((callbacks: ToolCallbacks) => {
+  // VOICE-08: registerToolCallbacks merges incoming callbacks into the shared ref
+  // and returns a deregister fn that removes EXACTLY the keys it registered.
+  // ownedKeys is captured at registration time so a later mutation of the input
+  // object can't change which keys the deregister fn deletes (RESEARCH.md
+  // Pitfall 4: survives React 19 strict-mode double-mount).
+  const registerToolCallbacks = useCallback((callbacks: ToolCallbacks): (() => void) => {
+    const ownedKeys = Object.keys(callbacks) as (keyof ToolCallbacks)[];
     toolCallbacksRef.current = { ...toolCallbacksRef.current, ...callbacks };
+    return () => {
+      for (const k of ownedKeys) {
+        delete toolCallbacksRef.current[k];
+      }
+    };
   }, []);
 
   // Phase 13 (D-05, D-04): toggleTheme and openLink have no page-specific state.
