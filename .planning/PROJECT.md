@@ -10,30 +10,17 @@ A visually striking, interactive portfolio that showcases projects with rich det
 
 ## Current State
 
-**Shipped:** v4.1 Phase 19 FSB-Inspired Control Overlay (2026-04-26)
+**Shipped:** v4.1 Parz Persona, Portfolio Context, and Site Control Refresh (2026-04-26)
 
-Parz now uses a public-safe profile source of truth for current work, personality, flagship projects, and refusal boundaries. About, Experience, and project content now reflect InfiniteChoice/Voyza, FSB / Full Self Browsing, GitFly, and the refined AI-builder narrative, with private GitFly source and non-public employer/product details explicitly guarded. Portfolio project cards now open approved project targets directly in the inbuilt browser, and Parz can now use the same safe project resolver from any page to navigate, scroll about-page sections, open projects globally, close the browser shell, open the current project externally, honestly refuse unsupported third-party iframe control, and show a pointer-safe monochrome FSB-inspired overlay while doing real control actions.
-
-## Current Milestone: v4.1 Parz Persona, Portfolio Context, and Site Control Refresh
-
-**Goal:** Make Parz feel more recognizably like Lakshman while updating portfolio knowledge/content and giving the AI meaningful, FSB-inspired control over project browsing and site navigation.
-
-**Target features:**
-- Rewrite/refactor Parz system prompt and data so answers are direct, richer, personality-grounded, and current
-- Add public-safe current work context: AI Enablement Engineer at InfiniteChoice building Voyza, an AI-first hotel booking platform
-- Update visible portfolio content for About, Experience, and relevant project cards/details
-- Promote current flagship projects: FSB / Full Self Browsing and GitFly, with GitFly linking only to https://gitfly.ai and no private source-code exposure
-- Add guardrails so Parz does not expose internal context, private source details, voice bot internals, API keys/secrets/config, or non-public employer/client details
-- Add prompt tests/evals for personality, factual grounding, flagship project answers, rude-user behavior, and internal-detail refusal
-- Replace the right-side project detail panel with direct inbuilt-browser project opening, including AI-triggered project opens from home without forcing navigation to portfolio first
-- Expand Parz tool control so it can navigate pages, scroll precisely, open projects, and operate the inbuilt browser in meaningful user-visible ways
-- Add an FSB-inspired monochrome navigation overlay while Parz is controlling/navigating, including a bottom-left "powered by FSB" badge
+v4.1 is complete and live at https://portfolio-v4-test.fly.dev/. Parz grounds answers in a typed `public-profile.ts` source of truth (current work, personality, flagship projects, refusal boundaries). About / Experience / project content shares the same approved facts as the system prompt, locked by Phase 20 contract tests. Project cards open approved targets directly in the inbuilt browser, and Parz can navigate, scroll, open projects, close the shell, and refuse third-party iframe control from any current page — all wrapped in a pointer-safe monochrome FSB control overlay. The voice pipeline was audited end-to-end and three additional waves of fixes (Phases 21-23) shipped: hardcoded tour scaffolding ripped out for LLM-driven walkthroughs, audio serialization rebuilt around a single `cancelAllAudio` primitive plus AbortController plus turn-generation counter, every word the user hears is now LLM-generated. Phase 24 closed out the mobile pass and iOS safe-area support (`viewport-fit=cover` + `env(safe-area-inset-*)` on all fixed mobile elements).
 
 ## Next Milestone Candidates
 
-- API-03: Restore or identify a reachable Amplify production URL and run `scripts/verify-amplify-apis.mjs` against `/api/chat`, `/api/stt-token`, and `/api/tts`.
-- Mobile voice mode refinements, if mobile UX becomes the next priority.
-- Deferred portfolio DataGrid hover effects and project-card polish, if visual completion becomes the next priority after the v4.1 content/persona/control refresh.
+- Wave 2 P1 voice audit findings still open in `21-AUDIT.md`: STT session-started timeout, SpeechSynthesis fallback timeout, registerToolCallbacks deregister, tool-callback exception wrapping, openTextChat 400 ms race.
+- API-03: Live Amplify / custom-domain smoke test against `audienclature.com` (script ready at `scripts/verify-amplify-apis.mjs`, blocked on a reachable production URL).
+- Mobile polish remaining: particle-background mobile performance, chat input iOS keyboard handling, project-detail full-screen mobile UX.
+- FSB-04 (overlay action captions), FSB-05 (mobile-specific overlay treatment), CHAT-UI-01 (chat popup/page redesign).
+- Deferred portfolio DataGrid hover effects and project-card polish.
 
 ## Requirements
 
@@ -82,14 +69,18 @@ Parz now uses a public-safe profile source of truth for current work, personalit
 - ✓ Parz can navigate to home, portfolio, and about, then scroll About, Experience, or Academics through the about page's internal scroll container — v4.1 Phase 18
 - ✓ Parz can close the inbuilt browser shell, open the current project externally, and honestly decline unsupported third-party iframe control — v4.1 Phase 18
 - ✓ Parz site-control actions show a monochrome FSB-inspired overlay with bottom-left `powered by FSB` badge while keeping controls pointer-safe — v4.1 Phase 19
+- ✓ Vitest contract suite (12 tests) plus a focused Playwright E2E spec verify persona, guardrails, source parity, project resolution, and shell control — v4.1 Phase 20
+- ✓ Voice pipeline audited end-to-end (17 findings); hardcoded tour scaffolding ripped out; Wave 1 P0 fixes shipped (SSE buffer, prefers-reduced-motion barge-in, Space hijack) — v4.1 Phase 21
+- ✓ Voice audio serialization rebuilt: `cancelAllAudio` primitive plus AbortController plus turn-generation counter close five overlap modes — v4.1 Phase 22
+- ✓ All hardcoded `speak()` strings removed; greet is LLM-generated via synthetic kickoff turn; R-1 barge-in regression hotfix shipped — v4.1 Phase 23
+- ✓ Mobile pass + iOS safe-area: `viewport-fit=cover`, `env(safe-area-inset-*)` on all fixed mobile elements, variant-aware AskParz button, portfolio image clipping, compact mobile voice panel — v4.1 Phase 24
 
-### Active
+### Active (next milestone candidates)
 
-- [ ] Add prompt tests/evals covering personality, factual grounding, flagship project answers, rude-user behavior, and internal-detail refusal
-- [x] Remove the right-side ProjectDetail panel path and make project opening use the inbuilt browser directly
-- [x] Let Parz open a specific project's GitHub/website/browser target from any page, including home, without always navigating to portfolio first
-- [x] Expand Parz site control for precise navigation, scrolling, project opening, and inbuilt-browser actions inspired by FSB
-- [x] Show an FSB-inspired monochrome overlay during Parz navigation/control actions with a small bottom-left "powered by FSB" badge
+- [ ] Wave 2 P1 voice audit findings (`21-AUDIT.md`): F-05 openTextChat 400ms race, F-06 STT session-started timeout, F-07 SpeechSynthesis fallback timeout, F-08 registerToolCallbacks deregister, F-09 tool-callback exception wrapping
+- [ ] API-03: Live Amplify / custom-domain smoke test against `audienclature.com` (script ready at `scripts/verify-amplify-apis.mjs`)
+- [ ] Particle-background mobile performance, chat input iOS keyboard handling, project-detail full-screen mobile UX
+- [ ] FSB-04 overlay action captions, FSB-05 mobile-specific overlay treatment, CHAT-UI-01 chat popup/page redesign
 
 ### Out of Scope
 

@@ -3,15 +3,16 @@ gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Parz Persona, Portfolio Context, and Site Control Refresh
 status: complete
-stopped_at: Phase 24 complete
-last_updated: "2026-04-26T07:10:00.000Z"
-last_activity: 2026-04-26 -- Phase 24 complete (mobile pass + voice stabilization)
+stopped_at: v4.1 milestone shipped
+last_updated: "2026-04-26T11:50:00.000Z"
+last_activity: 2026-04-26 -- v4.1 milestone shipped (9 phases / 14 plans archived)
 progress:
   total_phases: 9
   completed_phases: 9
   total_plans: 14
   completed_plans: 14
   percent: 100
+milestone_status: archived
 ---
 
 # Project State
@@ -98,11 +99,11 @@ v4.1 Progress: [████████████████████] 10
 
 ## Session Continuity
 
-Last session: Phase 24 (mobile pass + voice stabilization)
-Stopped at: Phase 24 complete
-Resume file: .planning/phases/24-mobile-pass-and-voice-stabilization/24-VERIFICATION.md
+Last session: v4.1 milestone close
+Stopped at: v4.1 archived (Phases 16-24 shipped)
+Resume file: .planning/milestones/v4.1-ROADMAP.md
 
-**Next:** v4.1 milestone is functionally done and live on `https://portfolio-v4-test.fly.dev/`. Run `/gsd-complete-milestone` to archive v4.1. Wave 2 P1 fixes (F-05 / F-06 / F-07 / F-08 / F-09 in `21-AUDIT.md`) carry into a future milestone if voice hardening continues.
+**Next:** Run `/gsd-new-milestone` to define v4.2 scope, requirements, and roadmap. Wave 2 P1 audit findings (F-05..F-09 in archived `21-AUDIT.md`) and other deferred items in `MILESTONES.md` are candidate scope.
 
 **Completed Phase:** 24 (Mobile Pass + Voice Stabilization) — 1 plan — 2026-04-26T07:10:00.000Z
 **Completed Phase:** 23 (Dynamic Voice Output + R-1 Hotfix) — 1 plan — 2026-04-26T01:15:00.000Z
