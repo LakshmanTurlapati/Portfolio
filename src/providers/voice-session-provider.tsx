@@ -85,15 +85,31 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     [navigateWithReveal, siteControl]
   );
 
-  // Per D-06 + Pattern 3 (RESEARCH.md): navigate to home first, then signal ChatPopup via CustomEvent.
-  // 400ms delay gives View Transitions API (~500ms) enough time to mount the home page
-  // before the event fires. If timing is still off, increase to 500ms.
+  // VOICE-05: event-driven coordination replacing the prior hardcoded 400ms.
+  // Subscribe to VoiceBus 'page-ready' synchronously BEFORE goPage so the
+  // listener is live before the destination page mounts. Whichever fires first
+  // -- the page-ready event for slug 'home' OR the 1500ms safety timer --
+  // calls fire() exactly once (gated by the `fired` flag). Safety timer
+  // covers View Transitions failures and missed emits (RESEARCH.md Pattern 2).
   const openTextChat = useCallback(
     (_initialText?: string) => {
-      goPage('home');
-      setTimeout(() => {
+      let fired = false;
+      let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+      const fire = () => {
+        if (fired) return;
+        fired = true;
+        try { unsub(); } catch {}
+        if (safetyTimer !== null) {
+          clearTimeout(safetyTimer);
+          safetyTimer = null;
+        }
         window.dispatchEvent(new CustomEvent('parz:open-text-chat'));
-      }, 400);
+      };
+      const unsub = window.VoiceBus.on('page-ready', (page) => {
+        if (page === 'home') fire();
+      });
+      safetyTimer = setTimeout(fire, 1500);
+      goPage('home');
     },
     [goPage]
   );
