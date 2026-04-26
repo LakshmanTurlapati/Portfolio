@@ -55,10 +55,10 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       window.open(url, '_blank', 'noopener,noreferrer');
     };
     toolCallbacksRef.current.openProject = ({ slug }: { slug: string }) => {
-      siteControl.openProject(slug);
+      return siteControl.openProject(slug);
     };
     toolCallbacksRef.current.scrollTo = ({ selector }: { selector: string }) => {
-      siteControl.scrollTo(selector);
+      return siteControl.scrollTo(selector);
     };
     toolCallbacksRef.current.closeBrowser = siteControl.closeBrowser;
     toolCallbacksRef.current.openCurrentProjectExternal = siteControl.openCurrentProjectExternal;

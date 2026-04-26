@@ -18,8 +18,8 @@ import type { ControlResult } from '@/providers/site-control-provider';
 // All fields are optional so callers can wire only what they support this phase.
 // Un-wired tools log a console.warn and are no-ops — they do NOT silently succeed.
 export interface ToolCallbacks {
-  openProject?: (args: { slug: string }) => void;   // Required for tour step 4 (Parz-AI)
-  scrollTo?: (args: { selector: string }) => void;
+  openProject?: (args: { slug: string }) => ControlResult | void;   // Required for tour step 4 (Parz-AI)
+  scrollTo?: (args: { selector: string }) => ControlResult | void;
   closeBrowser?: () => ControlResult;
   openCurrentProjectExternal?: () => ControlResult;
   unsupportedIframeControl?: () => ControlResult;
@@ -118,8 +118,8 @@ export function useVoiceController({
         case 'openProject':
           if (toolCallbacks?.openProject) {
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
-            toolCallbacks.openProject(args as { slug: string });
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-success');
+            const result = toolCallbacks.openProject(args as { slug: string });
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit(result?.ok === false ? 'tool-error' : 'tool-success');
           } else {
             console.warn('[VoiceController] openProject tool called but no toolCallbacks.openProject provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -128,8 +128,8 @@ export function useVoiceController({
         case 'scrollTo':
           if (toolCallbacks?.scrollTo) {
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
-            toolCallbacks.scrollTo(args as { selector: string });
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-success');
+            const result = toolCallbacks.scrollTo(args as { selector: string });
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit(result?.ok === false ? 'tool-error' : 'tool-success');
           } else {
             console.warn('[VoiceController] scrollTo tool called but no toolCallbacks.scrollTo provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
