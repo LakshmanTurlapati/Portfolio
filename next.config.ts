@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // Enable React strict mode for better development experience
   reactStrictMode: true,
 
+  // Standalone output for Docker/Fly.io deployment
+  output: 'standalone',
+
   // Must be inside `experimental` — top-level viewTransition: true is silently ignored.
   experimental: {
     viewTransition: true,
