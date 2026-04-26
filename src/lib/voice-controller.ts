@@ -132,9 +132,19 @@ export function useVoiceController({
   // does not abort the voice turn. Emits 'tool-executing' before invocation and
   // 'tool-success' / 'tool-error' on settle. Returns { ok } so callers can inspect
   // outcome (synchronous path only -- async resolves to ok=true optimistically).
-  const runTool = (name: string, fn: () => unknown): { ok: boolean } => {
+  // Phase 27 / FSB-04: 'tool-executing' now carries a { name, args } payload so
+  // caption consumers (FsbControlOverlay) can render context-aware captions like
+  // 'Opening {projectName}…' and 'Navigating to {page}…'. 'tool-success' and
+  // 'tool-error' remain payload-less — caption layer persists the last args until
+  // success/error arrives. Existing payload-agnostic subscribers (voice-glow.tsx)
+  // continue to work because they ignore the payload.
+  const runTool = (
+    name: string,
+    args: Record<string, unknown>,
+    fn: () => unknown,
+  ): { ok: boolean } => {
     const hasBus = typeof window !== 'undefined' && !!window.VoiceBus;
-    if (hasBus) window.VoiceBus.emit('tool-executing');
+    if (hasBus) window.VoiceBus.emit('tool-executing', { name, args });
     try {
       const result = fn();
       if (result && typeof (result as { then?: unknown }).then === 'function') {
@@ -170,7 +180,7 @@ export function useVoiceController({
       switch (name) {
         case 'openProject':
           if (toolCallbacks?.openProject) {
-            runTool('openProject', () => toolCallbacks.openProject!(args as { slug: string }));
+            runTool('openProject', args, () => toolCallbacks.openProject!(args as { slug: string }));
           } else {
             console.warn('[VoiceController] openProject tool called but no toolCallbacks.openProject provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -178,7 +188,7 @@ export function useVoiceController({
           break;
         case 'scrollTo':
           if (toolCallbacks?.scrollTo) {
-            runTool('scrollTo', () => toolCallbacks.scrollTo!(args as { selector: string }));
+            runTool('scrollTo', args, () => toolCallbacks.scrollTo!(args as { selector: string }));
           } else {
             console.warn('[VoiceController] scrollTo tool called but no toolCallbacks.scrollTo provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -186,7 +196,7 @@ export function useVoiceController({
           break;
         case 'openLink':
           if (toolCallbacks?.openLink) {
-            runTool('openLink', () => toolCallbacks.openLink!(args as { url: string }));
+            runTool('openLink', args, () => toolCallbacks.openLink!(args as { url: string }));
           } else {
             console.warn('[VoiceController] openLink tool called but no toolCallbacks.openLink provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -194,7 +204,7 @@ export function useVoiceController({
           break;
         case 'closeBrowser':
           if (toolCallbacks?.closeBrowser) {
-            runTool('closeBrowser', () => toolCallbacks.closeBrowser!());
+            runTool('closeBrowser', args, () => toolCallbacks.closeBrowser!());
           } else {
             console.warn('[VoiceController] closeBrowser tool called but no toolCallbacks.closeBrowser provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -202,7 +212,7 @@ export function useVoiceController({
           break;
         case 'openCurrentProjectExternal':
           if (toolCallbacks?.openCurrentProjectExternal) {
-            runTool('openCurrentProjectExternal', () => toolCallbacks.openCurrentProjectExternal!());
+            runTool('openCurrentProjectExternal', args, () => toolCallbacks.openCurrentProjectExternal!());
           } else {
             console.warn('[VoiceController] openCurrentProjectExternal tool called but no toolCallbacks.openCurrentProjectExternal provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -210,7 +220,7 @@ export function useVoiceController({
           break;
         case 'unsupportedIframeControl':
           if (toolCallbacks?.unsupportedIframeControl) {
-            runTool('unsupportedIframeControl', () => toolCallbacks.unsupportedIframeControl!());
+            runTool('unsupportedIframeControl', args, () => toolCallbacks.unsupportedIframeControl!());
           } else {
             console.warn('[VoiceController] unsupportedIframeControl tool called but no toolCallbacks.unsupportedIframeControl provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -218,14 +228,16 @@ export function useVoiceController({
           break;
         case 'toggleTheme':
           if (toolCallbacks?.toggleTheme) {
-            runTool('toggleTheme', () => toolCallbacks.toggleTheme!());
+            runTool('toggleTheme', args, () => toolCallbacks.toggleTheme!());
           } else {
             console.warn('[VoiceController] toggleTheme tool called but no toolCallbacks.toggleTheme provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
           }
           break;
         case 'navigate':
-          goPage((args as { page: string }).page);
+          runTool('navigate', args, () => {
+            goPage((args as { page: string }).page);
+          });
           break;
         case 'endCall':
           break;
