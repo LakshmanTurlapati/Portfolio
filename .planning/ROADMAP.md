@@ -17,7 +17,7 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
 - [x] **Phase 17: Direct Inbuilt Project Browser** - Manual project clicks resolve approved targets and open directly in the inbuilt browser without the right-side ProjectDetail path. (completed 2026-04-26)
 - [x] **Phase 18: Global Parz Site Control** - Parz can navigate, scroll, open projects, and operate feasible viewer shell actions from any page. (completed 2026-04-26)
 - [x] **Phase 19: FSB-Inspired Control Overlay** - Users see a monochrome control overlay and powered-by-FSB badge during real Parz control actions. (completed 2026-04-26)
-- [ ] **Phase 20: Verification and Regression Coverage** - Evals and E2E tests prove persona, safety, content parity, target resolution, and site-control behavior.
+- [x] **Phase 20: Verification and Regression Coverage** - Evals and E2E tests prove persona, safety, content parity, target resolution, and site-control behavior. (completed 2026-04-26)
 
 ## Phase Details
 
@@ -69,7 +69,7 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
   2. User sees a small bottom-left `powered by FSB` badge during Parz control actions.
   3. User can still close the inbuilt browser, use voice controls, navigate pages, and scroll while the overlay is visible.
   4. The overlay appears only for real control actions and clears cleanly after success, error, or blocked outcomes.
-**Plans**: TBD
+**Plans**: 20-01
 **UI hint**: yes
 
 ### Phase 20: Verification and Regression Coverage
@@ -138,4 +138,4 @@ Every v4.1 requirement maps to exactly one phase.
 | 17. Direct Inbuilt Project Browser | v4.1 | 2/2 | Complete | 2026-04-26 |
 | 18. Global Parz Site Control | v4.1 | 3/3 | Complete    | 2026-04-26 |
 | 19. FSB-Inspired Control Overlay | v4.1 | 1/1 | Complete | 2026-04-26 |
-| 20. Verification and Regression Coverage | v4.1 | 0/TBD | Not started | - |
+| 20. Verification and Regression Coverage | v4.1 | 1/1 | Complete | 2026-04-26 |

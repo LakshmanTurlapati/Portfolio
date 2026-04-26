@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -14,10 +15,10 @@ import { useTheme } from 'next-themes';
 import { FsbControlOverlay } from '@/components/fsb-control-overlay';
 import { IframeViewer } from '@/components/iframe-viewer';
 import { getProjectBrowserTarget, resolveProject } from '@/data/projects';
+import { normalizeSection, type ControlSection } from '@/lib/site-control-utils';
 import { useTransition } from '@/providers/transition-provider';
 
 export type ControlPage = 'home' | 'portfolio' | 'about';
-export type ControlSection = 'about' | 'experience' | 'academics';
 
 export interface ControlResult {
   ok: boolean;
@@ -40,6 +41,12 @@ interface SiteControlContextType {
   registerAboutScroller: (scroller: ((section: ControlSection) => void) | null) => () => void;
 }
 
+declare global {
+  interface Window {
+    __parzSiteControl?: SiteControlContextType;
+  }
+}
+
 const SiteControlContext = createContext<SiteControlContextType | null>(null);
 
 const PAGE_PATHS: Record<ControlPage, string> = {
@@ -47,22 +54,6 @@ const PAGE_PATHS: Record<ControlPage, string> = {
   portfolio: '/portfolio',
   about: '/about',
 };
-
-const SECTION_ALIASES: Record<string, ControlSection> = {
-  about: 'about',
-  bio: 'about',
-  me: 'about',
-  experience: 'experience',
-  work: 'experience',
-  academics: 'academics',
-  academic: 'academics',
-  education: 'academics',
-  school: 'academics',
-};
-
-function normalizeSection(section: ControlSection | string): ControlSection | null {
-  return SECTION_ALIASES[section.replace(/^#/, '').toLowerCase()] || null;
-}
 
 export function useSiteControl(): SiteControlContextType {
   const context = useContext(SiteControlContext);
@@ -186,7 +177,7 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const value: SiteControlContextType = {
+  const value: SiteControlContextType = useMemo(() => ({
     navigate,
     openProject,
     scrollTo,
@@ -194,7 +185,24 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
     openCurrentProjectExternal,
     unsupportedIframeControl,
     registerAboutScroller,
-  };
+  }), [
+    closeBrowser,
+    navigate,
+    openCurrentProjectExternal,
+    openProject,
+    registerAboutScroller,
+    scrollTo,
+    unsupportedIframeControl,
+  ]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+
+    window.__parzSiteControl = value;
+    return () => {
+      if (window.__parzSiteControl === value) delete window.__parzSiteControl;
+    };
+  }, [value]);
 
   return (
     <SiteControlContext.Provider value={value}>

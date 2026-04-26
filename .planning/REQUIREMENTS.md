@@ -56,11 +56,11 @@ Requirements for the current milestone. Each maps to exactly one roadmap phase.
 
 ### Evaluation and Verification
 
-- [ ] **EVAL-01**: Vitest evals verify Parz's persona tone, directness, flagship project answers, current work answer, and alignment/gap-radar explanation.
-- [ ] **EVAL-02**: Vitest guardrail evals verify refusals or safe redirects for internal context, private GitFly source, secrets/config, voice internals, and non-public employer/product details.
-- [ ] **EVAL-03**: Source parity tests verify Parz prompt data, About content, Experience content, and project content use the same approved public facts.
-- [ ] **EVAL-04**: Tool/project resolution tests verify aliases, canonical targets, allowlisted URLs, and unknown-project fallbacks.
-- [ ] **EVAL-05**: Playwright E2E tests verify Parz can navigate, scroll, open a project in the inbuilt browser, and show the FSB overlay/badge during control actions.
+- [x] **EVAL-01**: Vitest evals verify Parz's persona tone, directness, flagship project answers, current work answer, and alignment/gap-radar explanation.
+- [x] **EVAL-02**: Vitest guardrail evals verify refusals or safe redirects for internal context, private GitFly source, secrets/config, voice internals, and non-public employer/product details.
+- [x] **EVAL-03**: Source parity tests verify Parz prompt data, About content, Experience content, and project content use the same approved public facts.
+- [x] **EVAL-04**: Tool/project resolution tests verify aliases, canonical targets, allowlisted URLs, and unknown-project fallbacks.
+- [x] **EVAL-05**: Playwright E2E tests verify Parz can navigate, scroll, open a project in the inbuilt browser, and show the FSB overlay/badge during control actions.
 
 ## Future Requirements
 
@@ -128,11 +128,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FSB-01 | Phase 19 | Complete |
 | FSB-02 | Phase 19 | Complete |
 | FSB-03 | Phase 19 | Complete |
-| EVAL-01 | Phase 20 | Pending |
-| EVAL-02 | Phase 20 | Pending |
-| EVAL-03 | Phase 20 | Pending |
-| EVAL-04 | Phase 20 | Pending |
-| EVAL-05 | Phase 20 | Pending |
+| EVAL-01 | Phase 20 | Complete |
+| EVAL-02 | Phase 20 | Complete |
+| EVAL-03 | Phase 20 | Complete |
+| EVAL-04 | Phase 20 | Complete |
+| EVAL-05 | Phase 20 | Complete |
 
 **Coverage:**
 - v4.1 requirements: 34 total
