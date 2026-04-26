@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/providers/theme-provider';
 import { TransitionProvider } from '@/providers/transition-provider';
 import { VoiceBusProvider } from '@/providers/voice-bus-provider';
 import { VoiceSessionProvider } from '@/providers/voice-session-provider';
+import { SiteControlProvider } from '@/providers/site-control-provider';
 import { VoiceOverlay } from '@/components/voice-overlay';
 import { VoiceGlow } from '@/components/voice-glow';
 import './globals.css';
@@ -57,11 +58,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <TransitionProvider>
             <VoiceBusProvider>
-              <VoiceSessionProvider>
-                {children}
-                <VoiceOverlay />
-                <VoiceGlow />
-              </VoiceSessionProvider>
+              <SiteControlProvider>
+                <VoiceSessionProvider>
+                  {children}
+                  <VoiceOverlay />
+                  <VoiceGlow />
+                </VoiceSessionProvider>
+              </SiteControlProvider>
             </VoiceBusProvider>
           </TransitionProvider>
         </ThemeProvider>

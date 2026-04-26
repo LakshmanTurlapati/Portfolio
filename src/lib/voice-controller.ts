@@ -12,6 +12,7 @@ import {
 } from './voice-commands';
 import { Scribe, RealtimeEvents, CommitStrategy } from '@elevenlabs/client';
 import type { RealtimeConnection } from '@elevenlabs/client';
+import type { ControlResult } from '@/providers/site-control-provider';
 
 // ToolCallbacks carries App-level handlers for tool calls named in TOUR_STEPS and AI responses.
 // All fields are optional so callers can wire only what they support this phase.
@@ -19,6 +20,9 @@ import type { RealtimeConnection } from '@elevenlabs/client';
 export interface ToolCallbacks {
   openProject?: (args: { slug: string }) => void;   // Required for tour step 4 (Parz-AI)
   scrollTo?: (args: { selector: string }) => void;
+  closeBrowser?: () => ControlResult;
+  openCurrentProjectExternal?: () => ControlResult;
+  unsupportedIframeControl?: () => ControlResult;
   openLink?: (args: { url: string }) => void;
   toggleTheme?: () => void;
   // navigate and tourStep are handled internally by goPage / startTour; not in ToolCallbacks.
@@ -138,6 +142,36 @@ export function useVoiceController({
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-success');
           } else {
             console.warn('[VoiceController] openLink tool called but no toolCallbacks.openLink provided');
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
+          }
+          break;
+        case 'closeBrowser':
+          if (toolCallbacks?.closeBrowser) {
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
+            const result = toolCallbacks.closeBrowser();
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit(result.ok ? 'tool-success' : 'tool-error');
+          } else {
+            console.warn('[VoiceController] closeBrowser tool called but no toolCallbacks.closeBrowser provided');
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
+          }
+          break;
+        case 'openCurrentProjectExternal':
+          if (toolCallbacks?.openCurrentProjectExternal) {
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
+            const result = toolCallbacks.openCurrentProjectExternal();
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit(result.ok ? 'tool-success' : 'tool-error');
+          } else {
+            console.warn('[VoiceController] openCurrentProjectExternal tool called but no toolCallbacks.openCurrentProjectExternal provided');
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
+          }
+          break;
+        case 'unsupportedIframeControl':
+          if (toolCallbacks?.unsupportedIframeControl) {
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
+            const result = toolCallbacks.unsupportedIframeControl();
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit(result.ok ? 'tool-success' : 'tool-error');
+          } else {
+            console.warn('[VoiceController] unsupportedIframeControl tool called but no toolCallbacks.unsupportedIframeControl provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
           }
           break;
@@ -293,7 +327,6 @@ export function useVoiceController({
   );
 
   // startTour — iterate TOUR_STEPS sequentially, await each speak(), dispatch tool calls
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const startTour = useCallback(async () => {
     for (const step of TOUR_STEPS) {
       if (!activeRef.current) break;
@@ -419,9 +452,6 @@ export function useVoiceController({
               goPage((tc.args as { page: string }).page);
               break;
             case 'openProject': {
-              // Navigate to portfolio first, then open project
-              goPage('portfolio');
-              await waitForPage('portfolio');
               dispatchToolCall('openProject', { slug: (tc.args as { name: string }).name });
               break;
             }
@@ -433,6 +463,15 @@ export function useVoiceController({
               break;
             case 'openLink':
               dispatchToolCall('openLink', tc.args);
+              break;
+            case 'closeBrowser':
+              dispatchToolCall('closeBrowser', {});
+              break;
+            case 'openCurrentProjectExternal':
+              dispatchToolCall('openCurrentProjectExternal', {});
+              break;
+            case 'unsupportedIframeControl':
+              dispatchToolCall('unsupportedIframeControl', {});
               break;
             case 'startTour':
               startTour();

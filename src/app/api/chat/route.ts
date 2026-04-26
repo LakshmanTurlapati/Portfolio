@@ -10,21 +10,24 @@ const errorMessages = [
   'Having some technical difficulties. Give me a few minutes and try again!',
 ];
 
-const voiceToolInstructions = `
+const siteControlToolInstructions = `
 You have access to tools that control the portfolio website. Use them when appropriate:
 - navigate: Use when the user wants to go to a page (portfolio, about, home). Say something brief THEN call the tool.
 - openProject: Use when the user mentions a specific project name or approved alias. Open the approved inbuilt-browser target for that project; do not invent project URLs.
 - scrollTo: Use when the user wants to see a specific section on the about page (experience, education/academics, about).
+- closeBrowser: Use when the user asks to close the inbuilt browser/project viewer.
+- openCurrentProjectExternal: Use when the user asks to open the currently viewed project externally or in a new tab.
+- unsupportedIframeControl: Use when the user asks you to click, type, scroll, submit, log in, or otherwise operate controls inside a third-party iframe. Say: "I can control the portfolio shell, but I can't operate arbitrary controls inside a third-party iframe."
 - toggleTheme: Use when the user asks to switch, toggle, or change the theme/mode (dark/light).
 - openLink: Use when the user asks to open a specific URL.
 - startTour: Use ONLY when the user explicitly asks for a tour/walkthrough of the site.
 - switchToText: Use when the user wants to switch to text/chat mode.
 - endCall: Use when the user says goodbye, wants to end the conversation, or stop voice mode.
 
-IMPORTANT: Always respond with a brief spoken message alongside any tool call. For example, if navigating say "Sure, heading to the portfolio" and call navigate. Never call a tool silently without speaking.
+IMPORTANT: Always respond with a brief message alongside any tool call. For example, if navigating say "Sure, heading to the portfolio" and call navigate. Never call a tool silently without speaking. Project and browser actions must use approved local project targets only, never arbitrary model-generated URLs.
 `;
 
-const voiceTools = {
+const siteControlTools = {
   navigate: tool({
     description: 'Navigate to a page on the portfolio website. Valid pages: home, portfolio, about.',
     inputSchema: z.object({
@@ -42,6 +45,18 @@ const voiceTools = {
     inputSchema: z.object({
       section: z.enum(['about', 'experience', 'academics']).describe('The section to scroll to'),
     }),
+  }),
+  closeBrowser: tool({
+    description: 'Close the inbuilt portfolio browser/project viewer if it is currently open.',
+    inputSchema: z.object({}),
+  }),
+  openCurrentProjectExternal: tool({
+    description: 'Open the currently active approved project browser target externally in a new tab.',
+    inputSchema: z.object({}),
+  }),
+  unsupportedIframeControl: tool({
+    description: 'Use for unsupported requests to operate arbitrary third-party iframe contents. The portfolio shell can be controlled, but cross-origin iframe controls cannot.',
+    inputSchema: z.object({}),
   }),
   toggleTheme: tool({
     description: 'Toggle between dark and light theme.',
@@ -76,10 +91,15 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { messages, isVoice } = (await req.json()) as { messages: UIMessage[]; isVoice?: boolean };
+    const { messages, isVoice, enableSiteControl } = (await req.json()) as {
+      messages: UIMessage[];
+      isVoice?: boolean;
+      enableSiteControl?: boolean;
+    };
+    const toolsEnabled = Boolean(isVoice || enableSiteControl);
 
-    const system = isVoice
-      ? systemPrompt + voiceToolInstructions
+    const system = toolsEnabled
+      ? systemPrompt + siteControlToolInstructions
       : systemPrompt;
 
     const result = streamText({
@@ -88,7 +108,7 @@ export async function POST(req: Request) {
       messages: await convertToModelMessages(messages),
       maxOutputTokens: 1000,
       temperature: 0.7,
-      ...(isVoice ? { tools: voiceTools } : {}),
+      ...(toolsEnabled ? { tools: siteControlTools } : {}),
     });
 
     return result.toUIMessageStreamResponse();

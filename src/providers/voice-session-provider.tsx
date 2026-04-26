@@ -6,6 +6,7 @@ import { useVoiceController } from '@/lib/voice-controller';
 import type { ToolCallbacks } from '@/lib/voice-controller';
 import type { VoicePanelProps } from '@/components/voice-panel';
 import { useTransition } from '@/providers/transition-provider';
+import { useSiteControl } from '@/providers/site-control-provider';
 import { usePathname } from 'next/navigation';
 
 type VoiceNavProps = Omit<VoicePanelProps, 'isDark' | 'micDenied'>;
@@ -31,6 +32,7 @@ export function useVoiceSession(): VoiceSessionContextType {
 export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { navigateWithReveal } = useTransition();
+  const siteControl = useSiteControl();
 
   // Phase 13 (D-01, D-05, D-04): tool callback registry via ref so dispatchToolCall reads fresh values.
   // useRef not useState — prevents stale closure in dispatchToolCall memoization.
@@ -52,14 +54,26 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     toolCallbacksRef.current.openLink = ({ url }: { url: string }) => {
       window.open(url, '_blank', 'noopener,noreferrer');
     };
-  }, [resolvedTheme, setTheme]);
+    toolCallbacksRef.current.openProject = ({ slug }: { slug: string }) => {
+      siteControl.openProject(slug);
+    };
+    toolCallbacksRef.current.scrollTo = ({ selector }: { selector: string }) => {
+      siteControl.scrollTo(selector);
+    };
+    toolCallbacksRef.current.closeBrowser = siteControl.closeBrowser;
+    toolCallbacksRef.current.openCurrentProjectExternal = siteControl.openCurrentProjectExternal;
+    toolCallbacksRef.current.unsupportedIframeControl = siteControl.unsupportedIframeControl;
+  }, [resolvedTheme, setTheme, siteControl]);
 
   const goPage = useCallback(
     (page: string) => {
-      const paths: Record<string, string> = { home: '/', portfolio: '/portfolio', about: '/about' };
-      navigateWithReveal(paths[page] ?? '/', window.innerWidth / 2, window.innerHeight / 2);
+      if (page === 'home' || page === 'portfolio' || page === 'about') {
+        siteControl.navigate(page);
+        return;
+      }
+      navigateWithReveal('/', window.innerWidth / 2, window.innerHeight / 2);
     },
-    [navigateWithReveal]
+    [navigateWithReveal, siteControl]
   );
 
   // Per D-06 + Pattern 3 (RESEARCH.md): navigate to home first, then signal ChatPopup via CustomEvent.

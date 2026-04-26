@@ -9,7 +9,7 @@ import { bioSegments } from '@/data/bio';
 import { experienceData } from '@/data/experience';
 import { educationData } from '@/data/education';
 import { useTransition } from '@/providers/transition-provider';
-import { useVoiceSession } from '@/providers/voice-session-provider';
+import { useSiteControl } from '@/providers/site-control-provider';
 
 type SectionId = 'about' | 'experience' | 'academics';
 
@@ -104,7 +104,7 @@ export default function AboutPage() {
   const { navigateWithReveal } = useTransition();
   const isDesktop = useMediaQuery('(min-width: 600px)');
   const [activeSection, setActiveSection] = useState<SectionId>('about');
-  const { registerToolCallbacks } = useVoiceSession();
+  const { registerAboutScroller } = useSiteControl();
 
   const aboutRef = useRef<HTMLDivElement>(null);
   const experienceRef = useRef<HTMLDivElement>(null);
@@ -160,31 +160,10 @@ export default function AboutPage() {
     }
   }, []);
 
-  // Phase 13 (D-03, TOOL-03): register scrollTo voice callback on mount.
-  // Delegates to existing scrollToSection which scrolls the right-panel div (not window).
-  // Per RESEARCH.md Pitfall 4: about page uses scrollable div, NOT window scroll.
-  // valid SectionId values: 'about', 'experience', 'academics'
+  // About uses an internal scroll container, so global site control delegates here.
   useEffect(() => {
-    registerToolCallbacks({
-      scrollTo: ({ selector }) => {
-        // Strip '#' prefix if present: '#experience' → 'experience'
-        const raw = selector.replace(/^#/, '').toLowerCase();
-        // Map common voice-spoken aliases to SectionId
-        const idMap: Record<string, SectionId> = {
-          about: 'about',
-          experience: 'experience',
-          work: 'experience',
-          education: 'academics',
-          academics: 'academics',
-          school: 'academics',
-        };
-        const id = idMap[raw];
-        if (id) scrollToSection(id);
-      },
-    });
-    // Deregister on unmount
-    return () => registerToolCallbacks({});
-  }, [registerToolCallbacks, scrollToSection]);
+    return registerAboutScroller((section) => scrollToSection(section));
+  }, [registerAboutScroller, scrollToSection]);
 
   // Phase 13 (D-08, TOOL-06): emit 'page-ready' after mount so the tour's waitForPage resolves.
   useEffect(() => {

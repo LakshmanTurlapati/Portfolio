@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { FaArrowLeft, FaSliders, FaXmark } from 'react-icons/fa6';
 import { useTheme } from 'next-themes';
-import { getProjectBrowserTarget, pinnedProjects, resolveProject, shuffleableProjects } from '@/data/projects';
+import { getProjectBrowserTarget, pinnedProjects, shuffleableProjects } from '@/data/projects';
 import type { Project } from '@/data/projects';
 import { PortfolioCard } from '@/components/portfolio-card';
 import { DataGrid, DEFAULT_DG_CFG } from '@/components/data-grid';
@@ -11,7 +11,6 @@ import type { DataGridConfig } from '@/components/data-grid';
 import { IframeViewer } from '@/components/iframe-viewer';
 import { useTransition } from '@/providers/transition-provider';
 import { useMounted } from '@/hooks/use-mounted';
-import { useVoiceSession } from '@/providers/voice-session-provider';
 
 function shuffle<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -27,7 +26,6 @@ export default function PortfolioPage() {
   const { resolvedTheme } = useTheme();
   const mounted = useMounted();
   const isDark = mounted && resolvedTheme === 'dark';
-  const { registerToolCallbacks } = useVoiceSession();
 
   const projects = useMemo(
     () => [...pinnedProjects, ...shuffle(shuffleableProjects)],
@@ -74,26 +72,6 @@ export default function PortfolioPage() {
       opacityMax: rand(0.10, 0.24),
     }));
   }, []);
-
-  // Phase 17: resolve spoken aliases to approved project records, then open the browser path directly.
-  useEffect(() => {
-    registerToolCallbacks({
-      openProject: ({ slug }) => {
-        const project = resolveProject(slug);
-        if (project) {
-          openProject(project);
-          return;
-        }
-        setViewer(null);
-        setBrowserFallback({
-          heading: 'Project unavailable',
-          body: `I could not find an approved browser target for "${slug}".`,
-        });
-      },
-    });
-    // Deregister on unmount — prevents stale callbacks when navigating away
-    return () => registerToolCallbacks({});
-  }, [openProject, registerToolCallbacks]);
 
   // Phase 13 (D-08, TOOL-06): emit 'page-ready' after mount so the tour's waitForPage resolves.
   // Empty deps — fires once after first mount. Guards for VoiceBus availability (SSR safety).
