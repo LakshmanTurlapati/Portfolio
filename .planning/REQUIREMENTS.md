@@ -53,27 +53,38 @@ Explicitly excluded for v4.2.
 
 ## Traceability
 
-Filled by the roadmapper after phase mapping. Empty at requirements-definition time.
+Filled by the roadmapper after phase mapping.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VOICE-05 | TBD | Pending |
-| VOICE-06 | TBD | Pending |
-| VOICE-07 | TBD | Pending |
-| VOICE-08 | TBD | Pending |
-| VOICE-09 | TBD | Pending |
-| MOB-01 | TBD | Pending |
-| MOB-02 | TBD | Pending |
-| MOB-03 | TBD | Pending |
-| FSB-04 | TBD | Pending |
-| FSB-05 | TBD | Pending |
-| CHAT-UI-01 | TBD | Pending |
+| VOICE-05 | Phase 25 (Voice Wave 2 Hardening) | Pending |
+| VOICE-06 | Phase 25 (Voice Wave 2 Hardening) | Pending |
+| VOICE-07 | Phase 25 (Voice Wave 2 Hardening) | Pending |
+| VOICE-08 | Phase 25 (Voice Wave 2 Hardening) | Pending |
+| VOICE-09 | Phase 25 (Voice Wave 2 Hardening) | Pending |
+| MOB-01 | Phase 26 (Mobile UX Pass) | Pending |
+| MOB-02 | Phase 26 (Mobile UX Pass) | Pending |
+| MOB-03 | Phase 26 (Mobile UX Pass) | Pending |
+| FSB-04 | Phase 27 (FSB Overlay Polish) | Pending |
+| FSB-05 | Phase 27 (FSB Overlay Polish) | Pending |
+| CHAT-UI-01 | Phase 28 (Chat UI Redesign) | Pending |
 
 **Coverage:**
 - v4.2 requirements: 11 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 11
+- Mapped to phases: 11
+- Unmapped: 0
+
+**Phase mapping summary:**
+- Phase 25: 5 requirements (VOICE-05..09)
+- Phase 26: 3 requirements (MOB-01..03)
+- Phase 27: 2 requirements (FSB-04, FSB-05)
+- Phase 28: 1 requirement (CHAT-UI-01)
+
+**Cross-phase dependency notes:**
+- Phase 28 (CHAT-UI-01) hard-depends on Phase 26 (MOB-02): both edit `src/components/chat-popup.tsx`. MOB-02 lands the iOS keyboard / safe-area baseline before the redesign so the UI-SPEC can assume good mobile behavior and merge thrash is avoided.
+- Phase 27 (FSB-04) soft-depends on Phase 25 (VOICE-09): the `runTool` wrapping in VOICE-09 emits clean `tool-executing` -> `tool-success` / `tool-error` events that FSB-04 subscribes to for caption tracking.
+- Phase 25 and Phase 26 are independent and could run in parallel; sequenced 25 -> 26 to keep voice + UI work from interleaving.
 
 ---
 *Requirements defined: 2026-04-26*
-*Last updated: 2026-04-26 after initial v4.2 milestone definition*
+*Last updated: 2026-04-26 -- traceability filled after roadmap creation (4 phases, 11/11 mapped)*
