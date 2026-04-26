@@ -20,6 +20,8 @@ export interface ProjectDetail {
 export type HoverEffect = 'ripple' | 'wave' | 'spiral' | 'scan' | 'magnet' | 'scatter' | 'flow' | 'binary' | 'constellation' | 'heartbeat';
 
 export const PROJECT_EFFECTS: Record<string, HoverEffect> = {
+  "FSB / Full Self Browsing": "ripple",
+  "GitFly": "flow",
   "Review Gate": "heartbeat",
   "Blockchain Smartcontracts": "constellation",
   "Smart Fabric using IOT": "wave",
@@ -45,6 +47,8 @@ export const PROJECT_EFFECTS: Record<string, HoverEffect> = {
 
 // First project is pinned (always shown first), rest are shuffled on each render
 export const pinnedProjects: Project[] = [
+  { name: "FSB / Full Self Browsing", image: "/assets/fsb.png", links: { Website: "https://www.full-selfbrowsing.com", GitHub: "https://github.com/LakshmanTurlapati/FSB" } },
+  { name: "GitFly", image: "", links: { Website: "https://gitfly.ai" } },
   { name: "Review Gate", image: "/assets/review_gate.webp", links: { GitHub: "https://github.com/LakshmanTurlapati/Review-Gate" } },
 ];
 
@@ -65,13 +69,43 @@ export const shuffleableProjects: Project[] = [
   { name: "awsxutd", image: "/assets/awsxutd.png", links: { Website: "https://marvelous-sopapillas-cf2910.netlify.app", GitHub: "https://github.com/LakshmanTurlapati/awsxutd" } },
   { name: "Open-API", image: "/assets/open_api.png", links: { GitHub: "https://github.com/LakshmanTurlapati/open-api" } },
   { name: "ArtScii", image: "/assets/artscii.jpg", links: { GitHub: "https://github.com/LakshmanTurlapati/ArtScii" } },
-  { name: "FSB", image: "/assets/fsb.png", links: { GitHub: "https://github.com/LakshmanTurlapati/FSB" } },
   { name: "Asteroids Game", image: "/assets/asteroids.png", links: { Website: "https://harmonious-caramel-3c3627.netlify.app", GitHub: "https://github.com/LakshmanTurlapati/Atari-Astroids-Multiplayer" } },
   { name: "ProKeys", image: "/assets/prokeys.png", links: { GitHub: "https://github.com/LakshmanTurlapati/ProKeys" } },
   { name: "SmolLM Flutter", image: "/assets/smollm_flutter.png", links: { GitHub: "https://github.com/LakshmanTurlapati/SmolLm-Flutter" } },
 ];
 
 export const PROJECT_DETAILS: Record<string, ProjectDetail> = {
+  "FSB / Full Self Browsing": {
+    tagline: "AI that can visibly operate the browser",
+    year: "2026",
+    role: "Author \u00b7 Open-source builder",
+    stack: ["AI Agents", "Browser Automation", "TypeScript", "Web"],
+    overview: "FSB / Full Self Browsing is a public browser automation assistant that turns natural-language intent into visible browsing actions. The point is not fake magic; it is making AI control feel observable, bounded, and useful.",
+    highlights: [
+      "Public project home at https://www.full-selfbrowsing.com.",
+      "Explores AI-driven browser control with a visible user-facing control surface.",
+      "Inspired the portfolio's v4.1 direction for Parz-controlled navigation and browsing.",
+    ],
+    sections: [
+      { heading: "The spark", body: "Most AI browsing demos either feel hidden or overpromise control. FSB is about making the assistant's actions visible enough that users can trust what is happening." },
+      { heading: "The portfolio connection", body: "Parz's next control layer borrows this philosophy: show the user when the AI is navigating, opening projects, or moving through the site." },
+    ],
+  },
+  "GitFly": {
+    tagline: "A public product for faster code work",
+    year: "2026",
+    role: "Builder",
+    stack: ["AI", "Developer Tools", "Product Engineering"],
+    overview: "GitFly is a current flagship project available publicly at https://gitfly.ai. The public story is the product and what it helps builders do; the source code and private implementation details are intentionally not public.",
+    highlights: [
+      "Public platform link only: https://gitfly.ai.",
+      "Presented as a product story, not a source-code showcase.",
+      "Part of Lakshman's current AI-builder and developer-tools narrative.",
+    ],
+    sections: [
+      { heading: "Public boundary", body: "GitFly's source and private implementation details stay private. The portfolio and Parz should point people to the public platform and product story only." },
+    ],
+  },
   "Review Gate": {
     tagline: "Turn 500 Cursor requests into 2,500",
     year: "2025 \u00b7 v2.7.3",
@@ -328,13 +362,6 @@ export const PROJECT_DETAILS: Record<string, ProjectDetail> = {
       "Configurable character ramp from dense to sparse.",
       "Luminance-based mapping for accurate shading.",
     ],
-  },
-  "FSB": {
-    tagline: "Experimental project",
-    year: "2024",
-    role: "Author",
-    stack: ["Various"],
-    overview: "A smaller experimental project \u2014 details in the repo.",
   },
   "ProKeys": {
     tagline: "Keyboard shortcut utility",

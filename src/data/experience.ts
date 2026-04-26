@@ -9,6 +9,16 @@ export interface ExperienceEntry {
 
 export const experienceData: ExperienceEntry[] = [
   {
+    timeline: "2026 - Present",
+    title: "AI Enablement Engineer",
+    company: "InfiniteChoice",
+    descriptions: [
+      "Building Voyza, an AI-first hotel booking platform, with a public-safe focus on practical AI enablement, product workflows, and user-facing intelligence.",
+    ],
+    skills: ["AI Enablement", "Product Engineering", "AI Workflows", "Full-Stack"],
+    url: "https://www.linkedin.com/company/infinitechoice/",
+  },
+  {
     timeline: "June 2025 - December 2025",
     title: "AI/ML Intern",
     company: "Rocket Mortgage (formerly Mr.Cooper)",
