@@ -82,6 +82,11 @@ export function useVoiceController({
   // emits SESSION_STARTED. Cleared in SESSION_STARTED / AUTH_ERROR / ERROR /
   // outer catch / cancelAllAudio. On fire: close Scribe, fall back to Web Speech.
   const sessionGuardRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // VOICE-07: worst-case timeout for the SpeechSynthesis fallback path. Some
+  // browsers (notably Safari with disabled synth) silently no-op synth.speak()
+  // and never fire onend/onerror. Duration is text-length-aware (50ms/char,
+  // 1s floor, 30s cap). Cleared in onend/onerror and from cancelAllAudio.
+  const synthGuardRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const detachMicRef = useRef<(() => void) | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const historyRef = useRef<HistoryMessage[]>([]);
@@ -240,6 +245,16 @@ export function useVoiceController({
     }
   };
 
+  // VOICE-07: clear the SpeechSynthesis fallback worst-case timer if armed.
+  // Idempotent -- safe to call from onend/onerror, the guard's own fire path,
+  // and cancelAllAudio.
+  const clearSynthGuard = () => {
+    if (synthGuardRef.current !== null) {
+      clearTimeout(synthGuardRef.current);
+      synthGuardRef.current = null;
+    }
+  };
+
   // cancelAllAudio — single source of truth for stopping in-flight TTS, including
   // BufferSource playback, queued SpeechSynthesis utterances, and any /api/tts fetch
   // that is still in flight. Also unblocks any awaiter on speak() so old handleUserTurn
@@ -248,6 +263,10 @@ export function useVoiceController({
     // VOICE-06: clear Scribe stall guard so a stop-while-connecting doesn't
     // leave a 5s timer firing into a torn-down session.
     clearSessionGuard();
+
+    // VOICE-07: clear synth fallback guard so a stop-during-speak doesn't
+    // leave a stale timer firing into a torn-down speak() Promise.
+    clearSynthGuard();
 
     // Abort any in-flight /api/tts fetch so a stale .then doesn't create another source
     try { speakAbortRef.current?.abort(); } catch {}
