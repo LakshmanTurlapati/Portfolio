@@ -14,18 +14,26 @@ A visually striking, interactive portfolio that showcases projects with rich det
 
 Voice mode is now production-ready in-app: the session persists across routes, tool callbacks execute real UI actions, ElevenLabs Scribe v2 handles STT through server-issued tokens, voice state has visual glow feedback, and API routes are wired to real xAI/ElevenLabs providers. Live Amplify/custom-domain smoke testing is deferred because the production domain is currently unavailable.
 
+## Current Milestone: v4.1 Parz Persona, Portfolio Context, and Site Control Refresh
+
+**Goal:** Make Parz feel more recognizably like Lakshman while updating portfolio knowledge/content and giving the AI meaningful, FSB-inspired control over project browsing and site navigation.
+
 **Target features:**
-- Wire all voice tool callbacks (openProject, scrollTo, openLink, toggleTheme, navigate) so tour and AI commands actually execute
-- Upgrade STT from Web Speech API to ElevenLabs for better quality and cross-browser support
-- Verify Grok API key is present and voice/chat reach xAI Grok on a reachable deployment; keep a repeatable Amplify verifier for the deferred custom-domain production check
-- Persistent voice overlay that stays open across page navigation (layout-level, not page-level)
-- Voice mode accessible from all pages (portfolio, about, chat) -- not just home
+- Rewrite/refactor Parz system prompt and data so answers are direct, richer, personality-grounded, and current
+- Add public-safe current work context: AI Enablement Engineer at InfiniteChoice building Voyza, an AI-first hotel booking platform
+- Update visible portfolio content for About, Experience, and relevant project cards/details
+- Promote current flagship projects: FSB / Full Self Browsing and GitFly, with GitFly linking only to https://gitfly.ai and no private source-code exposure
+- Add guardrails so Parz does not expose internal context, private source details, voice bot internals, API keys/secrets/config, or non-public employer/client details
+- Add prompt tests/evals for personality, factual grounding, flagship project answers, rude-user behavior, and internal-detail refusal
+- Replace the right-side project detail panel with direct inbuilt-browser project opening, including AI-triggered project opens from home without forcing navigation to portfolio first
+- Expand Parz tool control so it can navigate pages, scroll precisely, open projects, and operate the inbuilt browser in meaningful user-visible ways
+- Add an FSB-inspired monochrome navigation overlay while Parz is controlling/navigating, including a bottom-left "powered by FSB" badge
 
 ## Next Milestone Candidates
 
 - API-03: Restore or identify a reachable Amplify production URL and run `scripts/verify-amplify-apis.mjs` against `/api/chat`, `/api/stt-token`, and `/api/tts`.
 - Mobile voice mode refinements, if mobile UX becomes the next priority.
-- Deferred portfolio DataGrid hover effects and project-card polish, if visual completion becomes the next priority.
+- Deferred portfolio DataGrid hover effects and project-card polish, if visual completion becomes the next priority after the v4.1 content/persona/control refresh.
 
 ## Requirements
 
@@ -63,7 +71,15 @@ Voice mode is now production-ready in-app: the session persists across routes, t
 
 ### Active
 
-- [ ] API-03: Run `scripts/verify-amplify-apis.mjs` against a reachable Amplify/custom-domain production URL
+- [ ] Refresh Parz's system prompt and knowledge data so responses are direct, current, personality-rich, and grounded in public-safe facts
+- [ ] Update About, Experience, and project content to reflect current work at InfiniteChoice, flagship projects, and the refined personal narrative
+- [ ] Add FSB / Full Self Browsing and GitFly as current flagship projects with accurate public links and project storytelling
+- [ ] Add guardrails preventing exposure of internal context, private source details, voice bot internals, API keys/secrets/config, and non-public employer/client details
+- [ ] Add prompt tests/evals covering personality, factual grounding, flagship project answers, rude-user behavior, and internal-detail refusal
+- [ ] Remove the right-side ProjectDetail panel path and make project opening use the inbuilt browser directly
+- [ ] Let Parz open a specific project's GitHub/website/browser target from any page, including home, without always navigating to portfolio first
+- [ ] Expand Parz site control for precise navigation, scrolling, project opening, and inbuilt-browser actions inspired by FSB
+- [ ] Show an FSB-inspired monochrome overlay during Parz navigation/control actions with a small bottom-left "powered by FSB" badge
 
 ### Out of Scope
 
@@ -73,6 +89,10 @@ Voice mode is now production-ready in-app: the session persists across routes, t
 - SEO optimization beyond basic meta tags -- can be added post-v3
 - Internationalization -- not in current version
 - Live Amplify/custom-domain API smoke testing -- deferred until `audienclature.com` or the actual Amplify URL is publicly reachable
+- GitFly source code or private implementation details -- source is private; portfolio/Parz should link only to the public platform at https://gitfly.ai
+- Non-public InfiniteChoice/Voyza implementation details -- current role/product context only unless details are explicitly public
+- Voice bot internal wiring details -- explain only high-level public behavior or public GitHub code-level details when applicable
+- Right-side project detail panel as a primary project experience -- user said it was never part of the design; project opens should go to the inbuilt browser instead
 
 ## Context
 
@@ -82,6 +102,15 @@ Voice mode is now production-ready in-app: the session persists across routes, t
 - Circular reveal transition complete -- uses View Transitions API with clip-path on ::view-transition-new(root), matching Flutter's ClipPath behavior
 - Voice mode is the largest new feature -- requires Web Speech API integration
 - Deployment target remains AWS Amplify/audienclature.com; current live API smoke evidence is from the reachable Fly deployment, and `scripts/verify-amplify-apis.mjs` is ready for future Amplify/custom-domain verification
+- Current work: Lakshman is an AI Enablement Engineer at InfiniteChoice, building Voyza, an AI-first hotel booking platform; Parz should keep this brief and public-safe.
+- Current flagship projects: FSB / Full Self Browsing (public open-source browser automation assistant at https://www.full-selfbrowsing.com) and GitFly (public platform at https://gitfly.ai; private source).
+- GitHub profile context: Lakshman frames himself as an AI builder, open-source builder, full-stack engineer turned AI engineer, and creative technologist; public GitHub profile lists InfiniteChoice, Texas, parzival.live, full-selfbrowsing.com, and cmd-k.site.
+- Personality target: Parz should be ambitious, curious, playful, kind, warm, high-energy, direct, practical, inclusive, confident but story-first, and never corporate, robotic, or overly formal.
+- Deeper behavioral model: Lakshman's intensity is about alignment, internal standards, and noticing gaps between what is and what could be -- not just chasing success.
+- Builder style: gap radar, ship-first instincts, aesthetic taste, AI leverage, and obsession loops once an idea catches.
+- Conversation behavior: answer directly first; add personality through wording rather than unsolicited extra chatter; use humor only when the user is casual.
+- Site-control goal: Parz should have meaningful control over the portfolio, not just scripted navigation. It should open project browser views directly, scroll/navigate precisely, and avoid unnecessary detours through the portfolio page when a project can be shown from the current page.
+- FSB visual inspiration: While Parz is navigating or controlling the site, show a monochrome overlay inspired by FSB and include a small bottom-left "powered by FSB" badge.
 
 ## Constraints
 
@@ -104,6 +133,11 @@ Voice mode is now production-ready in-app: the session persists across routes, t
 | particles.js for home bg | Connected-node mesh with grab/push interactivity, theme-aware | ✓ Good |
 | DataGrid for portfolio bg | Canvas-based pulsing dots with 10 hover effect types | -- Pending |
 | View Transitions API reveal | Replaced overlay with View Transitions API + clip-path, matches Flutter | ✓ Good |
+| Same UI, better brain for v4.1 | User explicitly chose chatbot/content intelligence over UI redesign | -- Pending |
+| GitFly public link only | Source code is private; public platform should redirect only to https://gitfly.ai | -- Pending |
+| Prompt evals required for persona refresh | Personality and guardrails need testable coverage, not just prompt edits | -- Pending |
+| Remove right-side project panel | User clarified it was never part of the intended design; project display should use the inbuilt browser | -- Pending |
+| FSB-inspired Parz control overlay | AI navigation/control should feel visible and intentional, with a monochrome overlay and "powered by FSB" badge | -- Pending |
 
 ## Evolution
 
@@ -123,4 +157,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26 after v4.0 milestone completion*
+*Last updated: 2026-04-26 after v4.1 milestone start*

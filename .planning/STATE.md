@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.0
-milestone_name: Voice Mode Production
-status: completed
-stopped_at: v4.0 milestone archived
-last_updated: "2026-04-26T01:58:46.378Z"
+milestone: v4.1
+milestone_name: Parz Persona, Portfolio Context, and Site Control Refresh
+status: defining_requirements
+stopped_at: defining requirements
+last_updated: "2026-04-26T02:30:00.000Z"
 last_activity: 2026-04-26
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** Between milestones — ready to start next milestone
+**Current focus:** v4.1 Parz persona, portfolio context, and site control refresh
 
 ## Current Position
 
-Phase: None — v4.0 archived
-Plan: None
-Status: Ready for `/gsd-new-milestone`; live Amplify/custom-domain smoke test deferred to future requirement API-03
-Last activity: 2026-04-26
+Phase: Not started (defining requirements)
+Plan: -
+Status: Defining requirements
+Last activity: 2026-04-26 - Milestone v4.1 started
 
 ```
-v4.0 Progress: [####################] 100% archived (4 of 4 phases complete; live Amplify/custom-domain smoke test deferred)
+v4.1 Progress: [--------------------] 0% defining requirements
 ```
 
 ## Performance Metrics
@@ -112,10 +112,23 @@ v4.0 Progress: [####################] 100% archived (4 of 4 phases complete; liv
 - [14-02]: sttCtx AudioContext created before first await in startListening — AudioContext autoplay policy compliance (Pitfall 3)
 - [14-02]: void guard used on startListening() call sites — startListening is now async; prevents unhandled rejection when offline
 - [14-02]: Barge-in threshold raised from 0.15 to 0.35 — ElevenLabs TTS amplitude is consistently higher than Web Speech API synthesis
+- [v4.1-scope]: Milestone focuses on Parz's brain/content, not a chat UI redesign -- user chose "same UI, better brain".
+- [v4.1-current-work]: Public-safe role context is AI Enablement Engineer at InfiniteChoice building Voyza, an AI-first hotel booking platform; keep brief and avoid internal employer/product details.
+- [v4.1-flagships]: Current flagship projects are FSB / Full Self Browsing and GitFly; GitFly must link only to https://gitfly.ai because source is private.
+- [v4.1-persona]: Parz should be ambitious, curious, playful, kind, warm, high-energy, direct, practical, inclusive, and story-first without sounding corporate, robotic, or overly formal.
+- [v4.1-persona]: Lakshman's intensity should be framed as alignment-driven gap radar and high internal standards, not simply chasing success.
+- [v4.1-builder-style]: Ship first, use AI as leverage, care about aesthetic feel, and obsess over gaps until solved.
+- [v4.1-guardrails]: Parz must not expose data store/internal context, private source details, API keys/secrets/config, non-public employer/client details, or voice bot internals.
+- [v4.1-rude-mode]: Parz may match profanity/roast when users are rude, but must avoid slurs, threats, hate, and punching down.
+- [v4.1-control]: User wants meaningful AI control inspired by FSB, not just scripted route changes -- Parz should open projects, scroll pages, navigate precisely, and control inbuilt browser experiences where feasible.
+- [v4.1-project-ui]: Remove the right-side ProjectDetail panel path; user said it was never part of the intended design. Project opening should use the inbuilt browser directly.
+- [v4.1-project-open]: Parz should be able to open a specific project from the home page or current page without always navigating to the portfolio page first.
+- [v4.1-fsb-overlay]: Show an FSB-inspired monochrome overlay while Parz is navigating/controlling, with a small bottom-left "powered by FSB" badge.
 
 ### Pending Todos
 
 - API-03: Run `scripts/verify-amplify-apis.mjs` against a reachable Amplify/custom-domain production URL in a future milestone
+- v4.1: Define requirements and roadmap for Parz persona/content/site-control refresh
 
 ### Blockers/Concerns
 
@@ -123,10 +136,10 @@ v4.0 Progress: [####################] 100% archived (4 of 4 phases complete; liv
 
 ## Session Continuity
 
-Last session: 2026-04-26T01:58:46Z
-Stopped at: v4.0 milestone archived
-Resume file: .planning/MILESTONES.md
+Last session: 2026-04-26T02:30:00Z
+Stopped at: defining v4.1 requirements
+Resume file: .planning/PROJECT.md
 
-**Next:** Start next milestone with `/gsd-new-milestone`
+**Next:** Finish requirements, then create v4.1 roadmap
 
 **Deferred:** API-03 — run `scripts/verify-amplify-apis.mjs` against a reachable Amplify/custom-domain production URL.
