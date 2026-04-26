@@ -42,11 +42,11 @@ Requirements for the current milestone. Each maps to exactly one roadmap phase.
 
 ### Parz Site Control
 
-- [ ] **CTRL-01**: User can ask Parz to open a specific project from home or any current page, and the project opens directly in the inbuilt browser without always navigating to portfolio first.
-- [ ] **CTRL-02**: User can ask Parz to navigate to home, portfolio, or about, and the site routes precisely to the requested page.
-- [ ] **CTRL-03**: User can ask Parz to scroll to About, Experience, or Academics, and the site scrolls to the correct section even when the request starts from another page.
-- [ ] **CTRL-04**: User can ask Parz to perform feasible inbuilt-browser shell actions such as closing the viewer or opening the current project externally.
-- [ ] **CTRL-05**: Parz communicates blocked or unsupported browser-control requests honestly instead of pretending to control arbitrary third-party iframe contents.
+- [x] **CTRL-01**: User can ask Parz to open a specific project from home or any current page, and the project opens directly in the inbuilt browser without always navigating to portfolio first.
+- [x] **CTRL-02**: User can ask Parz to navigate to home, portfolio, or about, and the site routes precisely to the requested page.
+- [x] **CTRL-03**: User can ask Parz to scroll to About, Experience, or Academics, and the site scrolls to the correct section even when the request starts from another page.
+- [x] **CTRL-04**: User can ask Parz to perform feasible inbuilt-browser shell actions such as closing the viewer or opening the current project externally.
+- [x] **CTRL-05**: Parz communicates blocked or unsupported browser-control requests honestly instead of pretending to control arbitrary third-party iframe contents.
 
 ### FSB-Inspired Control Overlay
 
@@ -120,11 +120,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BROW-03 | Phase 17 | Complete |
 | BROW-04 | Phase 17 | Complete |
 | BROW-05 | Phase 17 | Complete |
-| CTRL-01 | Phase 18 | Pending |
-| CTRL-02 | Phase 18 | Pending |
-| CTRL-03 | Phase 18 | Pending |
-| CTRL-04 | Phase 18 | Pending |
-| CTRL-05 | Phase 18 | Pending |
+| CTRL-01 | Phase 18 | Complete |
+| CTRL-02 | Phase 18 | Complete |
+| CTRL-03 | Phase 18 | Complete |
+| CTRL-04 | Phase 18 | Complete |
+| CTRL-05 | Phase 18 | Complete |
 | FSB-01 | Phase 19 | Pending |
 | FSB-02 | Phase 19 | Pending |
 | FSB-03 | Phase 19 | Pending |
