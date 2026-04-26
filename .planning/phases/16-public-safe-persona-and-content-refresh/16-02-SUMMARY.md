@@ -48,6 +48,7 @@ completed: 2026-04-26
 ## Task Commits
 
 1. **Tasks 1-3: Visible content refresh** - `a9aead4` (feat)
+2. **Review fix: Align Review Gate public metrics** - `5131360` (fix)
 
 ## Files Created/Modified
 
@@ -62,7 +63,15 @@ completed: 2026-04-26
 
 ## Deviations from Plan
 
-None - plan executed as written.
+### Auto-fixed Issues
+
+**1. Content parity: Review Gate metrics drift**
+- **Found during:** code review gate
+- **Issue:** Project details still listed older Review Gate traction numbers while About copy used 1500+ stars and roughly 200,000+ impressions.
+- **Fix:** Updated Review Gate project stats and V2 section to match the current public narrative.
+- **Files modified:** `src/data/projects.ts`
+- **Verification:** `npm run lint` exits with 0 errors.
+- **Committed in:** `5131360`
 
 ## Issues Encountered
 
