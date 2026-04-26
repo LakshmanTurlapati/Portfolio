@@ -61,6 +61,17 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
 
       previousPathRef.current = pathname;
 
+      // VOICE-05: derive page slug from destination path and emit page-ready on
+      // VoiceBus so coordinators (e.g. openTextChat) can act after the destination
+      // page actually mounts. '/' becomes 'home'; other paths strip the leading
+      // slash. Listeners are gated with a `fired` flag so duplicate emits (per-page
+      // mount emits on /portfolio and /about) are no-ops.
+      const emitPageReady = () => {
+        if (typeof window === 'undefined' || !window.VoiceBus) return;
+        const slug = path === '/' ? 'home' : path.replace(/^\//, '');
+        window.VoiceBus.emit('page-ready', slug);
+      };
+
       // D-04: circle math — identical to Flutter sqrt(maxX^2 + maxY^2)
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -98,6 +109,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
             clearTimeout(safetyTimer);
             isTransitioningRef.current = false;
             setIsTransitioningState(false);
+            emitPageReady();
           }).catch(() => {
             // Already handled by safety timer
           });
@@ -113,6 +125,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
           router.push(path);
           isTransitioningRef.current = false;
           setIsTransitioningState(false);
+          emitPageReady();
           return;
         }
 
@@ -134,6 +147,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
               overlay.style.clipPath = 'circle(0px at 0px 0px)';
               isTransitioningRef.current = false;
               setIsTransitioningState(false);
+              emitPageReady();
             }, 100);
           },
         });
