@@ -1,580 +1,311 @@
-# Architecture Research
+# Architecture Patterns: v4.1 Parz Persona, Portfolio Context, and Site Control Refresh
 
-**Domain:** Next.js App Router — persistent voice overlay, cross-page tool callbacks, ElevenLabs STT
-**Researched:** 2026-04-24
-**Confidence:** HIGH (all claims verified directly from codebase and installed package types)
+**Domain:** Next.js App Router portfolio with persistent Parz voice/text agent, inbuilt browser, and portfolio data refresh  
+**Researched:** 2026-04-25  
+**Overall confidence:** HIGH for codebase integration points; MEDIUM for browser-control feasibility because iframe security limits are browser/platform-dependent.
 
----
+## Executive Recommendation
 
-## Current State Diagnosis
+Do **not** build a new agent framework, browser automation layer, global state store, or project-detail replacement UI. v4.1 should be a targeted refresh on top of the already-good v4.0 architecture:
 
-### What exists (verified in source)
+1. Make `src/data/projects.ts` the public portfolio source of truth for project names, links, and project browser targets.
+2. Replace the old monolithic `systemPrompt` content with a cleaner server-only prompt/data module that mirrors public-safe data and guardrails.
+3. Move project opening control to the existing layout-level `VoiceSessionProvider`, because Parz must open projects from **any page**, not only after `/portfolio` mounts.
+4. Keep `IframeViewer` as the project-opening surface and remove the right-side `ProjectDetail` path from `portfolio/page.tsx`.
+5. Add a small global control overlay component driven by voice/tool execution state, not a full FSB clone.
 
-| Component | Location | Role |
-|-----------|----------|------|
-| `window.VoiceBus` | `src/lib/voice-bus-init.ts` | Global event bus, state machine, AudioContext owner |
-| `VoiceBusProvider` | `src/providers/voice-bus-provider.tsx` | React context mirror of `VoiceBus.state`; calls `initVoiceBus()` at module scope |
-| `useVoiceController` | `src/lib/voice-controller.ts` | Full session hook — STT, TTS, AI agent, tour, history |
-| `VoicePanel` | `src/components/voice-panel.tsx` | UI inside navbar when voice active |
-| `VoiceWave` | `src/components/voice-wave.tsx` | Amplitude visualizer |
-| `DesktopNavbar` | `src/components/desktop-navbar.tsx` | Hosts VoicePanel; GSAP Flip morph on `voiceActive` |
-| `MobileNavbar` | `src/components/mobile-navbar.tsx` | Hosts VoicePanel; CSS height morph on `voiceActive` |
-| `/api/tts` | `src/app/api/tts/route.ts` | ElevenLabs TTS proxy, `eleven_turbo_v2_5`, MP3 stream |
-| `/api/chat` | `src/app/api/chat/route.ts` | xAI Grok-3-mini, AI SDK streaming |
-| `layout.tsx` | `src/app/layout.tsx` | Wraps all pages: `ThemeProvider > TransitionProvider > VoiceBusProvider > {children}` |
-| `page.tsx` (home) | `src/app/page.tsx` | Only place `useVoiceController()` is called; owns `voiceActive`, `voiceProps`, `micDenied` |
+The key architectural shift is this: **page-local callbacks are still useful for page-specific actions like About-page section scrolling, but global actions like opening a project/browser target should live in the session provider.** That avoids the current v4.0 problem where `openProject` must navigate to portfolio before a page-local callback exists.
 
-### The root problem
+## Current Architecture Snapshot
 
-`useVoiceController` lives in `page.tsx`. When the user navigates to `/portfolio` or `/about`, `page.tsx` unmounts, destroying the voice session — audio stops, state resets, the navbar morph collapses. The navbars on other pages don't receive `voiceActive`/`voiceProps` at all because those page files don't call `useVoiceController`.
-
-`window.VoiceBus` already survives navigation because it lives on `window`. The `VoiceBusProvider` React context also survives because it is in `layout.tsx`. But the hook that drives the session (`useVoiceController`) and the state that feeds the navbar props do not survive.
-
----
+| Area | Current implementation | v4.1 implication |
+|------|------------------------|------------------|
+| AI prompt | `src/data/system-prompt.ts` server-only string imported by `/api/chat` | Modify heavily; keep server-only boundary. |
+| Chat API | `src/app/api/chat/route.ts` uses AI SDK `streamText`, xAI model, optional `voiceTools` | Modify tool descriptions/schemas and guardrail instructions; no route split needed. |
+| Voice session | `src/providers/voice-session-provider.tsx` owns `useVoiceController`, page navigation, theme/link callbacks | Extend here for global project/browser control and overlay state. |
+| Voice controller | `src/lib/voice-controller.ts` owns STT/TTS, history, tool-call parsing, dispatch | Modify dispatch semantics only; avoid adding UI state here. |
+| Voice commands | `src/lib/voice-commands.ts` holds static tour/legacy intent helpers | Update tour copy/project target; do not add major logic. |
+| Project data | `src/data/projects.ts` holds `Project`, `PROJECT_DETAILS`, pinned/shuffle arrays | Extend fields minimally for `browserTarget`, `aliases`, `isPrivateSource`; update flagship content. |
+| Portfolio page | `src/app/portfolio/page.tsx` has grid, `selectedProject`, `viewer`, imports `ProjectDetail` and `IframeViewer` | Remove `selectedProject`/`ProjectDetail`; card opens `IframeViewer` directly. |
+| Inbuilt browser | `src/components/iframe-viewer.tsx` handles embeds, GitHub preview, blocked hosts, external-tab fallback | Keep; optionally add imperative actions via props or context later. |
+| About page | `src/app/about/page.tsx` registers `scrollTo` page callback | Keep page-local scroll callback; update data content separately. |
+| Home page | `src/app/page.tsx` owns chat popup event listener and home UI | Keep; optionally register page-ready event if global control needs precise home timing. |
+| Transitions | `src/providers/transition-provider.tsx` exposes `navigateWithReveal` | Keep unchanged. |
 
 ## Recommended Architecture
 
-### System Overview
-
-```
-layout.tsx  (survives all navigation)
-├── ThemeProvider
-├── TransitionProvider
-├── VoiceBusProvider               ← already here, keeps window.VoiceBus subscribed
-└── VoiceSessionProvider  [NEW]    ← lifts useVoiceController() here
-    │   owns: voiceActive, voiceProps, micDenied, currentPage
-    │   exposes: useVoiceSession() hook
-    │   exposes: registerToolCallbacks() for pages
+```text
+layout.tsx
+└── VoiceSessionProvider                          # already persistent across routes
+    ├── global site-control registry/state         # extend here, not in pages
+    │   ├── navigate(page)
+    │   ├── openProject(name, target?)             # NEW global action
+    │   ├── openBrowser(url,label)                 # NEW global action/event
+    │   ├── closeBrowser/backBrowser?              # optional minimal browser controls
+    │   └── controlOverlayState                    # executing/success/error/caption
     │
-    ├── LayoutShell  [NEW]         ← renders navbars persistently
-    │   ├── DesktopNavbar          ← consumes useVoiceSession()
-    │   └── MobileNavbar           ← consumes useVoiceSession()
-    │
-    └── {children}                 ← page.tsx, portfolio/page.tsx, about/page.tsx
-        │
-        └── pages call useVoiceToolCallbacks() [NEW] on mount
-            portfolio/page.tsx → openProject, openLink
-            about/page.tsx     → scrollTo
-            home page.tsx      → (none; navigate/goPage is layout-level)
+    ├── VoiceOverlay / VoicePanel                  # existing voice UI
+    ├── ParzControlOverlay                         # NEW visual overlay only
+    └── pages
+        ├── home page                              # can receive browser-open event if viewer rendered globally
+        ├── portfolio page                         # grid + direct IframeViewer; no ProjectDetail
+        └── about page                             # page-local scrollTo callback
 ```
 
-### Component Boundaries (new vs modified)
+### Preferred state ownership
 
-| Component | Status | Responsibility |
-|-----------|--------|----------------|
-| `VoiceSessionProvider` | NEW | Holds `useVoiceController()` state, exposes context |
-| `LayoutShell` | NEW | Renders navbars using session context, wraps `{children}` |
-| `useVoiceSession()` hook | NEW | Read access to `voiceActive`, `voiceProps`, `micDenied` |
-| `useVoiceToolCallbacks()` hook | NEW | Pages push page-scoped callbacks into session on mount |
-| `useVoiceController` | MODIFIED | `startListening` switches from Web Speech API to MediaRecorder + `/api/stt` |
-| `DesktopNavbar` | MODIFIED | Sources voice props from context via LayoutShell, not from page.tsx props |
-| `MobileNavbar` | MODIFIED | Same as DesktopNavbar |
-| `page.tsx` (home) | MODIFIED | Removes `useVoiceController()` call; removes navbar renders; reads `useVoiceSession()` only for `handleAskParz` if needed |
-| `portfolio/page.tsx` | MODIFIED | Adds `useVoiceToolCallbacks` for `openProject`/`openLink` |
-| `about/page.tsx` | MODIFIED | Adds `useVoiceToolCallbacks` for `scrollTo` |
-| `/api/stt` | NEW | ElevenLabs STT proxy (same `ELEVENLABS_API_KEY`) |
-| `window.VoiceBus` | UNCHANGED | Already global; already survives navigation |
-| `VoiceBusProvider` | UNCHANGED | No changes needed |
-| `/api/tts` | UNCHANGED | No changes needed |
-| `VoicePanel` | UNCHANGED | No changes needed |
-| `VoiceWave` | UNCHANGED | No changes needed |
-| `voice-bus-init.ts` | UNCHANGED | No changes needed |
-| `voice-commands.ts` | UNCHANGED | No changes needed |
+| State/control | Should live in | Why |
+|---------------|----------------|-----|
+| Voice active/caption/transcript | `useVoiceController` via `VoiceSessionProvider` | Already implemented and persistent. |
+| Tool callback registry | `VoiceSessionProvider` | Already implemented; good for page-local callbacks. |
+| Global project lookup/opening | `VoiceSessionProvider` or a tiny helper imported by it | Must work from home/current page without portfolio detour. |
+| Active browser viewer | Prefer global lightweight provider/component near layout; acceptable MVP: event + page-local viewer on portfolio | Parz must open browser from any page. Global viewer is cleaner than duplicating `IframeViewer` state in every page. |
+| About scroll refs | `about/page.tsx` | Scroll container is page-local and uses refs; keep it there. |
+| Portfolio grid controls | `portfolio/page.tsx` | Pure page UI; no need to globalize. |
+| FSB control overlay visual state | `VoiceSessionProvider` + `ParzControlOverlay` | Overlay reflects tool execution globally; controller should emit events, provider owns UI state. |
+| Prompt/data facts | `src/data/system-prompt.ts` and public data modules | Server-only prompt remains server-only; public page content remains normal data. |
 
----
+## New vs Modified vs Removed
 
-## Key Architecture Patterns
+### New modules
 
-### Pattern 1: VoiceSessionProvider in layout.tsx
+| Module | Purpose | Notes |
+|--------|---------|-------|
+| `src/lib/project-targets.ts` or functions inside `src/data/projects.ts` | `findProjectByNameOrAlias()`, `getPreferredProjectTarget()` | Keep pure TypeScript; no React. Prefer central helper over duplicating link-priority logic. |
+| `src/providers/browser-viewer-provider.tsx` **or** `src/components/global-iframe-viewer.tsx` | Global `IframeViewer` host so Parz can open a project from any route | Minimal: context with `openViewer({url,label})`, `closeViewer()`. |
+| `src/components/parz-control-overlay.tsx` | FSB-inspired monochrome control overlay and bottom-left `powered by FSB` badge | Visual only; driven by control state/events. |
+| `tests`/eval fixture file for prompt cases | Persona/grounding/guardrail tests | Exact runner depends existing test setup; architecture only requires stable prompt API seam. |
 
-**What:** A React context provider that owns the voice controller hook. Replaces calling `useVoiceController` inside `page.tsx`.
+### Modified modules
 
-**When to use:** Any state that must survive Next.js App Router page navigation must live in a layout-level provider, not in a page component.
+| Module | Required change |
+|--------|-----------------|
+| `src/data/system-prompt.ts` | Rewrite prompt/data store: direct first, personality-grounded, current public-safe facts, guardrails, rude-user policy, no internal-detail leakage. Consider exporting smaller typed sections and composing string server-side. |
+| `src/data/projects.ts` | Add/update FSB, GitFly, InfiniteChoice/Voyza-related public context where appropriate. Add aliases and browser-target metadata. Mark GitFly source private by omission or explicit `privateSource: true`; link only `https://gitfly.ai`. |
+| `src/app/api/chat/route.ts` | Update `voiceToolInstructions`; `openProject` should no longer say “Navigate to portfolio first.” Add browser-control tools only for feasible actions. |
+| `src/lib/voice-controller.ts` | Stop forcing `openProject` through `goPage('portfolio')`. Dispatch global `openProject` directly. Emit/drive control-overlay states around meaningful tool calls. |
+| `src/providers/voice-session-provider.tsx` | Add global `openProject` implementation, project lookup, browser viewer opening, and control overlay state. Keep page callback registry for page-specific tools. |
+| `src/app/portfolio/page.tsx` | Remove `ProjectDetail` import/state/render. Card click calls shared `openProjectInViewer(project)` or `openViewer(getPreferredProjectTarget(project))`. Voice callback should no longer call `setSelectedProject`. |
+| `src/components/iframe-viewer.tsx` | Keep core viewer. Optional: expose close/open-new-tab controls to Parz through provider methods; do not attempt cross-origin DOM control. |
+| `src/lib/voice-commands.ts` | Update tour step from old Parz-AI favorite to FSB/GitFly flagship if desired. |
+| `src/app/about/page.tsx` | Content/data updates and possibly richer scroll aliases. Keep scroll implementation. |
+| `src/app/page.tsx` | Content only unless global browser viewer is not layout-level. If no global viewer is added, home must host viewer state, but that is less clean. |
 
-**Trade-offs:** The provider needs `usePathname()` to know `currentPage`. This is valid inside a Client Component in the App Router — `usePathname` re-runs on every navigation and returns the current path. The provider is `'use client'` — this is fine since all voice logic is already client-only.
+### Removed/deprecated path
 
-```typescript
-// src/providers/voice-session-provider.tsx
-'use client';
-
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { usePathname } from 'next/navigation';
-import { useTransition } from '@/providers/transition-provider';
-import { useVoiceController, type ToolCallbacks } from '@/lib/voice-controller';
-
-interface VoiceSessionContextType {
-  voiceActive: boolean;
-  voiceProps: ReturnType<typeof useVoiceController>['voiceProps'];
-  micDenied: boolean;
-  prefersReduced: boolean;
-  openVoice: () => void;
-  closeVoice: () => void;
-  registerToolCallbacks: (cbs: ToolCallbacks) => () => void;
-}
-
-const VoiceSessionContext = createContext<VoiceSessionContextType | null>(null);
-
-export function useVoiceSession() {
-  const ctx = useContext(VoiceSessionContext);
-  if (!ctx) throw new Error('useVoiceSession must be used within VoiceSessionProvider');
-  return ctx;
-}
-
-export function VoiceSessionProvider({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const { navigateWithReveal } = useTransition();
-  const [chatOpen, setChatOpen] = useState(false);
-  const toolCallbacksRef = useRef<ToolCallbacks>({});
-
-  const currentPage =
-    pathname === '/'          ? 'home'      :
-    pathname === '/portfolio' ? 'portfolio' :
-    pathname === '/about'     ? 'about'     : 'home';
-
-  const goPage = useCallback((page: string) => {
-    const paths: Record<string, string> = {
-      home: '/', portfolio: '/portfolio', about: '/about',
-    };
-    navigateWithReveal(paths[page] ?? '/', window.innerWidth / 2, window.innerHeight / 2);
-  }, [navigateWithReveal]);
-
-  const openTextChat = useCallback(() => setChatOpen(true), []);
-
-  // Forwarding proxy — delegates to whatever callbacks pages have registered
-  const toolCallbacks: ToolCallbacks = {
-    openProject: (args) => toolCallbacksRef.current.openProject?.(args),
-    scrollTo:    (args) => toolCallbacksRef.current.scrollTo?.(args),
-    openLink:    (args) => toolCallbacksRef.current.openLink?.(args),
-    toggleTheme: ()     => toolCallbacksRef.current.toggleTheme?.(),
-  };
-
-  const { active, open, close, micDenied, prefersReduced, voiceProps } =
-    useVoiceController({ goPage, openTextChat, currentPage, toolCallbacks });
-
-  const registerToolCallbacks = useCallback((cbs: ToolCallbacks): (() => void) => {
-    toolCallbacksRef.current = { ...toolCallbacksRef.current, ...cbs };
-    return () => {
-      const keys = Object.keys(cbs) as (keyof ToolCallbacks)[];
-      keys.forEach((k) => { delete toolCallbacksRef.current[k]; });
-    };
-  }, []);
-
-  return (
-    <VoiceSessionContext.Provider value={{
-      voiceActive: active, voiceProps, micDenied, prefersReduced,
-      openVoice: open, closeVoice: close, registerToolCallbacks,
-    }}>
-      {children}
-    </VoiceSessionContext.Provider>
-  );
-}
-```
-
-### Pattern 2: LayoutShell — navbars rendered at layout level
-
-**What:** A thin `'use client'` component that renders both navbars. Pages no longer render navbars. The layout owns them.
-
-**When to use:** Any UI element that must be shared across pages and must not unmount on navigation. This is the standard pattern for persistent headers in Next.js App Router.
-
-**Trade-offs:** Pages lose direct control of navbar props. This is the intended outcome — the navbar reads from context rather than from page-local state.
-
-```typescript
-// src/components/layout-shell.tsx
-'use client';
-
-import { useVoiceSession } from '@/providers/voice-session-provider';
-import { DesktopNavbar } from '@/components/desktop-navbar';
-import { MobileNavbar } from '@/components/mobile-navbar';
-
-export function LayoutShell({ children }: { children: React.ReactNode }) {
-  const { voiceActive, voiceProps, micDenied, openVoice, closeVoice } = useVoiceSession();
-  const handleAskParz = () => voiceActive ? closeVoice() : openVoice();
-
-  return (
-    <>
-      <div className="hidden sm:block">
-        <DesktopNavbar
-          onAskParz={handleAskParz}
-          voiceActive={voiceActive}
-          voiceProps={voiceProps}
-          micDenied={micDenied}
-        />
-      </div>
-      <div className="sm:hidden">
-        <MobileNavbar
-          onAskParz={handleAskParz}
-          voiceActive={voiceActive}
-          voiceProps={voiceProps}
-          micDenied={micDenied}
-        />
-      </div>
-      {children}
-    </>
-  );
-}
-```
-
-Then `layout.tsx` becomes:
-
-```tsx
-<VoiceBusProvider>
-  <VoiceSessionProvider>
-    <LayoutShell>
-      {children}
-    </LayoutShell>
-  </VoiceSessionProvider>
-</VoiceBusProvider>
-```
-
-### Pattern 3: useVoiceToolCallbacks — page-scoped tool registration
-
-**What:** Each page calls this hook on mount to register its tool callbacks. The returned cleanup removes them on unmount.
-
-**When to use:** `openProject` only makes sense on `/portfolio`; `scrollTo` only makes sense on `/about`. Rather than making the layout aware of page internals, each page self-registers and self-cleans.
-
-**Trade-offs:** During the ~100ms gap between page unmount and next page mount, registered callbacks are absent. This is safe — no voice tool call fires during that window because TTS for any command queued during navigation has not started yet.
-
-```typescript
-// src/hooks/use-voice-tool-callbacks.ts
-'use client';
-
-import { useEffect } from 'react';
-import { useVoiceSession } from '@/providers/voice-session-provider';
-import type { ToolCallbacks } from '@/lib/voice-controller';
-
-export function useVoiceToolCallbacks(callbacks: ToolCallbacks) {
-  const { registerToolCallbacks } = useVoiceSession();
-  useEffect(() => {
-    return registerToolCallbacks(callbacks);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // stable — callbacks captured at mount
-}
-```
-
-Usage in portfolio page:
-
-```typescript
-useVoiceToolCallbacks({
-  openProject: ({ slug }) => {
-    const project = projects.find((p) => p.name === slug || p.slug === slug);
-    if (project) setSelectedProject(project);
-  },
-  openLink: ({ url }) => setViewer({ url, label: 'Visit' }),
-});
-```
-
-Usage in about page:
-
-```typescript
-useVoiceToolCallbacks({
-  scrollTo: ({ selector }) => {
-    const el = document.querySelector(selector);
-    el?.scrollIntoView({ behavior: 'smooth' });
-  },
-});
-```
-
-### Pattern 4: /api/stt — ElevenLabs STT proxy
-
-**What:** A server-side route that accepts a multipart audio blob, forwards it to ElevenLabs `speechToText.convert()`, and returns the transcript string. `ELEVENLABS_API_KEY` stays server-side — same key already used by `/api/tts`.
-
-**ElevenLabs STT API facts (verified from installed package v2.44.0):**
-
-- Method: `client.speechToText.convert({ file, modelId, languageCode })`
-- `modelId` value for current model: `"scribe_v2"` (verified in type definitions)
-- `file` field type: `core.file.Uploadable` — accepts `Blob`/`File` directly
-- Response type: `SpeechToTextChunkResponseModel` for standard non-multichannel calls
-- Response has `text: string` (the full transcript) and `languageCode: string`
-- No streaming — this is a synchronous REST call returning a single JSON object
-- File size limit: 3 GB; minimum audio length: 100ms
-
-```typescript
-// src/app/api/stt/route.ts
-import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
-import { hasEnvVar } from '@/lib/env';
-
-export async function POST(req: Request) {
-  if (!hasEnvVar('ELEVENLABS_API_KEY')) {
-    return Response.json({ error: 'STT not configured' }, { status: 503 });
-  }
-
-  const formData = await req.formData();
-  const audio = formData.get('audio');
-  if (!(audio instanceof Blob)) {
-    return Response.json({ error: 'audio field required' }, { status: 400 });
-  }
-
-  try {
-    const client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY });
-    const result = await client.speechToText.convert({
-      file: audio,
-      modelId: 'scribe_v2',
-      languageCode: 'en',
-    });
-    // SpeechToTextChunkResponseModel | MultichannelSpeechToTextResponseModel | SpeechToTextWebhookResponseModel
-    const text = 'text' in result ? result.text : '';
-    return Response.json({ text });
-  } catch {
-    return Response.json({ error: 'STT failed' }, { status: 500 });
-  }
-}
-```
-
-**Client side — replacing Web Speech API in `voice-controller.ts`:**
-
-The current `startListening` uses `SpeechRecognition`. Replace it with MediaRecorder:
-
-1. `navigator.mediaDevices.getUserMedia({ audio: true })` — get mic stream
-2. `MediaRecorder` records until silence threshold is crossed
-3. On stop: assemble `Blob`, POST as `FormData` to `/api/stt`
-4. On response: call `handleUserTurn(result.text)`
-
-The `attachMic`/`_startLoop`/`_stopLoop` amplitude path on `window.VoiceBus` stays entirely unchanged — it uses the raw audio stream for RMS visualization, independent of the STT transport.
-
-Silence detection strategy: stop recording when `VoiceBus.level` drops below `0.05` for 1.5 seconds after having exceeded `0.15` (indicating the user finished speaking). This mirrors the barge-in threshold already in the codebase.
-
----
+| Remove/deprecate | What to delete or stop using |
+|------------------|------------------------------|
+| Right-side project detail panel | Remove `selectedProject` state, `ProjectDetail` render block, and `ProjectDetail` import from `portfolio/page.tsx`. |
+| `src/components/project-detail.tsx` | Delete if no other imports remain, or leave unused for one phase only if deletion risk is high. Roadmap should include cleanup. |
+| Voice `openProject` portfolio detour | Remove `goPage('portfolio'); await waitForPage('portfolio')` from `voice-controller.ts` tool handling. |
+| Project detail as voice target | Do not call `setSelectedProject` from voice. Voice project opening should resolve a URL and open `IframeViewer`. |
 
 ## Data Flow
 
-### Voice Session Lifecycle (new flow after changes)
+### Parz opens a project from home/current page
 
-```
-User taps "Ask Parz" (any page)
-    ↓
-LayoutShell.handleAskParz()
-    ↓
-VoiceSessionContext.openVoice()
-    ↓
-useVoiceController.open()
-    → VoiceBus.setState('speaking')
-    → streamTTS(greetMessage) → POST /api/tts → ElevenLabs TTS
-    ← audio plays; VoiceWave in navbar reflects amplitude
-```
-
-### Navigation During Active Voice (preserved state)
-
-```
-Voice active on /home
-    ↓
-User says "show portfolio" → handleUserTurn → matchNavIntent → goPage('portfolio')
-    ↓
-navigateWithReveal('/portfolio') — View Transitions API clip-path reveal
-    ↓
-layout.tsx does NOT unmount — VoiceSessionProvider stays alive
-    ↓
-portfolio/page.tsx mounts → useVoiceToolCallbacks registers openProject/openLink
-    ↓
-Voice continues: navbar morph stays, audio continues, tour can proceed
+```text
+User: “Show me GitFly”
+  ↓
+/api/chat returns text + tool call openProject({ name: "GitFly" })
+  ↓
+voice-controller parses tool call
+  ↓
+dispatchToolCall('openProject', { slug/name: 'GitFly' })
+  ↓
+VoiceSessionProvider global openProject
+  ↓
+findProjectByNameOrAlias('GitFly')
+  ↓
+getPreferredProjectTarget(project)
+  ↓
+openViewer({ url: 'https://gitfly.ai', label: 'Visit site' })
+  ↓
+Global IframeViewer opens; if blocked/unembeddable, existing fallback UI offers new tab
 ```
 
-### Tool Call Dispatch (wired flow)
+### User clicks a portfolio card
 
-```
-AI response or TOUR_STEP: tool call "openProject" { slug: "Parz-AI" }
-    ↓
-dispatchToolCall("openProject", { slug: "Parz-AI" })  [in voice-controller.ts]
-    ↓
-toolCallbacks.openProject?.({ slug: "Parz-AI" })      [forwarding proxy in VoiceSessionProvider]
-    ↓
-toolCallbacksRef.current.openProject?.(...)            [registered by portfolio/page.tsx]
-    ↓
-setSelectedProject(project)  →  ProjectDetail overlay opens
+```text
+PortfolioCard.onOpen(project)
+  ↓
+shared openProjectInViewer(project)
+  ↓
+setViewer/openViewer({ url, label })
+  ↓
+IframeViewer
 ```
 
-### STT Flow (ElevenLabs upgrade)
+This keeps manual and AI-triggered project opening consistent.
 
-```
-User speaks → attachMic() on VoiceBus starts RMS loop (amplitude visualization)
-           → MediaRecorder captures audio chunks in parallel
-    ↓
-VoiceBus.level drops below 0.05 for 1.5s (silence detection)
-    ↓
-MediaRecorder.stop() → Blob assembled (webm/opus on Chrome, mp4/aac on Safari)
-    ↓
-POST /api/stt  FormData { audio: Blob }
-    ↓
-Server: ElevenLabsClient.speechToText.convert({ file: audio, modelId: 'scribe_v2' })
-    ↓
-{ text: "show me the portfolio" }
-    ↓
-handleUserTurn("show me the portfolio") → matchNavIntent / AI agent
+### Page navigation and scrolling
+
+```text
+navigate(page)
+  → VoiceSessionProvider.goPage()
+  → TransitionProvider.navigateWithReveal()
+
+scrollTo(section)
+  → if about page callback registered: about/page.tsx scrollToSection()
+  → if not on about page: navigate('about'), waitForPage('about'), then dispatch scrollTo
 ```
 
----
+For v4.1, only add the second branch if users explicitly expect “show my experience” to work from home. It is useful but should reuse existing `waitForPage`; do not build a generic DOM automation engine.
 
-## Integration Points
+## Browser Control Limitations
 
-### New vs Modified vs Unchanged — Complete Map
+Be explicit in prompt/tool behavior: Parz can operate the **portfolio’s inbuilt browser chrome**, not arbitrary third-party pages.
 
-| | File | Change |
-|--|------|--------|
-| NEW | `src/providers/voice-session-provider.tsx` | Create — lifts `useVoiceController` to layout level; owns session state; exposes `registerToolCallbacks` |
-| NEW | `src/components/layout-shell.tsx` | Create — renders both navbars from context; wraps `{children}` |
-| NEW | `src/hooks/use-voice-tool-callbacks.ts` | Create — page-side registration hook |
-| NEW | `src/app/api/stt/route.ts` | Create — ElevenLabs STT proxy; accepts `FormData { audio: Blob }` |
-| MODIFIED | `src/app/layout.tsx` | Add `VoiceSessionProvider` wrapping `VoiceBusProvider`'s children; add `LayoutShell` wrapping `{children}` |
-| MODIFIED | `src/app/page.tsx` | Remove `useVoiceController` call; remove `DesktopNavbar`/`MobileNavbar` renders (LayoutShell owns them); call `useVoiceSession()` only if home page needs `handleAskParz` reference |
-| MODIFIED | `src/app/portfolio/page.tsx` | Add `useVoiceToolCallbacks({ openProject, openLink })`; no navbar renders to add (LayoutShell covers it) |
-| MODIFIED | `src/app/about/page.tsx` | Add `useVoiceToolCallbacks({ scrollTo })`; no navbar renders to add |
-| MODIFIED | `src/lib/voice-controller.ts` | Replace `startListening` body: swap `SpeechRecognition` for MediaRecorder + fetch to `/api/stt`; keep all other code unchanged |
-| UNCHANGED | `src/lib/voice-bus-init.ts` | `window.VoiceBus` already global; already survives navigation |
-| UNCHANGED | `src/providers/voice-bus-provider.tsx` | No changes |
-| UNCHANGED | `src/app/api/tts/route.ts` | No changes |
-| UNCHANGED | `src/app/api/chat/route.ts` | No changes |
-| UNCHANGED | `src/components/voice-panel.tsx` | No changes |
-| UNCHANGED | `src/components/voice-wave.tsx` | No changes |
-| UNCHANGED | `src/components/desktop-navbar.tsx` | Props interface unchanged; still receives `onAskParz/voiceActive/voiceProps/micDenied` — now from LayoutShell not page |
-| UNCHANGED | `src/components/mobile-navbar.tsx` | Same as desktop-navbar |
+| Desired action | Feasible? | Implementation |
+|----------------|-----------|----------------|
+| Open project website/GitHub/design in inbuilt browser | YES | Global viewer provider + `IframeViewer`. |
+| Close inbuilt browser | YES | Provider `closeViewer()`. |
+| Open current viewer URL in new tab | YES | Provider stores active URL and calls `window.open`. |
+| Switch between project targets (Website/GitHub/Design) | YES | Use project `links` metadata and viewer provider. |
+| Navigate site pages | YES | Existing `goPage`/`navigateWithReveal`. |
+| Scroll About sections precisely | YES | Existing refs in `about/page.tsx`. |
+| Scroll inside same-origin portfolio pages | YES | Page-local callbacks/refs. |
+| Click buttons inside arbitrary iframe | NO for cross-origin | Browser same-origin policy blocks DOM access. Do not promise this. |
+| Read arbitrary iframe content | NO for cross-origin | Use fallback previews only for known sources like `GithubPreview`. |
+| Force embed sites that block iframes | NO | Existing `isUnembeddable` and blocked fallback are correct. |
 
-### External Service Boundaries
+## Patterns to Follow
 
-| Service | Route | Auth | Notes |
-|---------|-------|------|-------|
-| ElevenLabs TTS | `/api/tts` | `ELEVENLABS_API_KEY` server-only | Already working; streams MP3 chunks |
-| ElevenLabs STT | `/api/stt` (new) | Same `ELEVENLABS_API_KEY` | `scribe_v2`; REST; returns `{ text: string }` |
-| xAI Grok | `/api/chat` | `XAI_API_KEY` server-only | Already working; unchanged |
+### Pattern 1: Shared project target resolver
 
----
+**What:** One pure function decides which URL opens for a project.
 
-## Recommended Build Order
+```typescript
+type ProjectTargetKind = 'website' | 'design' | 'github';
 
-Dependencies between the four milestone features determine sequencing:
+export function getPreferredProjectTarget(project: Project, preferred?: ProjectTargetKind) {
+  const links = project.links || {};
+  if (preferred === 'website' && links.Website) return { url: links.Website, label: 'Visit site' };
+  if (preferred === 'design' && links.Design) return { url: links.Design, label: 'Design' };
+  if (preferred === 'github' && links.GitHub) return { url: links.GitHub, label: 'Source' };
 
-### Step 1: VoiceSessionProvider + LayoutShell (overlay persistence prerequisite)
+  if (links.Website && !isUnembeddable(links.Website)) return { url: links.Website, label: 'Visit site' };
+  if (links.Design) return { url: links.Design, label: 'Design' };
+  if (links.Website) return { url: links.Website, label: 'Visit site' };
+  if (links.GitHub) return { url: links.GitHub, label: 'Source' };
+  return null;
+}
+```
 
-This must come first. Until `useVoiceController` lives in layout, the overlay cannot persist across navigation, tool callbacks have nowhere stable to live, and any STT work done in `page.tsx` will still unmount on navigation.
+**Why:** Today `portfolio/page.tsx` has this priority inline. v4.1 needs the same logic from voice/session code.
 
-- Create `VoiceSessionProvider` with empty `toolCallbacks` forwarding proxy
-- Create `LayoutShell` wrapping both navbars
-- Update `layout.tsx` to nest `VoiceSessionProvider > LayoutShell > {children}`
-- Strip `useVoiceController` call and navbar renders from `page.tsx`
-- Verification gate: open voice on home, navigate to portfolio, voice stays active
+### Pattern 2: Global viewer provider, local viewer UI unchanged
 
-### Step 2: Tool callback wiring
+**What:** Keep `IframeViewer` as a controlled component, but mount its controller once near layout.
 
-Now that the session is stable, wire the page callbacks. Gives the tour and AI tool calls actual effect.
+```typescript
+interface BrowserViewerContextType {
+  openViewer: (viewer: { url: string; label: string }) => void;
+  closeViewer: () => void;
+  openExternal: () => void;
+  activeViewer: { url: string; label: string } | null;
+}
+```
 
-- Create `useVoiceToolCallbacks` hook
-- Add `openProject` + `openLink` to `portfolio/page.tsx`
-- Add `scrollTo` to `about/page.tsx`
-- Verification gate: say "give me a tour" — Parz-AI project card opens on portfolio page, about sections scroll on command
+**Why:** This is the smallest way to let home/voice/portfolio all open the same inbuilt browser without routing to portfolio.
 
-### Step 3: ElevenLabs STT route
+### Pattern 3: Control overlay reacts to tool state, not business logic
 
-Independent of steps 1 and 2 structurally, but benefits from the stable session in step 1 (microphone input stays alive across navigation).
+**What:** `ParzControlOverlay` should display captions like “Opening GitFly”, “Navigating to About”, “Scrolling to Experience”, plus the `powered by FSB` badge. It should not perform actions.
 
-- Create `src/app/api/stt/route.ts`
-- Replace `startListening` in `voice-controller.ts`: MediaRecorder records audio, silence detection stops recording, POST blob to `/api/stt`, call `handleUserTurn` on response
-- Keep `attachMic`/`_startLoop` amplitude path entirely untouched
-- Verification gate: voice transcribes correctly in Firefox and Safari (not only Chrome)
-
-### Step 4: Grok API key verification
-
-Orthogonal to the above. An environment variable audit and a health-check call to verify both `XAI_API_KEY` and `ELEVENLABS_API_KEY` are present and functional in the deployment environment.
-
----
+**Why:** Keeps the FSB-inspired overlay decorative/communicative rather than becoming a second control system.
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Calling useVoiceController in multiple pages
+### Anti-Pattern 1: Building a generic browser automation layer
 
-**What people do:** Copy the `useVoiceController` call into portfolio and about pages to "add voice support there."
+**Why bad:** Cross-origin iframes cannot be controlled, and a generic command DSL would be overkill for a portfolio.  
+**Instead:** Implement named site tools: `navigate`, `scrollTo`, `openProject`, `openBrowserTarget`, `closeBrowser`, `openExternal`.
 
-**Why it's wrong:** Creates multiple independent voice sessions. When navigating, one session dies and another starts from idle. Two controllers calling `VoiceBus.setState` clobber each other. AudioContext may be double-allocated.
+### Anti-Pattern 2: Keeping ProjectDetail as a hidden voice-only path
 
-**Do this instead:** Single call in `VoiceSessionProvider` at layout level. Pages only call `useVoiceSession()` to read state or `useVoiceToolCallbacks()` to register actions.
+**Why bad:** User explicitly rejected the right-side detail panel as not part of the design. Keeping it creates inconsistent manual vs AI behavior.  
+**Instead:** Delete or fully disconnect it and route all opens to `IframeViewer`.
 
-### Anti-Pattern 2: Passing toolCallbacks as props through layout
+### Anti-Pattern 3: Duplicating project facts in prompt and UI without a plan
 
-**What people do:** Add `openProject` as a prop on `layout.tsx`, thread it through `LayoutShell`, through `VoiceSessionProvider`, into `useVoiceController`.
+**Why bad:** FSB/GitFly/InfiniteChoice updates will drift between cards, About page, and Parz answers.  
+**Instead:** Keep `projects.ts` as public UI source; compose prompt from audited public-safe text or mirror it deliberately with tests.
 
-**Why it's wrong:** `layout.tsx` has no awareness of which page is active or what project data it holds. Props flow parent-to-child; you cannot push data upward from a page to the layout through props. You would be reinventing context to avoid context.
+### Anti-Pattern 4: Exposing internal implementation in Parz answers
 
-**Do this instead:** The `registerToolCallbacks` / `useVoiceToolCallbacks` pattern — pages push their handlers into a ref on mount, remove on unmount. The layout stays ignorant of page internals.
+**Why bad:** Current prompt talks about internals and data-store behavior; v4.1 requires refusal for internal context, private source, API keys/config, and voice bot internals.  
+**Instead:** Add guardrails in `system-prompt.ts` and evals for refusal behavior.
 
-### Anti-Pattern 3: Keeping Web Speech API as the primary STT path
+## Recommended Build Order
 
-**What people do:** Keep `SpeechRecognition` as primary, add ElevenLabs as fallback only.
+1. **Data model and content safety foundation**
+   - Update `projects.ts` with FSB, GitFly, aliases, target links, and private-source constraints.
+   - Update About/Experience data modules for InfiniteChoice/Voyza public-safe context.
+   - Rationale: every later prompt/tool feature depends on accurate project names and links.
 
-**Why it's wrong:** Web Speech API sends audio to Google regardless of the ElevenLabs integration, is unavailable in Firefox entirely, and returns an untyped event. The entire point of the upgrade is cross-browser support and quality.
+2. **Remove ProjectDetail path and unify manual project opening**
+   - Remove `selectedProject` and `ProjectDetail` from `portfolio/page.tsx`.
+   - Extract/reuse preferred target resolver.
+   - Verify card clicks open `IframeViewer` directly.
+   - Rationale: establishes the intended project UX before AI controls it.
 
-**Do this instead:** MediaRecorder + `/api/stt` as the only path. Keep `SpeechSynthesisUtterance` as the TTS fallback (it already is in `streamTTS`) — not as an STT path.
+3. **Add global browser viewer/openProject control**
+   - Add viewer provider or layout-level viewer host.
+   - Extend `VoiceSessionProvider` with global `openProject` using project resolver.
+   - Modify `voice-controller.ts` to stop navigating to portfolio before `openProject`.
+   - Rationale: satisfies “open projects from current page/home”.
 
-### Anti-Pattern 4: Moving VoiceBus from window into React state
+4. **Refresh `/api/chat` tools and Parz prompt**
+   - Update `voiceToolInstructions` to reflect direct project opening and feasible browser controls.
+   - Rewrite `system-prompt.ts` for direct personality-grounded answers, public-safe facts, rude-user policy, and internal-detail refusals.
+   - Rationale: tool behavior and persona should align after the control surface exists.
 
-**What people do:** Propose refactoring `window.VoiceBus` into Zustand or a context ref inside the layout.
+5. **Add FSB-inspired control overlay**
+   - Add `ParzControlOverlay` driven by tool execution state from provider/VoiceBus events.
+   - Keep it monochrome and minimal with bottom-left `powered by FSB` badge.
+   - Rationale: visual polish after actions are real.
 
-**Why it's wrong:** `window.VoiceBus` is intentionally global. The AudioContext, RAF loop, and mic stream live on it and do not belong in React's render cycle. React state would cause rerenders on every amplitude tick (60 fps). The existing design is correct — `VoiceBusProvider` React context mirrors only the `VoiceState` string; the raw audio internals stay on `window`.
+6. **Prompt tests/evals**
+   - Add tests for persona directness, factual grounding, flagship project answers, rude-user behavior, and refusal of internal/private details.
+   - Rationale: prompt changes need regression protection after all source facts/tools are finalized.
 
-**Do this instead:** Keep `window.VoiceBus` as-is. The only new React context needed is `VoiceSessionProvider` for `voiceActive`, `voiceProps`, and `micDenied`.
+## Phase-Specific Risks
 
----
+| Phase topic | Risk | Mitigation |
+|-------------|------|------------|
+| Project data refresh | GitFly private source accidentally exposed | Do not include GitHub/source link; add eval asking for GitFly source. |
+| Prompt rewrite | Parz becomes either too verbose or too bland | Eval direct-answer style and personality tone separately. |
+| Open project from home | Page-local callback unavailable | Move `openProject` to `VoiceSessionProvider`, not `portfolio/page.tsx`. |
+| Removing ProjectDetail | Dead imports/styles remain | Search imports after removal; run build/lint. |
+| Inbuilt browser control | Overpromising cross-origin control | Tool descriptions must say open/close/switch targets, not click/read inside third-party pages. |
+| Overlay | Competes with existing `VoiceOverlay`/navbar z-index | Make overlay pointer-events none, z-index below modal viewer but above page chrome; hide or reduce when `IframeViewer` is active if necessary. |
+| Tool call streaming | AI SDK event parsing is custom in `voice-controller.ts` | Keep schemas simple; test each tool call with live `/api/chat` stream. |
 
-## Recommended Project Structure (after changes)
+## Minimal Architecture Decision
 
-```
-src/
-├── app/
-│   ├── layout.tsx                    # Updated: VoiceSessionProvider + LayoutShell added
-│   ├── page.tsx                      # Updated: removes voice controller + navbar renders
-│   ├── portfolio/page.tsx            # Updated: adds useVoiceToolCallbacks
-│   ├── about/page.tsx                # Updated: adds useVoiceToolCallbacks
-│   ├── chat/page.tsx                 # No change
-│   └── api/
-│       ├── chat/route.ts             # No change
-│       ├── tts/route.ts              # No change
-│       └── stt/route.ts              # NEW
-├── providers/
-│   ├── theme-provider.tsx            # No change
-│   ├── transition-provider.tsx       # No change
-│   ├── voice-bus-provider.tsx        # No change
-│   └── voice-session-provider.tsx    # NEW — owns useVoiceController
-├── components/
-│   ├── layout-shell.tsx              # NEW — renders navbars from context
-│   ├── desktop-navbar.tsx            # Props interface unchanged
-│   ├── mobile-navbar.tsx             # Props interface unchanged
-│   ├── voice-panel.tsx               # No change
-│   └── voice-wave.tsx                # No change
-├── hooks/
-│   ├── use-voice-bus.ts              # No change
-│   └── use-voice-tool-callbacks.ts   # NEW
-└── lib/
-    ├── voice-controller.ts           # Modified: startListening body only
-    ├── voice-bus-init.ts             # No change
-    └── voice-commands.ts             # No change
-```
+The minimal durable v4.1 architecture is:
 
----
-
-## Scaling Considerations
-
-This is a portfolio site — single user, single tab. Scale is not a concern. The architectural choices here are all about session lifecycle correctness:
-
-- **`window.VoiceBus` as global** — correct for single-tab use; if multi-tab were needed, a `BroadcastChannel` bridge would be the extension point
-- **No WebSocket for STT** — ElevenLabs Scribe v2 is a REST API (file upload, synchronous). Latency is ~500–1500ms per utterance depending on clip length. Acceptable for a portfolio. If lower latency is needed later, the ElevenLabs Conversational AI WebSocket API is the upgrade path — but that is a distinct product with a different billing model
-- **History in localStorage** — 20-message cap is correct; no backend needed
-
----
+- **Keep:** Next.js App Router, `VoiceSessionProvider`, `VoiceBus`, `TransitionProvider`, `IframeViewer`, page-local About scrolling.
+- **Modify:** `system-prompt.ts`, `projects.ts`, `/api/chat` tool instructions, `voice-controller.ts` openProject dispatch, `voice-session-provider.tsx` global control, `portfolio/page.tsx` project opening.
+- **Add:** shared project target resolver, global viewer host/provider, FSB-inspired visual control overlay, prompt evals.
+- **Remove:** `ProjectDetail` panel path and voice behavior that detours through the portfolio page just to open project details.
 
 ## Sources
 
-All claims verified directly from the codebase and installed package:
+Verified directly from mandatory project files:
 
-- `src/lib/voice-controller.ts` — session hook implementation, `ToolCallbacks` interface, `startListening` (Web Speech API path to replace)
-- `src/lib/voice-bus-init.ts` — `initVoiceBus()` structure, confirms global singleton pattern
-- `src/providers/voice-bus-provider.tsx` — confirms `VoiceBusProvider` is already in layout, mirrors only `VoiceState` string
-- `src/app/layout.tsx` — confirmed provider nesting order; `VoiceBusProvider` is innermost before `{children}`
-- `src/app/page.tsx` — confirmed single call site for `useVoiceController`; confirmed navbar renders in page (not layout)
-- `src/app/portfolio/page.tsx` — confirmed `openProject` exists locally, not wired to voice
-- `src/app/about/page.tsx` — confirmed `scrollToSection` exists locally, not wired to voice
-- `node_modules/@elevenlabs/elevenlabs-js/dist/Client.d.ts` — confirms `speechToText` property on `ElevenLabsClient` (v2.44.0)
-- `node_modules/@elevenlabs/elevenlabs-js/dist/api/resources/speechToText/client/Client.d.ts` — confirms `convert()` method signature
-- `node_modules/@elevenlabs/elevenlabs-js/dist/api/resources/speechToText/client/requests/BodySpeechToTextV1SpeechToTextPost.d.ts` — confirms `file: core.file.Uploadable`, `modelId` field, `languageCode` field
-- `node_modules/@elevenlabs/elevenlabs-js/dist/api/types/SpeechToTextChunkResponseModel.d.ts` — confirms `text: string` on response
-- `node_modules/@elevenlabs/elevenlabs-js/dist/api/resources/speechToText/types/SpeechToTextConvertResponse.d.ts` — confirms response union type
-
----
-
-*Architecture research for: Voice Mode Production — persistent overlay, cross-page tool callbacks, ElevenLabs STT*
-*Researched: 2026-04-24*
+- `.planning/PROJECT.md` and `.planning/STATE.md` — v4.1 scope, decisions, constraints, and explicit ProjectDetail removal requirement.
+- `src/data/system-prompt.ts` — current monolithic server-only prompt/data store and guardrail gaps.
+- `src/data/projects.ts` — current project/link/detail model and existing link priority needs.
+- `src/app/api/chat/route.ts` — current voice tools and outdated “navigate to portfolio first” instruction.
+- `src/lib/voice-controller.ts` — current tool dispatch, forced portfolio navigation for `openProject`, STT/TTS/session ownership.
+- `src/lib/voice-commands.ts` — static tour path and old Parz-AI-focused tour step.
+- `src/providers/voice-session-provider.tsx` — persistent session provider and callback registry.
+- `src/components/voice-overlay.tsx` — existing overlay positioning and z-index considerations.
+- `src/components/iframe-viewer.tsx` — inbuilt browser behavior, unembeddable host limitations, GitHub preview fallback.
+- `src/components/project-detail.tsx` — right-side panel path to remove.
+- `src/app/portfolio/page.tsx` — current `ProjectDetail` state path and local iframe viewer opening logic.
+- `src/app/page.tsx` — home voice/chat integration and lack of project viewer state.
+- `src/app/about/page.tsx` — page-local scroll refs/callbacks.
+- `src/providers/transition-provider.tsx` — existing navigation primitive to reuse unchanged.
