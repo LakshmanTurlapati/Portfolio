@@ -16,6 +16,7 @@
 import { useTheme } from 'next-themes';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useMounted } from '@/hooks/use-mounted';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { resolveProject } from '@/data/projects';
 
 interface FsbControlOverlayProps {
@@ -75,6 +76,20 @@ function captionToSrText(caption: string | null): string {
 
 export function FsbControlOverlay({ active }: FsbControlOverlayProps) {
   const mounted = useMounted();
+  // Phase 27 breakpoint reconciliation:
+  //   - Grid visibility: gated here in JS at 768px (matches Phase 26's MOB convention).
+  //   - Corners + target ornaments: still gated at 600px via the existing CSS @media
+  //     rule in globals.css. This produces a 600-768px zone where ornaments use
+  //     desktop sizing but the grid is hidden. UI-SPEC labels this an acceptable
+  //     alternative; documented here for future maintainers.
+  //   - Badge sizing: gated at 768px in CSS (Plan 27-03 Task 2 consolidates the
+  //     existing 600px badge rule onto 768px so caption hit-area math is consistent
+  //     with the JS gate above).
+  // Phase 27 / FSB-05: hide the full-bleed scan grid on viewports < 768px.
+  // Use `min-width: 768px` so the FIRST render (server-side or pre-mount) defaults
+  // to FALSE, which keeps the grid hidden until the client confirms a desktop width.
+  // This prevents a brief desktop-grid flash on mobile during hydration.
+  const isDesktop = useMediaQuery('(min-width: 768px)');
   const { resolvedTheme } = useTheme();
   const [caption, setCaption] = useState<string | null>(null);
   // Controls fade opacity. true = caption (or idle) at full opacity; false = mid-cross-fade.
@@ -175,7 +190,7 @@ export function FsbControlOverlay({ active }: FsbControlOverlayProps) {
         style={{ '--fsb-overlay-rgb': overlayRgb } as CSSProperties}
         className="fsb-control-overlay pointer-events-none fixed inset-0"
       >
-        <div className="fsb-control-grid" />
+        {isDesktop ? <div className="fsb-control-grid" /> : null}
         <div className="fsb-control-corners" />
         <div className="fsb-control-target" />
         <div className="fsb-control-badge" style={fadeStyle}>
