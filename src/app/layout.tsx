@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Lato, Instrument_Serif } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { TransitionProvider } from '@/providers/transition-provider';
@@ -23,6 +23,15 @@ const instrumentSerif = Instrument_Serif({
   variable: '--font-instrument-serif',
   display: 'swap',
 });
+
+export const viewport: Viewport = {
+  // viewportFit: 'cover' is required for iOS to expose env(safe-area-inset-*).
+  // Without it, fixed elements at top:20 sit under the notch / dynamic island
+  // and fixed elements at bottom:20 sit under the home indicator.
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   title: "Turlapati's",

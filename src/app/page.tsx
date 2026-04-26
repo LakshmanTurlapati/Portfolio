@@ -136,8 +136,12 @@ export default function Home() {
       <div className="hidden sm:block fixed bottom-5 left-5 z-40">
         <ThemeToggle />
       </div>
-      {/* Mobile: top-right */}
-      <div className="sm:hidden fixed top-5 right-5 z-40">
+      {/* Mobile: top-right — pushed below the iOS safe-area inset so the toggle
+          doesn't sit under the notch / dynamic island / Safari URL bar. */}
+      <div
+        className="sm:hidden fixed right-5 z-40"
+        style={{ top: 'calc(env(safe-area-inset-top) + 20px)' }}
+      >
         <ThemeToggle />
       </div>
 
@@ -146,8 +150,11 @@ export default function Home() {
       <div className="hidden sm:block fixed bottom-5 right-[30px] z-40">
         <AuthorName variant="desktop" />
       </div>
-      {/* Mobile: top-left */}
-      <div className="sm:hidden fixed top-5 left-5 z-40">
+      {/* Mobile: top-left — same safe-area-inset push as the theme toggle. */}
+      <div
+        className="sm:hidden fixed left-5 z-40"
+        style={{ top: 'calc(env(safe-area-inset-top) + 20px)' }}
+      >
         <AuthorName variant="mobile" />
       </div>
 
