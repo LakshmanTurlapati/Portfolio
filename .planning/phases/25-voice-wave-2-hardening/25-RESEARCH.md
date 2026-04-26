@@ -447,7 +447,7 @@ Skipped — phase has no external dependency adds. All edits use already-install
 
 **For the planner:** A1-A4 are low-impact assumptions with built-in safety nets (existing try/catch, listener `fired` gate, identity checks). A5 is locked by the user. None require user re-confirmation before planning.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does `transition-provider`'s `popstate` handler need its own `page-ready` emission?**
    - What we know: line 146-153 wires `popstate` → `navigateWithReveal(prevPath, ...)`, which goes through the same `transition.finished.then` path → emit will fire.
