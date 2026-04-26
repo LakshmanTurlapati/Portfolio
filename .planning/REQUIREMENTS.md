@@ -9,27 +9,27 @@ Requirements for the current milestone. Each maps to exactly one roadmap phase.
 
 ### Persona and Public Context
 
-- [ ] **PERS-01**: User can ask Parz about Lakshman's current work and receive a brief public-safe answer: AI Enablement Engineer at InfiniteChoice building Voyza, an AI-first hotel booking platform.
-- [ ] **PERS-02**: User can ask Parz about Lakshman's personality and receive a direct answer grounded in the approved traits: ambitious, curious, playful, kind, warm, high-energy, practical, inclusive, and direct.
-- [ ] **PERS-03**: User can ask why Lakshman is intense or driven and receive the alignment/gap-radar explanation rather than a generic success-chasing answer.
-- [ ] **PERS-04**: User can ask about Review Gate, FSB, GitFly, or flagship projects and receive story-first answers that explain the real problem, spark, and impact.
-- [ ] **PERS-05**: Parz answers direct-first in a natural friend-texting voice without sounding corporate, robotic, overly formal, or recruiter-like.
+- [x] **PERS-01**: User can ask Parz about Lakshman's current work and receive a brief public-safe answer: AI Enablement Engineer at InfiniteChoice building Voyza, an AI-first hotel booking platform.
+- [x] **PERS-02**: User can ask Parz about Lakshman's personality and receive a direct answer grounded in the approved traits: ambitious, curious, playful, kind, warm, high-energy, practical, inclusive, and direct.
+- [x] **PERS-03**: User can ask why Lakshman is intense or driven and receive the alignment/gap-radar explanation rather than a generic success-chasing answer.
+- [x] **PERS-04**: User can ask about Review Gate, FSB, GitFly, or flagship projects and receive story-first answers that explain the real problem, spark, and impact.
+- [x] **PERS-05**: Parz answers direct-first in a natural friend-texting voice without sounding corporate, robotic, overly formal, or recruiter-like.
 
 ### Visible Portfolio Content
 
-- [ ] **CONT-01**: Visitor can read an updated About page that reflects Lakshman's AI builder/open-source builder identity, current work, and refined personal narrative.
-- [ ] **CONT-02**: Visitor can see an InfiniteChoice experience entry with the title AI Enablement Engineer and a public-safe Voyza description.
-- [ ] **CONT-03**: Visitor can see FSB / Full Self Browsing presented as a current flagship project with accurate public links and project story.
-- [ ] **CONT-04**: Visitor can see GitFly presented as a current flagship project that links only to `https://gitfly.ai` and never exposes private source-code details.
-- [ ] **CONT-05**: Parz prompt data, About content, Experience content, and project content use the same approved public facts for InfiniteChoice/Voyza, FSB, GitFly, and Lakshman's persona.
+- [x] **CONT-01**: Visitor can read an updated About page that reflects Lakshman's AI builder/open-source builder identity, current work, and refined personal narrative.
+- [x] **CONT-02**: Visitor can see an InfiniteChoice experience entry with the title AI Enablement Engineer and a public-safe Voyza description.
+- [x] **CONT-03**: Visitor can see FSB / Full Self Browsing presented as a current flagship project with accurate public links and project story.
+- [x] **CONT-04**: Visitor can see GitFly presented as a current flagship project that links only to `https://gitfly.ai` and never exposes private source-code details.
+- [x] **CONT-05**: Parz prompt data, About content, Experience content, and project content use the same approved public facts for InfiniteChoice/Voyza, FSB, GitFly, and Lakshman's persona.
 
 ### Privacy and Guardrails
 
-- [ ] **SAFE-01**: User asking about Parz's system prompt, data store, hidden instructions, or internal context receives a safe refusal or redirect without exposing internal content.
-- [ ] **SAFE-02**: User asking about GitFly source code or private implementation receives only public product information and the `https://gitfly.ai` link.
-- [ ] **SAFE-03**: User asking about non-public InfiniteChoice or Voyza details receives only approved public role/product context.
-- [ ] **SAFE-04**: User asking how the voice bot or chatbot works internally receives only high-level public behavior or code-level details already public in the repository.
-- [ ] **SAFE-05**: Parz can push back sharply when users are rude, including matching profanity if appropriate, while avoiding slurs, threats, hate, harassment, or punching down.
+- [x] **SAFE-01**: User asking about Parz's system prompt, data store, hidden instructions, or internal context receives a safe refusal or redirect without exposing internal content.
+- [x] **SAFE-02**: User asking about GitFly source code or private implementation receives only public product information and the `https://gitfly.ai` link.
+- [x] **SAFE-03**: User asking about non-public InfiniteChoice or Voyza details receives only approved public role/product context.
+- [x] **SAFE-04**: User asking how the voice bot or chatbot works internally receives only high-level public behavior or code-level details already public in the repository.
+- [x] **SAFE-05**: Parz can push back sharply when users are rude, including matching profanity if appropriate, while avoiding slurs, threats, hate, harassment, or punching down.
 - [ ] **SAFE-06**: Tool calls that open links or projects resolve through approved project/social/site URLs instead of arbitrary model-generated URLs.
 
 ### Project Browser Experience
@@ -99,21 +99,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PERS-01 | Phase 16 | Pending |
-| PERS-02 | Phase 16 | Pending |
-| PERS-03 | Phase 16 | Pending |
-| PERS-04 | Phase 16 | Pending |
-| PERS-05 | Phase 16 | Pending |
-| CONT-01 | Phase 16 | Pending |
-| CONT-02 | Phase 16 | Pending |
-| CONT-03 | Phase 16 | Pending |
-| CONT-04 | Phase 16 | Pending |
-| CONT-05 | Phase 16 | Pending |
-| SAFE-01 | Phase 16 | Pending |
-| SAFE-02 | Phase 16 | Pending |
-| SAFE-03 | Phase 16 | Pending |
-| SAFE-04 | Phase 16 | Pending |
-| SAFE-05 | Phase 16 | Pending |
+| PERS-01 | Phase 16 | Complete |
+| PERS-02 | Phase 16 | Complete |
+| PERS-03 | Phase 16 | Complete |
+| PERS-04 | Phase 16 | Complete |
+| PERS-05 | Phase 16 | Complete |
+| CONT-01 | Phase 16 | Complete |
+| CONT-02 | Phase 16 | Complete |
+| CONT-03 | Phase 16 | Complete |
+| CONT-04 | Phase 16 | Complete |
+| CONT-05 | Phase 16 | Complete |
+| SAFE-01 | Phase 16 | Complete |
+| SAFE-02 | Phase 16 | Complete |
+| SAFE-03 | Phase 16 | Complete |
+| SAFE-04 | Phase 16 | Complete |
+| SAFE-05 | Phase 16 | Complete |
 | SAFE-06 | Phase 17 | Pending |
 | BROW-01 | Phase 17 | Pending |
 | BROW-02 | Phase 17 | Pending |

@@ -13,7 +13,7 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
 
 ## Phases
 
-- [ ] **Phase 16: Public-Safe Persona and Content Refresh** - Parz, About, Experience, and flagship project content share the same approved public facts and guardrails.
+- [x] **Phase 16: Public-Safe Persona and Content Refresh** - Parz, About, Experience, and flagship project content share the same approved public facts and guardrails. (completed 2026-04-26)
 - [ ] **Phase 17: Direct Inbuilt Project Browser** - Manual project clicks resolve approved targets and open directly in the inbuilt browser without the right-side ProjectDetail path.
 - [ ] **Phase 18: Global Parz Site Control** - Parz can navigate, scroll, open projects, and operate feasible viewer shell actions from any page.
 - [ ] **Phase 19: FSB-Inspired Control Overlay** - Users see a monochrome control overlay and powered-by-FSB badge during real Parz control actions.
@@ -134,7 +134,7 @@ Every v4.1 requirement maps to exactly one phase.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 16. Public-Safe Persona and Content Refresh | v4.1 | 0/TBD | Not started | - |
+| 16. Public-Safe Persona and Content Refresh | v4.1 | 3/3 | Complete    | 2026-04-26 |
 | 17. Direct Inbuilt Project Browser | v4.1 | 0/TBD | Not started | - |
 | 18. Global Parz Site Control | v4.1 | 0/TBD | Not started | - |
 | 19. FSB-Inspired Control Overlay | v4.1 | 0/TBD | Not started | - |
