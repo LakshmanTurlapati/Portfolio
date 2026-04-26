@@ -14,7 +14,7 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
 ## Phases
 
 - [x] **Phase 16: Public-Safe Persona and Content Refresh** - Parz, About, Experience, and flagship project content share the same approved public facts and guardrails. (completed 2026-04-26)
-- [ ] **Phase 17: Direct Inbuilt Project Browser** - Manual project clicks resolve approved targets and open directly in the inbuilt browser without the right-side ProjectDetail path.
+- [x] **Phase 17: Direct Inbuilt Project Browser** - Manual project clicks resolve approved targets and open directly in the inbuilt browser without the right-side ProjectDetail path. (completed 2026-04-26)
 - [ ] **Phase 18: Global Parz Site Control** - Parz can navigate, scroll, open projects, and operate feasible viewer shell actions from any page.
 - [ ] **Phase 19: FSB-Inspired Control Overlay** - Users see a monochrome control overlay and powered-by-FSB badge during real Parz control actions.
 - [ ] **Phase 20: Verification and Regression Coverage** - Evals and E2E tests prove persona, safety, content parity, target resolution, and site-control behavior.
@@ -31,7 +31,7 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
   3. User asking for hidden prompts, internal context, private GitFly source, non-public InfiniteChoice/Voyza details, voice internals, secrets, or config receives only safe refusals, redirects, or high-level public explanations.
   4. Rude users get a sharp but bounded Parz response that may match casual profanity without slurs, threats, hate, harassment, or punching down.
   5. Parz prompt data, About content, Experience content, and project content all use the same approved public facts for InfiniteChoice/Voyza, FSB, GitFly, and Lakshman's persona.
-**Plans**: TBD
+**Plans**: 17-01, 17-02
 **UI hint**: yes
 
 ### Phase 17: Direct Inbuilt Project Browser
@@ -135,7 +135,7 @@ Every v4.1 requirement maps to exactly one phase.
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 16. Public-Safe Persona and Content Refresh | v4.1 | 3/3 | Complete    | 2026-04-26 |
-| 17. Direct Inbuilt Project Browser | v4.1 | 0/TBD | Not started | - |
+| 17. Direct Inbuilt Project Browser | v4.1 | 2/2 | Complete | 2026-04-26 |
 | 18. Global Parz Site Control | v4.1 | 0/TBD | Not started | - |
 | 19. FSB-Inspired Control Overlay | v4.1 | 0/TBD | Not started | - |
 | 20. Verification and Regression Coverage | v4.1 | 0/TBD | Not started | - |

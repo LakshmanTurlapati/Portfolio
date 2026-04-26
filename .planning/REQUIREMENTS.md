@@ -30,15 +30,15 @@ Requirements for the current milestone. Each maps to exactly one roadmap phase.
 - [x] **SAFE-03**: User asking about non-public InfiniteChoice or Voyza details receives only approved public role/product context.
 - [x] **SAFE-04**: User asking how the voice bot or chatbot works internally receives only high-level public behavior or code-level details already public in the repository.
 - [x] **SAFE-05**: Parz can push back sharply when users are rude, including matching profanity if appropriate, while avoiding slurs, threats, hate, harassment, or punching down.
-- [ ] **SAFE-06**: Tool calls that open links or projects resolve through approved project/social/site URLs instead of arbitrary model-generated URLs.
+- [x] **SAFE-06**: Tool calls that open links or projects resolve through approved project/social/site URLs instead of arbitrary model-generated URLs.
 
 ### Project Browser Experience
 
-- [ ] **BROW-01**: User clicking a project card opens the relevant project target directly in the inbuilt browser instead of opening the right-side ProjectDetail panel.
-- [ ] **BROW-02**: The right-side ProjectDetail panel is removed from the primary project experience so it no longer appears when opening projects manually or via Parz.
-- [ ] **BROW-03**: Project opening resolves natural aliases such as FSB, Full Self Browsing, GitFly, Review Gate, T2S, and Parz-AI to canonical project records.
-- [ ] **BROW-04**: Project targets prefer the correct public destination per project: GitHub for public source projects, public website for products like GitFly, and existing fallback handling for unembeddable hosts.
-- [ ] **BROW-05**: User sees a clean fallback when a project target is unknown, blocked, or unembeddable instead of a broken browser view.
+- [x] **BROW-01**: User clicking a project card opens the relevant project target directly in the inbuilt browser instead of opening the right-side ProjectDetail panel.
+- [x] **BROW-02**: The right-side ProjectDetail panel is removed from the primary project experience so it no longer appears when opening projects manually or via Parz.
+- [x] **BROW-03**: Project opening resolves natural aliases such as FSB, Full Self Browsing, GitFly, Review Gate, T2S, and Parz-AI to canonical project records.
+- [x] **BROW-04**: Project targets prefer the correct public destination per project: GitHub for public source projects, public website for products like GitFly, and existing fallback handling for unembeddable hosts.
+- [x] **BROW-05**: User sees a clean fallback when a project target is unknown, blocked, or unembeddable instead of a broken browser view.
 
 ### Parz Site Control
 
@@ -114,12 +114,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SAFE-03 | Phase 16 | Complete |
 | SAFE-04 | Phase 16 | Complete |
 | SAFE-05 | Phase 16 | Complete |
-| SAFE-06 | Phase 17 | Pending |
-| BROW-01 | Phase 17 | Pending |
-| BROW-02 | Phase 17 | Pending |
-| BROW-03 | Phase 17 | Pending |
-| BROW-04 | Phase 17 | Pending |
-| BROW-05 | Phase 17 | Pending |
+| SAFE-06 | Phase 17 | Complete |
+| BROW-01 | Phase 17 | Complete |
+| BROW-02 | Phase 17 | Complete |
+| BROW-03 | Phase 17 | Complete |
+| BROW-04 | Phase 17 | Complete |
+| BROW-05 | Phase 17 | Complete |
 | CTRL-01 | Phase 18 | Pending |
 | CTRL-02 | Phase 18 | Pending |
 | CTRL-03 | Phase 18 | Pending |
@@ -142,4 +142,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-26*
-*Last updated: 2026-04-26 after v4.1 roadmap creation*
+*Last updated: 2026-04-26 after v4.1 Phase 17 completion*

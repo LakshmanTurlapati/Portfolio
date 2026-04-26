@@ -10,9 +10,9 @@ A visually striking, interactive portfolio that showcases projects with rich det
 
 ## Current State
 
-**Shipped:** v4.1 Phase 16 Public-Safe Persona and Content Refresh (2026-04-26)
+**Shipped:** v4.1 Phase 17 Direct Inbuilt Project Browser (2026-04-26)
 
-Parz now uses a public-safe profile source of truth for current work, personality, flagship projects, and refusal boundaries. About, Experience, and project content now reflect InfiniteChoice/Voyza, FSB / Full Self Browsing, GitFly, and the refined AI-builder narrative, with private GitFly source and non-public employer/product details explicitly guarded.
+Parz now uses a public-safe profile source of truth for current work, personality, flagship projects, and refusal boundaries. About, Experience, and project content now reflect InfiniteChoice/Voyza, FSB / Full Self Browsing, GitFly, and the refined AI-builder narrative, with private GitFly source and non-public employer/product details explicitly guarded. Portfolio project cards now open approved project targets directly in the inbuilt browser, with canonical aliases and local-record target safety replacing the right-side project detail detour.
 
 ## Current Milestone: v4.1 Parz Persona, Portfolio Context, and Site Control Refresh
 
@@ -75,11 +75,14 @@ Parz now uses a public-safe profile source of truth for current work, personalit
 - ✓ Parz prompt refreshed for direct-first, warm, practical, personality-grounded answers — v4.1 Phase 16
 - ✓ About, Experience, FSB, GitFly, and Review Gate content refreshed around current public-safe facts — v4.1 Phase 16
 - ✓ Guardrails added for hidden prompts/internal context, private GitFly source, non-public InfiniteChoice/Voyza details, secrets/config, voice internals, and bounded rude-user behavior — v4.1 Phase 16
+- ✓ Project cards open approved public targets directly in the inbuilt browser instead of the right-side ProjectDetail panel — v4.1 Phase 17
+- ✓ Canonical project aliases resolve FSB, Full Self Browsing, GitFly, Review Gate, T2S, and Parz-AI through local project records — v4.1 Phase 17
+- ✓ Project opening is constrained to approved local project URLs, with GitFly linking only to https://gitfly.ai — v4.1 Phase 17
 
 ### Active
 
 - [ ] Add prompt tests/evals covering personality, factual grounding, flagship project answers, rude-user behavior, and internal-detail refusal
-- [ ] Remove the right-side ProjectDetail panel path and make project opening use the inbuilt browser directly
+- [x] Remove the right-side ProjectDetail panel path and make project opening use the inbuilt browser directly
 - [ ] Let Parz open a specific project's GitHub/website/browser target from any page, including home, without always navigating to portfolio first
 - [ ] Expand Parz site control for precise navigation, scrolling, project opening, and inbuilt-browser actions inspired by FSB
 - [ ] Show an FSB-inspired monochrome overlay during Parz navigation/control actions with a small bottom-left "powered by FSB" badge
@@ -95,7 +98,7 @@ Parz now uses a public-safe profile source of truth for current work, personalit
 - GitFly source code or private implementation details -- source is private; portfolio/Parz should link only to the public platform at https://gitfly.ai
 - Non-public InfiniteChoice/Voyza implementation details -- current role/product context only unless details are explicitly public
 - Voice bot internal wiring details -- explain only high-level public behavior or public GitHub code-level details when applicable
-- Right-side project detail panel as a primary project experience -- user said it was never part of the design; project opens should go to the inbuilt browser instead
+- Right-side project detail panel as a primary project experience -- user said it was never part of the design; project opens now go to the inbuilt browser instead
 
 ## Context
 
@@ -113,6 +116,7 @@ Parz now uses a public-safe profile source of truth for current work, personalit
 - Builder style: gap radar, ship-first instincts, aesthetic taste, AI leverage, and obsession loops once an idea catches.
 - Conversation behavior: answer directly first; add personality through wording rather than unsolicited extra chatter; use humor only when the user is casual.
 - Site-control goal: Parz should have meaningful control over the portfolio, not just scripted navigation. It should open project browser views directly, scroll/navigate precisely, and avoid unnecessary detours through the portfolio page when a project can be shown from the current page.
+- Phase 17 browser foundation: project records now carry approved aliases and preferred browser targets, and portfolio-local project opens resolve through those records before opening the inbuilt browser.
 - FSB visual inspiration: While Parz is navigating or controlling the site, show a monochrome overlay inspired by FSB and include a small bottom-left "powered by FSB" badge.
 
 ## Constraints
@@ -139,7 +143,7 @@ Parz now uses a public-safe profile source of truth for current work, personalit
 | Same UI, better brain for v4.1 | User explicitly chose chatbot/content intelligence over UI redesign | -- Pending |
 | GitFly public link only | Source code is private; public platform should redirect only to https://gitfly.ai | -- Pending |
 | Prompt evals required for persona refresh | Personality and guardrails need testable coverage, not just prompt edits | -- Pending |
-| Remove right-side project panel | User clarified it was never part of the intended design; project display should use the inbuilt browser | -- Pending |
+| Remove right-side project panel | User clarified it was never part of the intended design; project display now uses the inbuilt browser | ✓ Good |
 | FSB-inspired Parz control overlay | AI navigation/control should feel visible and intentional, with a monochrome overlay and "powered by FSB" badge | -- Pending |
 | Public-safe profile source of truth | Phase 16 centralized approved public facts and protected categories in `src/data/public-profile.ts` | ✓ Good |
 
@@ -161,4 +165,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26 after v4.1 Phase 16 completion*
+*Last updated: 2026-04-26 after v4.1 Phase 17 completion*
