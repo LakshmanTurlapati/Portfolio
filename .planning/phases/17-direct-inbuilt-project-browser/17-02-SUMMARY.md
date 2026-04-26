@@ -21,17 +21,19 @@ metrics:
 | Commit | Description |
 |--------|-------------|
 | ec4495e | Replaced the portfolio detail-panel open path with direct approved browser targets and updated voice tool copy. |
+| f918cf9 | Added a user-visible fallback overlay for unknown or unavailable project browser targets. |
 
 ## Completed
 
 - Removed `ProjectDetail` from the primary portfolio render path.
 - Updated project card opening to use `getProjectBrowserTarget` and set `IframeViewer` directly.
 - Updated portfolio-local `openProject` voice callback to resolve aliases through `resolveProject` and use the same direct browser path.
+- Added a clean `Project unavailable` fallback overlay for unknown aliases or projects without approved browser targets.
 - Updated chat/voice tool copy so project opening uses approved project names/aliases and does not invent URLs.
 
 ## Deviations
 
-- Unknown portfolio-local project tool calls log a warning and do not open anything. A user-visible global fallback is deferred to Phase 18's global site-control layer.
+- Cross-page/global project-control fallbacks are deferred to Phase 18's global site-control layer.
 
 ## Verification
 
