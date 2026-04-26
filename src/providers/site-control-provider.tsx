@@ -84,10 +84,14 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
     try {
       return action();
     } finally {
+      // Phase 27 / FSB-04: extended from 900ms to 3500ms so the FSB overlay's
+      // caption state machine (success: 1500ms hold + 200ms fade; error: 3000ms
+      // hold + 200ms fade) finishes inside the visible overlay before unmount.
+      // 3500ms = 3000ms (error hold) + 200ms (fade-out) + 300ms (safety margin).
       overlayHideTimerRef.current = window.setTimeout(() => {
         setControlOverlayActive(false);
         overlayHideTimerRef.current = null;
-      }, 900);
+      }, 3500);
     }
   }, []);
 
