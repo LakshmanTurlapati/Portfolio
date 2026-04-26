@@ -98,7 +98,10 @@ See `milestones/v3-ROADMAP.md` (merged with v3 carry-forward).
   1. User watching Parz perform a tool action (open project, navigate, scroll, close browser, toggle theme, open link) sees a context-aware action caption rendered in the FSB overlay, sourced from VoiceBus `tool-executing` events (FSB-04).
   2. User on mobile sees an overlay treatment scaled for small screens — the desktop grid is hidden, badge dimensions tuned for mobile, and pointer-safety preserved (FSB-05).
   3. User on desktop sees the overlay continue to behave exactly as it did at end of Phase 19 / 23 — no regression on monochrome styling, badge copy `powered by FSB`, or pointer-safety (FSB-04, FSB-05).
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 27-01-PLAN.md — FSB-04: Extend runTool helper to emit { name, args } payload (Wave 1)
+- [ ] 27-02-PLAN.md — FSB-04: Caption state machine + per-tool resolver in fsb-control-overlay.tsx + overlay lifetime reconciliation (Wave 2)
+- [ ] 27-03-PLAN.md — FSB-05: Mobile breakpoint gate for grid + WCAG 2.5.5 badge sizing + 600/768px breakpoint reconciliation (Wave 3)
 **UI hint**: yes
 
 ### Phase 28: Chat UI Redesign
@@ -131,5 +134,5 @@ Phases execute in numeric order: 25 → 26 → 27 → 28
 | 24. Mobile Pass + Voice Stabilization       | v4.1 | 1/1 | Complete    | 2026-04-26 |
 | 25. Voice Wave 2 Hardening                  | v4.2 | 5/5 | Complete    | 2026-04-26 |
 | 26. Mobile UX Pass                          | v4.2 | 3/3 | Complete    | 2026-04-26 |
-| 27. FSB Overlay Polish                      | v4.2 | 0/TBD | Not started | -          |
+| 27. FSB Overlay Polish                      | v4.2 | 0/3 | Planned     | -          |
 | 28. Chat UI Redesign                        | v4.2 | 0/TBD | Not started | -          |
