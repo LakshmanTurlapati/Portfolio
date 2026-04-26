@@ -161,9 +161,7 @@ export function useVoiceController({
       switch (name) {
         case 'openProject':
           if (toolCallbacks?.openProject) {
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
-            const result = toolCallbacks.openProject(args as { slug: string });
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit(result?.ok === false ? 'tool-error' : 'tool-success');
+            runTool('openProject', () => toolCallbacks.openProject!(args as { slug: string }));
           } else {
             console.warn('[VoiceController] openProject tool called but no toolCallbacks.openProject provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -171,9 +169,7 @@ export function useVoiceController({
           break;
         case 'scrollTo':
           if (toolCallbacks?.scrollTo) {
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
-            const result = toolCallbacks.scrollTo(args as { selector: string });
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit(result?.ok === false ? 'tool-error' : 'tool-success');
+            runTool('scrollTo', () => toolCallbacks.scrollTo!(args as { selector: string }));
           } else {
             console.warn('[VoiceController] scrollTo tool called but no toolCallbacks.scrollTo provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -181,9 +177,7 @@ export function useVoiceController({
           break;
         case 'openLink':
           if (toolCallbacks?.openLink) {
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
-            toolCallbacks.openLink(args as { url: string });
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-success');
+            runTool('openLink', () => toolCallbacks.openLink!(args as { url: string }));
           } else {
             console.warn('[VoiceController] openLink tool called but no toolCallbacks.openLink provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -191,9 +185,7 @@ export function useVoiceController({
           break;
         case 'closeBrowser':
           if (toolCallbacks?.closeBrowser) {
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
-            const result = toolCallbacks.closeBrowser();
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit(result.ok ? 'tool-success' : 'tool-error');
+            runTool('closeBrowser', () => toolCallbacks.closeBrowser!());
           } else {
             console.warn('[VoiceController] closeBrowser tool called but no toolCallbacks.closeBrowser provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -201,9 +193,7 @@ export function useVoiceController({
           break;
         case 'openCurrentProjectExternal':
           if (toolCallbacks?.openCurrentProjectExternal) {
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
-            const result = toolCallbacks.openCurrentProjectExternal();
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit(result.ok ? 'tool-success' : 'tool-error');
+            runTool('openCurrentProjectExternal', () => toolCallbacks.openCurrentProjectExternal!());
           } else {
             console.warn('[VoiceController] openCurrentProjectExternal tool called but no toolCallbacks.openCurrentProjectExternal provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -211,9 +201,7 @@ export function useVoiceController({
           break;
         case 'unsupportedIframeControl':
           if (toolCallbacks?.unsupportedIframeControl) {
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
-            const result = toolCallbacks.unsupportedIframeControl();
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit(result.ok ? 'tool-success' : 'tool-error');
+            runTool('unsupportedIframeControl', () => toolCallbacks.unsupportedIframeControl!());
           } else {
             console.warn('[VoiceController] unsupportedIframeControl tool called but no toolCallbacks.unsupportedIframeControl provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
@@ -221,9 +209,7 @@ export function useVoiceController({
           break;
         case 'toggleTheme':
           if (toolCallbacks?.toggleTheme) {
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-executing');
-            toolCallbacks.toggleTheme();
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-success');
+            runTool('toggleTheme', () => toolCallbacks.toggleTheme!());
           } else {
             console.warn('[VoiceController] toggleTheme tool called but no toolCallbacks.toggleTheme provided');
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
