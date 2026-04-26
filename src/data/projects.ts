@@ -114,7 +114,7 @@ export const PROJECT_DETAILS: Record<string, ProjectDetail> = {
     overview: "A Cursor IDE rule + MCP server that forces the agent to pause before ending a request, opening a popup where you can keep iterating \u2014 with voice, text, and image input \u2014 all inside a single main request\u2019s tool-call budget.",
     stats: [
       { label: "Request multiplier", value: "~5x" },
-      { label: "GitHub stars", value: "500+" },
+      { label: "GitHub stars", value: "1500+" },
       { label: "Platforms", value: "macOS \u00b7 Win \u00b7 Linux" },
     ],
     highlights: [
@@ -127,7 +127,7 @@ export const PROJECT_DETAILS: Record<string, ProjectDetail> = {
     sections: [
       { heading: "The problem", body: "Cursor would drop the mic way too early \u2014 a complex task would use ~5 of its ~25 tool calls, then the agent would sign off. Follow-up tweaks meant burning another of my ~500 monthly requests. That felt wrong." },
       { heading: "The idea", body: "Instruct the agent, via a Cursor rule, to call a review_gate_chat MCP tool before finishing. The tool opens a popup and waits. The agent can\u2019t exit until I type TASK_COMPLETE \u2014 so the remaining tool-call budget stays available for iterative sub-prompts inside the same main request." },
-      { heading: "V2 upgrades", body: "V1 was a terminal script. V2 is native: an MCP tool, a VSIX extension, local Whisper transcription, image uploads, real-time status, and a cross-platform installer. The community pushed for it \u2014 100+ forks, 100+ stars, 100k+ impressions \u2014 and V2 is the response." },
+      { heading: "V2 upgrades", body: "V1 was a terminal script. V2 is native: an MCP tool, a VSIX extension, local Whisper transcription, image uploads, real-time status, and a cross-platform installer. The community pushed for it: 1500+ stars and roughly 200,000+ impressions showed the problem was real." },
     ],
   },
   "Blockchain Smartcontracts": {
