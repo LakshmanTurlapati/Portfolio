@@ -84,7 +84,10 @@ See `milestones/v3-ROADMAP.md` (merged with v3 carry-forward).
   1. User on a mobile device sees the particle background render smoothly with reduced particle count (~40-50 vs desktop's 90) and no visible jank from the breathing rAF loop (MOB-01).
   2. User typing into the chat input on iOS sees the field scroll into view above the keyboard, with `inputMode` hinting the right keyboard and safe-area insets respected on the input wrapper (MOB-02).
   3. User reading a project detail on mobile sees responsive horizontal padding (`px-4` on small screens, `px-14` from `lg` up), with stats grid and cover image margins that don't crop or cramp content (MOB-03).
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 26-01-PLAN.md — MOB-01: Mobile particle count reduction (45 vs 90 via useMediaQuery 768px breakpoint)
+- [ ] 26-02-PLAN.md — MOB-02: iOS chat keyboard handling (inputMode/enterKeyHint/autoComplete + 300ms scrollIntoView focus + bottom safe-area inset)
+- [ ] 26-03-PLAN.md — MOB-03: Project-detail responsive layout (px-4 md:px-8 lg:px-14 padding ladder + full-bleed mobile cover + 2-col stats grid + proportional type scale)
 **UI hint**: yes
 
 ### Phase 27: FSB Overlay Polish
@@ -127,6 +130,6 @@ Phases execute in numeric order: 25 → 26 → 27 → 28
 | 23. Dynamic Voice Output + R-1 Hotfix       | v4.1 | 1/1 | Complete    | 2026-04-26 |
 | 24. Mobile Pass + Voice Stabilization       | v4.1 | 1/1 | Complete    | 2026-04-26 |
 | 25. Voice Wave 2 Hardening                  | v4.2 | 5/5 | Complete    | 2026-04-26 |
-| 26. Mobile UX Pass                          | v4.2 | 0/TBD | Not started | -          |
+| 26. Mobile UX Pass                          | v4.2 | 0/3   | Not started | -          |
 | 27. FSB Overlay Polish                      | v4.2 | 0/TBD | Not started | -          |
 | 28. Chat UI Redesign                        | v4.2 | 0/TBD | Not started | -          |
