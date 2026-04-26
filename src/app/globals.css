@@ -296,7 +296,7 @@ body {
 }
 
 .fsb-control-overlay {
-  z-index: 70;
+  z-index: 120;
   color: rgb(var(--fsb-overlay-rgb));
   mix-blend-mode: normal;
 }
