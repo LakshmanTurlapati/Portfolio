@@ -9,7 +9,7 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
 - ✅ **v1.0 Migration** - Phases 1-4 (shipped / partially carried forward in historical roadmap)
 - ✅ **v3 Portfolio Redesign** - Phases 5-11 (shipped)
 - ✅ **v4.0 Voice Mode Production** - Phases 12-15 (shipped 2026-04-26)
-- 🚧 **v4.1 Parz Persona, Portfolio Context, and Site Control Refresh** - Phases 16-22 (Phases 16-20 shipped 2026-04-26; Phases 21-22 are audit-driven follow-on)
+- 🚧 **v4.1 Parz Persona, Portfolio Context, and Site Control Refresh** - Phases 16-23 (Phases 16-20 shipped 2026-04-26; Phases 21-23 are audit-driven follow-on)
 
 ## Phases
 
@@ -20,6 +20,7 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
 - [x] **Phase 20: Verification and Regression Coverage** - Evals and E2E tests prove persona, safety, content parity, target resolution, and site-control behavior. (completed 2026-04-26)
 - [x] **Phase 21: Voice Audit and Wave 1 Fixes** - Voice pipeline audited end-to-end (17 findings); hardcoded tour scaffolding removed so the LLM drives walkthroughs entirely through existing tool calls; Wave 1 P0 fixes shipped (SSE chunk-boundary buffer, `prefers-reduced-motion` barge-in, Space-bar hijack guard). (completed 2026-04-26)
 - [x] **Phase 22: Voice Audio Serialization** - Centralised `cancelAllAudio` primitive plus `AbortController` and turn-generation counter eliminate the five overlap modes (O-1..O-5) where two TTS streams could play simultaneously. (completed 2026-04-26)
+- [x] **Phase 23: Dynamic Voice Output + R-1 hotfix** - Removed all three hardcoded `speak()` calls (greet, empty-response, server-error); greet is now LLM-generated via a synthetic kickoff turn. Bundled hotfix for the Phase-22 R-1 regression where `setState('speaking')` emitted a phantom default level that triggered self-barge-in and aborted every TTS fetch. (completed 2026-04-26)
 
 ## Phase Details
 
@@ -115,6 +116,21 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
   7. Typecheck, vitest (12/12), and Next build are all green; lint shows only pre-existing warnings.
 **Plans**: 22-01
 
+### Phase 23: Dynamic Voice Output + R-1 Hotfix
+**Goal**: Make every word the user hears from Parz LLM-generated, and ship the production hotfix for the Phase-22 R-1 regression that silenced all TTS on the deployed test portfolio
+**Depends on**: Phase 22 (the regression hotfix targets a bug introduced there)
+**Requirements**: None — audit-driven bug-fix work, no new milestone requirements
+**Success Criteria** (what must be TRUE):
+  1. `grep -nE 'speak\("[^"]+"\)' src/lib/voice-controller.ts` returns no matches — zero hardcoded user-facing speech strings remain.
+  2. `open()` greet is LLM-generated via `handleUserTurn(trigger, { kind: 'greet' })`; the trigger is a system instruction in brackets, not user-facing speech.
+  3. `handleUserTurn` accepts `kind: 'user' | 'greet'`. Greet skips appending the trigger to history, skips the `isStopIntent` early-return, and appends a one-shot synthetic message to the LLM call.
+  4. Empty-response branch (no text and no tool calls) sets state to idle and clears caption — silence, not a hardcoded apology.
+  5. Server-error branch (`/api/chat` failure) sets state to idle and surfaces a UI caption (`'Server hiccup — try again.'`) — UI text, not speech.
+  6. R-1 hotfix: barge-in `useEffect` gates on `window.VoiceBus._liveAudio === true`, so the phantom default level (`0.75` for `'speaking'`) emitted by `setState` no longer fires self-barge-in and aborts the in-flight TTS fetch.
+  7. Live test on `https://portfolio-v4-test.fly.dev/` confirms audible greet plays and audible response plays after push-to-talk.
+  8. Typecheck, vitest (12/12), and Next build are all green; lint shows only pre-existing warnings.
+**Plans**: 23-01
+
 ## Coverage
 
 Every v4.1 requirement maps to exactly one phase. Phase 21 is audit-driven follow-on work and adds no new requirements.
@@ -161,7 +177,7 @@ Every v4.1 requirement maps to exactly one phase. Phase 21 is audit-driven follo
 ## Progress
 
 **Execution Order:**
-16 → 17 → 18 → 19 → 20 → 21 → 22
+16 → 17 → 18 → 19 → 20 → 21 → 22 → 23
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -172,3 +188,4 @@ Every v4.1 requirement maps to exactly one phase. Phase 21 is audit-driven follo
 | 20. Verification and Regression Coverage | v4.1 | 1/1 | Complete | 2026-04-26 |
 | 21. Voice Audit and Wave 1 Fixes | v4.1 | 1/1 | Complete | 2026-04-26 |
 | 22. Voice Audio Serialization | v4.1 | 1/1 | Complete | 2026-04-26 |
+| 23. Dynamic Voice Output + R-1 Hotfix | v4.1 | 1/1 | Complete | 2026-04-26 |

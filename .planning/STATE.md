@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Parz Persona, Portfolio Context, and Site Control Refresh
 status: complete
-stopped_at: Phase 22 complete
-last_updated: "2026-04-26T00:50:00.000Z"
-last_activity: 2026-04-26 -- Phase 22 complete (voice audio serialization)
+stopped_at: Phase 23 complete
+last_updated: "2026-04-26T01:15:00.000Z"
+last_activity: 2026-04-26 -- Phase 23 complete (dynamic voice output + R-1 hotfix)
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 12
-  completed_plans: 12
+  total_phases: 8
+  completed_phases: 8
+  total_plans: 13
+  completed_plans: 13
   percent: 100
 ---
 
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** v4.1 milestone phases complete (incl. retroactive audit-driven Phases 21 & 22) — ready for milestone audit/completion
+**Current focus:** v4.1 milestone phases complete (incl. retroactive audit-driven Phases 21, 22, 23) — ready for milestone audit/completion
 
 ## Current Position
 
-Phase: 22
+Phase: 23
 Plan: Complete
 Status: Complete
-Last activity: 2026-04-26 -- Phase 22 complete (voice audio serialization)
+Last activity: 2026-04-26 -- Phase 23 complete (dynamic voice output + R-1 hotfix)
 
 ```
-v4.1 Progress: [████████████████████] 100% complete (7 / 7 phases)
+v4.1 Progress: [████████████████████] 100% complete (8 / 8 phases)
 ```
 
 ## Performance Metrics
@@ -46,7 +46,7 @@ v4.1 Progress: [████████████████████] 10
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 16-22 | 7 | TBD | TBD |
+| 16-23 | 8 | TBD | TBD |
 | 16 | 3 | 3 | - |
 | 17 | 2 | 2 | - |
 | 18 | 3 | - | - |
@@ -54,6 +54,7 @@ v4.1 Progress: [████████████████████] 10
 | 20 | 1 | 1 | - |
 | 21 | 1 | 1 | - |
 | 22 | 1 | 1 | - |
+| 23 | 1 | 1 | - |
 
 ## Accumulated Context
 
@@ -77,6 +78,9 @@ v4.1 Progress: [████████████████████] 10
 - [phase-22]: Single `cancelAllAudio` primitive owns all in-flight TTS teardown (BufferSource, SpeechSynthesis queue, `/api/tts` fetch via `AbortController`, RMS loop, Promise resolver). It does NOT mutate `VoiceBus.state`; the caller decides the new state.
 - [phase-22]: `BufferSource.onended` and `SpeechSynthesisUtterance.onend` now identity-check against ref-tracked current values so a cancelled handler can never reset state on top of a newer speak.
 - [phase-22]: `handleUserTurn` increments `turnGenerationRef` and bails at the post-SSE-parse checkpoint when a newer turn arrives, so Web Speech multi-final firing parallel turns ends up with only the latest dispatching tools and speaking.
+- [phase-23]: Voice output is 100% LLM-generated. Greet on open is no longer hardcoded — `handleUserTurn(trigger, { kind: 'greet' })` sends a synthetic kickoff to the LLM and speaks whatever it writes back. Empty-response and server-error fallbacks are silent (UI caption only). The trigger phrasing is a system instruction, not user-facing speech.
+- [phase-23]: Phase-22 R-1 regression hotfix shipped. `setState('speaking')` emits a fallback default level of 0.75 when `_liveAudio` is false; this exceeds the 0.35 barge-in threshold and triggered self-barge-in that aborted every TTS fetch via Phase-22's AbortController. Fix: barge-in `useEffect` now also checks `window.VoiceBus._liveAudio === true`, so phantom default-level emissions no longer fire barge-in.
+- [phase-23]: User-reported live-deploy regression ("speech isn't working") was the trigger for the R-1 fix; bundled into Phase 23 because it sits in the same file and shipping the LLM-greet without the R-1 fix would land a broken greet anyway.
 
 ### Pending Todos
 
@@ -89,12 +93,13 @@ v4.1 Progress: [████████████████████] 10
 
 ## Session Continuity
 
-Last session: Phase 22 (voice audio serialization)
-Stopped at: Phase 22 complete
-Resume file: .planning/phases/22-voice-audio-serialization/22-VERIFICATION.md
+Last session: Phase 23 (dynamic voice output + R-1 hotfix)
+Stopped at: Phase 23 complete
+Resume file: .planning/phases/23-dynamic-voice-output/23-VERIFICATION.md
 
-**Next:** Deploy to fly.io test portfolio for live verification, then run `/gsd-audit-milestone` to validate v4.1 against original intent before archiving, or `/gsd-complete-milestone` to archive v4.1 and start v4.2 for remaining Wave 2 P1 fixes.
+**Next:** Live-verify on `https://portfolio-v4-test.fly.dev/` after `fly deploy --remote-only`, then run `/gsd-audit-milestone` to validate v4.1 against original intent before archiving, or `/gsd-complete-milestone` to archive v4.1 and start v4.2 for remaining Wave 2 P1 fixes (F-05 / F-06 / F-07 / F-08 / F-09 still in `21-AUDIT.md`).
 
+**Completed Phase:** 23 (Dynamic Voice Output + R-1 Hotfix) — 1 plan — 2026-04-26T01:15:00.000Z
 **Completed Phase:** 22 (Voice Audio Serialization) — 1 plan — 2026-04-26T00:50:00.000Z
 **Completed Phase:** 21 (Voice Audit and Wave 1 Fixes) — 1 plan — 2026-04-26T00:25:00.000Z
 **Completed Phase:** 20 (Verification and Regression Coverage) — 1 plan — 2026-04-26T04:03:00.000Z
