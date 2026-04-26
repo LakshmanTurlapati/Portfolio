@@ -78,6 +78,10 @@ export function useVoiceController({
   // Refs for non-reactive mutable state
   const connectionRef = useRef<RealtimeConnection | null>(null);
   const speakingRef = useRef(false);
+  // VOICE-06: guard timer that fires if Scribe accepts the connection but never
+  // emits SESSION_STARTED. Cleared in SESSION_STARTED / AUTH_ERROR / ERROR /
+  // outer catch / cancelAllAudio. On fire: close Scribe, fall back to Web Speech.
+  const sessionGuardRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const detachMicRef = useRef<(() => void) | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const historyRef = useRef<HistoryMessage[]>([]);
@@ -227,11 +231,24 @@ export function useVoiceController({
     [toolCallbacks, goPage]
   );
 
+  // VOICE-06: clear the Scribe SESSION_STARTED guard timer if one is armed.
+  // Idempotent — safe to call from any of the five clear sites.
+  const clearSessionGuard = () => {
+    if (sessionGuardRef.current !== null) {
+      clearTimeout(sessionGuardRef.current);
+      sessionGuardRef.current = null;
+    }
+  };
+
   // cancelAllAudio — single source of truth for stopping in-flight TTS, including
   // BufferSource playback, queued SpeechSynthesis utterances, and any /api/tts fetch
   // that is still in flight. Also unblocks any awaiter on speak() so old handleUserTurn
   // calls don't hang. Does NOT change VoiceBus state — the caller decides the new state.
   const cancelAllAudio = useCallback(() => {
+    // VOICE-06: clear Scribe stall guard so a stop-while-connecting doesn't
+    // leave a 5s timer firing into a torn-down session.
+    clearSessionGuard();
+
     // Abort any in-flight /api/tts fetch so a stale .then doesn't create another source
     try { speakAbortRef.current?.abort(); } catch {}
     speakAbortRef.current = null;
