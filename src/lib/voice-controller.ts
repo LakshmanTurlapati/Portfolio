@@ -726,8 +726,19 @@ export function useVoiceController({
         },
       });
 
+      // VOICE-06: arm 5s guard against silent Scribe stall. If SESSION_STARTED
+      // never fires, close the connection and fall back to Web Speech. Set
+      // ref to null BEFORE close() to break CLOSE-handler reentrancy.
+      sessionGuardRef.current = setTimeout(() => {
+        sessionGuardRef.current = null;
+        try { connection.close(); } catch {}
+        setCaption('Speech service slow \u2014 switching to fallback');
+        startListeningFallback();
+      }, 5000);
+
       // 3. Wire transcript events
       connection.on(RealtimeEvents.SESSION_STARTED, () => {
+        clearSessionGuard();
         // Per D-06: attach VoiceBus mic AFTER session confirmed — mirrors existing r.onstart pattern
         window.VoiceBus.attachMic().then((detach: () => void) => {
           if (window.VoiceBus.state !== 'listening') { detach(); return; }
@@ -746,6 +757,7 @@ export function useVoiceController({
       });
 
       connection.on(RealtimeEvents.AUTH_ERROR, () => {
+        clearSessionGuard();
         setMicDenied(true);
         setCaption('Mic access denied. Click to retry.');
         window.VoiceBus.setState('idle');
@@ -753,6 +765,7 @@ export function useVoiceController({
       });
 
       connection.on(RealtimeEvents.ERROR, () => {
+        clearSessionGuard();
         window.VoiceBus.setState('idle');
         connection.close();
         startListeningFallback(); // per D-02: silent fallback, no user notification
@@ -768,6 +781,9 @@ export function useVoiceController({
       connectionRef.current = connection;
 
     } catch {
+      // VOICE-06: clear guard if token fetch failed (guard may not have been armed
+      // yet, but clearSessionGuard is idempotent).
+      clearSessionGuard();
       // Token fetch failed or SDK unavailable — silent fallback to Web Speech API (per D-02)
       sttCtx.close().catch(() => {});
       startListeningFallback();
