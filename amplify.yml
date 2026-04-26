@@ -8,6 +8,7 @@ frontend:
         # Amplify Console env vars are available at build time but NOT at Lambda runtime
         # Writing them to .env.production bundles them with the server-side code
         - echo "XAI_API_KEY=$XAI_API_KEY" >> .env.production
+        - echo "ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY" >> .env.production
     build:
       commands:
         - npm run build
