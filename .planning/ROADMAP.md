@@ -9,7 +9,7 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
 - ✅ **v1.0 Migration** - Phases 1-4 (shipped / partially carried forward in historical roadmap)
 - ✅ **v3 Portfolio Redesign** - Phases 5-11 (shipped)
 - ✅ **v4.0 Voice Mode Production** - Phases 12-15 (shipped 2026-04-26)
-- 🚧 **v4.1 Parz Persona, Portfolio Context, and Site Control Refresh** - Phases 16-23 (Phases 16-20 shipped 2026-04-26; Phases 21-23 are audit-driven follow-on)
+- 🚧 **v4.1 Parz Persona, Portfolio Context, and Site Control Refresh** - Phases 16-24 (Phases 16-20 shipped 2026-04-26; Phases 21-24 are audit-driven follow-on + mobile / safe-area pass)
 
 ## Phases
 
@@ -21,6 +21,7 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
 - [x] **Phase 21: Voice Audit and Wave 1 Fixes** - Voice pipeline audited end-to-end (17 findings); hardcoded tour scaffolding removed so the LLM drives walkthroughs entirely through existing tool calls; Wave 1 P0 fixes shipped (SSE chunk-boundary buffer, `prefers-reduced-motion` barge-in, Space-bar hijack guard). (completed 2026-04-26)
 - [x] **Phase 22: Voice Audio Serialization** - Centralised `cancelAllAudio` primitive plus `AbortController` and turn-generation counter eliminate the five overlap modes (O-1..O-5) where two TTS streams could play simultaneously. (completed 2026-04-26)
 - [x] **Phase 23: Dynamic Voice Output + R-1 hotfix** - Removed all three hardcoded `speak()` calls (greet, empty-response, server-error); greet is now LLM-generated via a synthetic kickoff turn. Bundled hotfix for the Phase-22 R-1 regression where `setState('speaking')` emitted a phantom default level that triggered self-barge-in and aborted every TTS fetch. (completed 2026-04-26)
+- [x] **Phase 24: Mobile Pass + Voice Stabilization** - Voice TTS unstick (pre-warm AudioContext, await resume, exit thinking on tool-only response); mobile navbar overhaul (variant-aware AskParz, portfolio image clipping, compact voice panel); iOS safe-area inset support (viewport-fit=cover + top/bottom safe-area on all fixed mobile elements); diagnostic API logging cleanup. (completed 2026-04-26)
 
 ## Phase Details
 
@@ -131,6 +132,22 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
   8. Typecheck, vitest (12/12), and Next build are all green; lint shows only pre-existing warnings.
 **Plans**: 23-01
 
+### Phase 24: Mobile Pass + Voice Stabilization
+**Goal**: Land three follow-ons after Phase 23 deployed: finish unsticking TTS so Parz actually plays audio, make the mobile site feel right (navbar overlap, iOS safe-area, compact voice panel), and remove the temporary diagnostic API logging
+**Depends on**: Phase 23
+**Requirements**: None — stabilization + polish, no new milestone requirements
+**Success Criteria** (what must be TRUE):
+  1. Voice TTS plays reliably on the live deploy: Parz greet is audible on open, Parz response is audible after push-to-talk, no more "keeps thinking" hang.
+  2. `open()` pre-warms `window.VoiceBus._getCtx()` synchronously inside the click gesture frame; `streamTTS` awaits `ctx.resume()` if `ctx.state === 'suspended'`; the empty-text branch of `handleUserTurn` always resets state to idle (not gated on `toolCalls.length === 0`).
+  3. `AskParzButton` accepts `variant: 'desktop' | 'mobile'`. Mobile variant uses `position: relative`, hides the "Parz" label, and `padding: 0 10px`. Desktop unchanged.
+  4. `PortfolioButton` mobile renders `<Image width=64 height=16>` inside an `overflow-hidden` button so the scaled image never bleeds past its slot.
+  5. `VoicePanel` + `VoiceWave` accept a `compact` prop. Mobile contexts (mobile-navbar voice slot, mobile voice-overlay) pass it.
+  6. `app/layout.tsx` exports `viewport` with `viewportFit: 'cover'`, enabling iOS to surface `env(safe-area-inset-*)`.
+  7. Mobile navbar bottom and mobile voice-overlay bottom use `max(20px, env(safe-area-inset-bottom))`. Mobile AuthorName + ThemeToggle wrappers use `top: calc(env(safe-area-inset-top) + 20px)`.
+  8. Diagnostic `console.warn` request-trace logging removed from `/api/chat`, `/api/tts`, `/api/stt-token` (added during diagnosis, no longer needed).
+  9. Typecheck, vitest (12/12), and Next build are all green; lint shows only pre-existing warnings.
+**Plans**: 24-01
+
 ## Coverage
 
 Every v4.1 requirement maps to exactly one phase. Phase 21 is audit-driven follow-on work and adds no new requirements.
@@ -177,7 +194,7 @@ Every v4.1 requirement maps to exactly one phase. Phase 21 is audit-driven follo
 ## Progress
 
 **Execution Order:**
-16 → 17 → 18 → 19 → 20 → 21 → 22 → 23
+16 → 17 → 18 → 19 → 20 → 21 → 22 → 23 → 24
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -189,3 +206,4 @@ Every v4.1 requirement maps to exactly one phase. Phase 21 is audit-driven follo
 | 21. Voice Audit and Wave 1 Fixes | v4.1 | 1/1 | Complete | 2026-04-26 |
 | 22. Voice Audio Serialization | v4.1 | 1/1 | Complete | 2026-04-26 |
 | 23. Dynamic Voice Output + R-1 Hotfix | v4.1 | 1/1 | Complete | 2026-04-26 |
+| 24. Mobile Pass + Voice Stabilization | v4.1 | 1/1 | Complete | 2026-04-26 |

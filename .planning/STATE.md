@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Parz Persona, Portfolio Context, and Site Control Refresh
 status: complete
-stopped_at: Phase 23 complete
-last_updated: "2026-04-26T01:15:00.000Z"
-last_activity: 2026-04-26 -- Phase 23 complete (dynamic voice output + R-1 hotfix)
+stopped_at: Phase 24 complete
+last_updated: "2026-04-26T07:10:00.000Z"
+last_activity: 2026-04-26 -- Phase 24 complete (mobile pass + voice stabilization)
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 13
-  completed_plans: 13
+  total_phases: 9
+  completed_phases: 9
+  total_plans: 14
+  completed_plans: 14
   percent: 100
 ---
 
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** v4.1 milestone phases complete (incl. retroactive audit-driven Phases 21, 22, 23) — ready for milestone audit/completion
+**Current focus:** v4.1 milestone phases complete (incl. retroactive audit-driven Phases 21-24) — ready for milestone archive
 
 ## Current Position
 
-Phase: 23
+Phase: 24
 Plan: Complete
 Status: Complete
-Last activity: 2026-04-26 -- Phase 23 complete (dynamic voice output + R-1 hotfix)
+Last activity: 2026-04-26 -- Phase 24 complete (mobile pass + voice stabilization)
 
 ```
-v4.1 Progress: [████████████████████] 100% complete (8 / 8 phases)
+v4.1 Progress: [████████████████████] 100% complete (9 / 9 phases)
 ```
 
 ## Performance Metrics
@@ -46,7 +46,7 @@ v4.1 Progress: [████████████████████] 10
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 16-23 | 8 | TBD | TBD |
+| 16-24 | 9 | TBD | TBD |
 | 16 | 3 | 3 | - |
 | 17 | 2 | 2 | - |
 | 18 | 3 | - | - |
@@ -55,6 +55,7 @@ v4.1 Progress: [████████████████████] 10
 | 21 | 1 | 1 | - |
 | 22 | 1 | 1 | - |
 | 23 | 1 | 1 | - |
+| 24 | 1 | 1 | - |
 
 ## Accumulated Context
 
@@ -81,6 +82,10 @@ v4.1 Progress: [████████████████████] 10
 - [phase-23]: Voice output is 100% LLM-generated. Greet on open is no longer hardcoded — `handleUserTurn(trigger, { kind: 'greet' })` sends a synthetic kickoff to the LLM and speaks whatever it writes back. Empty-response and server-error fallbacks are silent (UI caption only). The trigger phrasing is a system instruction, not user-facing speech.
 - [phase-23]: Phase-22 R-1 regression hotfix shipped. `setState('speaking')` emits a fallback default level of 0.75 when `_liveAudio` is false; this exceeds the 0.35 barge-in threshold and triggered self-barge-in that aborted every TTS fetch via Phase-22's AbortController. Fix: barge-in `useEffect` now also checks `window.VoiceBus._liveAudio === true`, so phantom default-level emissions no longer fire barge-in.
 - [phase-23]: User-reported live-deploy regression ("speech isn't working") was the trigger for the R-1 fix; bundled into Phase 23 because it sits in the same file and shipping the LLM-greet without the R-1 fix would land a broken greet anyway.
+- [phase-24]: Voice TTS unstick — three layered fixes. Pre-warm `VoiceBus._getCtx()` synchronously inside `open()`'s click frame so AudioContext is created in user-gesture context. Await `ctx.resume()` in `streamTTS` if state is suspended. Always exit 'thinking' on empty-text response (was gated on `toolCalls.length === 0`, hung on tool-only responses).
+- [phase-24]: Mobile navbar — `AskParzButton` got a `variant: 'desktop' | 'mobile'` prop because the desktop `position: absolute right: 132 top-1/2` was escaping the mobile flex slot. Mobile variant is `position: relative`, label hidden, padding compact. `PortfolioButton` mobile image reduced from 112×28 to 64×16 with `overflow-hidden` on the inner button (was bleeding into "About Me" via `scale-[1.4]`).
+- [phase-24]: iOS safe-area required `viewport: { viewportFit: 'cover' }` in `app/layout.tsx`. Without that meta, iOS Safari refuses to expose `env(safe-area-inset-*)` and every safe-area formula in the project resolves to 0. Phase 22's safe-area-inset-bottom on the mobile navbar wasn't actually engaging until Phase 24 added this.
+- [phase-24]: Diagnostic `console.warn` request-trace logging on `/api/chat`, `/api/tts`, `/api/stt-token` was added during the TTS-unstick diagnosis (commit 6960de3) and removed in this phase. Server-side was confirmed healthy; the bug was client-side AudioContext autoplay policy.
 
 ### Pending Todos
 
@@ -93,12 +98,13 @@ v4.1 Progress: [████████████████████] 10
 
 ## Session Continuity
 
-Last session: Phase 23 (dynamic voice output + R-1 hotfix)
-Stopped at: Phase 23 complete
-Resume file: .planning/phases/23-dynamic-voice-output/23-VERIFICATION.md
+Last session: Phase 24 (mobile pass + voice stabilization)
+Stopped at: Phase 24 complete
+Resume file: .planning/phases/24-mobile-pass-and-voice-stabilization/24-VERIFICATION.md
 
-**Next:** Live-verify on `https://portfolio-v4-test.fly.dev/` after `fly deploy --remote-only`, then run `/gsd-audit-milestone` to validate v4.1 against original intent before archiving, or `/gsd-complete-milestone` to archive v4.1 and start v4.2 for remaining Wave 2 P1 fixes (F-05 / F-06 / F-07 / F-08 / F-09 still in `21-AUDIT.md`).
+**Next:** v4.1 milestone is functionally done and live on `https://portfolio-v4-test.fly.dev/`. Run `/gsd-complete-milestone` to archive v4.1. Wave 2 P1 fixes (F-05 / F-06 / F-07 / F-08 / F-09 in `21-AUDIT.md`) carry into a future milestone if voice hardening continues.
 
+**Completed Phase:** 24 (Mobile Pass + Voice Stabilization) — 1 plan — 2026-04-26T07:10:00.000Z
 **Completed Phase:** 23 (Dynamic Voice Output + R-1 Hotfix) — 1 plan — 2026-04-26T01:15:00.000Z
 **Completed Phase:** 22 (Voice Audio Serialization) — 1 plan — 2026-04-26T00:50:00.000Z
 **Completed Phase:** 21 (Voice Audit and Wave 1 Fixes) — 1 plan — 2026-04-26T00:25:00.000Z
