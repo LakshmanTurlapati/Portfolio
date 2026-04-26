@@ -498,6 +498,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
         <div
           style={{
             padding: '8px 16px 16px',
+            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
             flexShrink: 0,
           }}
         >
@@ -505,9 +506,17 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
             <input
               ref={inputRef}
               type="text"
+              inputMode="text"
+              enterKeyHint="send"
+              autoComplete="off"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={() => {
+                setTimeout(() => {
+                  inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }, 300);
+              }}
               placeholder="Talk to my persona!"
               disabled={isLoading}
               style={{
