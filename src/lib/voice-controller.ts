@@ -282,6 +282,13 @@ export function useVoiceController({
             if (ac.signal.aborted) return;
             const ctx = window.VoiceBus._getCtx();
             if (!ctx) throw new Error('AudioContext unavailable');
+            // Phase 23 hotfix: actually await resume() before using the context.
+            // _getCtx fires resume() but doesn't await it — if the context is still
+            // suspended when source.start() runs, audio plays silently and onended
+            // never fires, hanging the speak Promise.
+            if (ctx.state === 'suspended') {
+              try { await ctx.resume(); } catch {}
+            }
             const decoded = await ctx.decodeAudioData(buffer);
             if (ac.signal.aborted) return;
 
@@ -559,11 +566,14 @@ export function useVoiceController({
         }
 
         // Speak the text response (if any). Phase 23: removed the empty-response
-        // hardcoded fallback. If Grok returns no text and no tools, we go silent —
-        // every word the user hears is now LLM-generated or nothing at all.
+        // hardcoded fallback. If Grok returns no text (whether or not tools fired),
+        // we go silent — every word the user hears is LLM-generated or nothing at
+        // all. Phase 23 hotfix: the `else` branch (was previously gated on
+        // `toolCalls.length === 0`) now always runs when there's no text, so state
+        // never hangs at 'thinking' for tool-only responses.
         if (clean) {
           await speak(clean);
-        } else if (toolCalls.length === 0) {
+        } else {
           window.VoiceBus.setState('idle');
           setCaption('');
         }
@@ -768,10 +778,20 @@ export function useVoiceController({
   // navbar morph settles. Phase 22: guard the timer so a fast user doesn't hear
   // the greet overlap their answer (mode O-2). Phase 23: the greet is no longer
   // hardcoded — handleUserTurn(trigger, { kind: 'greet' }) sends a synthetic
-  // kickoff instruction to the LLM and speaks whatever Parz writes back. The
-  // trigger is a prompt, not user-facing speech.
+  // kickoff instruction to the LLM and speaks whatever Parz writes back.
+  //
+  // Phase 23 hotfix: pre-warm the VoiceBus AudioContext synchronously inside
+  // the click gesture frame. Without this, the first speak()'s streamTTS tries
+  // to create the context inside its fetch .then chain — long after the click
+  // gesture has expired — and the browser autoplay policy keeps the context
+  // suspended. A suspended context lets source.start() succeed silently but
+  // never fires onended, so state hangs in 'speaking' and Parz appears mute.
+  // Calling _getCtx() inside the gesture creates (or resumes) the context now.
   const open = useCallback(() => {
     setActive(true);
+    if (typeof window !== 'undefined' && window.VoiceBus) {
+      try { window.VoiceBus._getCtx(); } catch {}
+    }
     setTimeout(() => {
       if (!activeRef.current) return;
       if (speakingRef.current) return;
