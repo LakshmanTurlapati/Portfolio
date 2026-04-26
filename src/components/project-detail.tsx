@@ -102,12 +102,12 @@ export function ProjectDetail({ project, isDark, onClose, onOpenLink }: ProjectD
             )}
           </div>
 
-          <h1 className="text-[56px] leading-[1.02] font-normal tracking-[-0.02em] m-0 mb-3 font-[family-name:var(--font-instrument-serif)]">
+          <h1 className="text-[40px] md:text-[44px] lg:text-[56px] leading-[1.02] font-normal tracking-[-0.02em] m-0 mb-3 font-[family-name:var(--font-instrument-serif)]">
             {project.name}
           </h1>
 
           {detail.tagline && (
-            <p className="text-[18px] leading-[1.5] opacity-[0.72] m-0 mb-6 max-w-[62ch]">
+            <p className="text-[16px] lg:text-[18px] leading-[1.5] opacity-[0.72] m-0 mb-6 max-w-[62ch]">
               {detail.tagline}
             </p>
           )}
@@ -175,21 +175,20 @@ export function ProjectDetail({ project, isDark, onClose, onOpenLink }: ProjectD
         {/* Body */}
         <div className="px-4 md:px-8 lg:px-14 pb-10">
           {detail.overview && (
-            <p className="text-[22px] leading-[1.45] opacity-[0.92] mb-8 max-w-[62ch] font-[family-name:var(--font-instrument-serif)]">{detail.overview}</p>
+            <p className="text-[19px] lg:text-[22px] leading-[1.45] opacity-[0.92] mb-8 max-w-[62ch] font-[family-name:var(--font-instrument-serif)]">{detail.overview}</p>
           )}
 
           {detail.stats && detail.stats.length > 0 && (
             <div
-              className="grid gap-4 mb-8 py-5"
+              className="grid grid-cols-2 md:grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4 mb-8 py-5"
               style={{
-                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
                 borderTop: `1px solid ${isDark ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'}`,
                 borderBottom: `1px solid ${isDark ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'}`,
               }}
             >
               {detail.stats.map((s, i) => (
                 <div key={i}>
-                  <div className="text-[28px] leading-none tracking-[-0.01em] mb-1.5 font-[family-name:var(--font-instrument-serif)] font-normal">{s.value}</div>
+                  <div className="text-[24px] md:text-[28px] leading-none tracking-[-0.01em] mb-1.5 font-[family-name:var(--font-instrument-serif)] font-normal">{s.value}</div>
                   <div
                     className="text-[10px] uppercase tracking-[0.12em] opacity-55"
                     style={{ fontFamily: "'JetBrains Mono', 'Space Mono', monospace" }}
