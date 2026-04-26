@@ -2,14 +2,14 @@
 
 ## Overview
 
-v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing path, and global site-control experience. The milestone starts from the shipped v4.0 voice/control foundation and continues phase numbering at Phase 16. The work first aligns public-safe facts and visible content, then replaces project-detail detours with direct inbuilt-browser opening, expands Parz's site controls, adds an FSB-inspired control overlay, and locks the behavior with Vitest and Playwright coverage.
+v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing path, and global site-control experience. The milestone starts from the shipped v4.0 voice/control foundation and continues phase numbering at Phase 16. The work first aligns public-safe facts and visible content, then replaces project-detail detours with direct inbuilt-browser opening, expands Parz's site controls, adds an FSB-inspired control overlay, locks the behavior with Vitest and Playwright coverage, and (Phase 21, retroactively filed) audits the voice pipeline end-to-end and ships Wave 1 P0 fixes.
 
 ## Milestones
 
 - ✅ **v1.0 Migration** - Phases 1-4 (shipped / partially carried forward in historical roadmap)
 - ✅ **v3 Portfolio Redesign** - Phases 5-11 (shipped)
 - ✅ **v4.0 Voice Mode Production** - Phases 12-15 (shipped 2026-04-26)
-- 🚧 **v4.1 Parz Persona, Portfolio Context, and Site Control Refresh** - Phases 16-20 (planned)
+- 🚧 **v4.1 Parz Persona, Portfolio Context, and Site Control Refresh** - Phases 16-22 (Phases 16-20 shipped 2026-04-26; Phases 21-22 are audit-driven follow-on)
 
 ## Phases
 
@@ -18,6 +18,8 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
 - [x] **Phase 18: Global Parz Site Control** - Parz can navigate, scroll, open projects, and operate feasible viewer shell actions from any page. (completed 2026-04-26)
 - [x] **Phase 19: FSB-Inspired Control Overlay** - Users see a monochrome control overlay and powered-by-FSB badge during real Parz control actions. (completed 2026-04-26)
 - [x] **Phase 20: Verification and Regression Coverage** - Evals and E2E tests prove persona, safety, content parity, target resolution, and site-control behavior. (completed 2026-04-26)
+- [x] **Phase 21: Voice Audit and Wave 1 Fixes** - Voice pipeline audited end-to-end (17 findings); hardcoded tour scaffolding removed so the LLM drives walkthroughs entirely through existing tool calls; Wave 1 P0 fixes shipped (SSE chunk-boundary buffer, `prefers-reduced-motion` barge-in, Space-bar hijack guard). (completed 2026-04-26)
+- [x] **Phase 22: Voice Audio Serialization** - Centralised `cancelAllAudio` primitive plus `AbortController` and turn-generation counter eliminate the five overlap modes (O-1..O-5) where two TTS streams could play simultaneously. (completed 2026-04-26)
 
 ## Phase Details
 
@@ -84,9 +86,38 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
   5. Developer can run Playwright E2E tests showing Parz navigates, scrolls, opens a project in the inbuilt browser, and displays the FSB overlay/badge during control actions.
 **Plans**: TBD
 
+### Phase 21: Voice Audit and Wave 1 Fixes
+**Goal**: Voice pipeline is audited end-to-end with a written deliverable, the hardcoded tour scaffolding is removed so the LLM drives walkthroughs entirely through existing tool calls, and the four P0 user-visible bugs from the audit are shipped or structurally obsoleted
+**Depends on**: Phase 20 (uses the same Vitest contract suite for regression coverage)
+**Requirements**: None — audit-driven bug-fix work, no new milestone requirements
+**Success Criteria** (what must be TRUE):
+  1. `21-AUDIT.md` exists with executive summary, pipeline diagram, 17 severity-tagged findings (P0-P3), per-finding `file:line` references, repro steps, and a false-positives section.
+  2. There are no hardcoded tour triggers anywhere in `src/` — the LLM is told (via chat-route instructions) to drive walkthroughs one step at a time using existing `navigate` / `openProject` / `scrollTo` tools, paced by user input.
+  3. The only remaining hardcoded trigger in the voice path is `isStopIntent`, justified by instant-abort UX (no network round-trip).
+  4. F-01 (SSE chunk-boundary buffer) is shipped — JSON events that span reads are no longer dropped.
+  5. F-03 (barge-in vs `prefers-reduced-motion`) is shipped — a11y users can interrupt Parz mid-sentence.
+  6. F-04 (Space-bar hijack) is shipped — typing in any input field is no longer broken while voice is active.
+  7. F-02 is structurally obsoleted by the tour rip-out (no `startTour()` to fire-and-forget).
+  8. Typecheck, vitest (12/12), and Next build are all green; lint shows only pre-existing warnings.
+**Plans**: 21-01
+
+### Phase 22: Voice Audio Serialization
+**Goal**: Eliminate concurrent / overlapping TTS in voice mode by introducing a single cancellation primitive and dedupe primitive across every audio entry point
+**Depends on**: Phase 21 (audit catalogues the modes; this phase fixes them)
+**Requirements**: None — audit-driven bug-fix work, no new milestone requirements
+**Success Criteria** (what must be TRUE):
+  1. A `cancelAllAudio()` helper exists in `voice-controller.ts` and is the single source of truth for stopping in-flight TTS (BufferSource, SpeechSynthesis, fetch, RMS loop, Promise resolver).
+  2. `streamTTS` calls `cancelAllAudio` at entry and uses an `AbortController` for the `/api/tts` fetch so cancellation aborts the network request, not just the audio source.
+  3. `BufferSource.onended` and `SpeechSynthesisUtterance.onend` / `onerror` identity-check via refs so a cancelled handler can never reset state on top of a newer speak.
+  4. `handleUserTurn` calls `cancelAllAudio` on entry (closes O-4) and bumps a `turnGenerationRef` whose stale-turn checkpoint after SSE parse causes older parallel turns to bail (closes O-3).
+  5. `open()` greet timer body has guards for closed voice, in-flight speak, and `VoiceBus.state !== 'idle'` (closes O-2).
+  6. `bargeIn` and `stopAll` both delegate audio teardown to `cancelAllAudio` (closes O-1, O-5).
+  7. Typecheck, vitest (12/12), and Next build are all green; lint shows only pre-existing warnings.
+**Plans**: 22-01
+
 ## Coverage
 
-Every v4.1 requirement maps to exactly one phase.
+Every v4.1 requirement maps to exactly one phase. Phase 21 is audit-driven follow-on work and adds no new requirements.
 
 | Requirement | Phase |
 |-------------|-------|
@@ -130,7 +161,7 @@ Every v4.1 requirement maps to exactly one phase.
 ## Progress
 
 **Execution Order:**
-16 → 17 → 18 → 19 → 20
+16 → 17 → 18 → 19 → 20 → 21 → 22
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -139,3 +170,5 @@ Every v4.1 requirement maps to exactly one phase.
 | 18. Global Parz Site Control | v4.1 | 3/3 | Complete    | 2026-04-26 |
 | 19. FSB-Inspired Control Overlay | v4.1 | 1/1 | Complete | 2026-04-26 |
 | 20. Verification and Regression Coverage | v4.1 | 1/1 | Complete | 2026-04-26 |
+| 21. Voice Audit and Wave 1 Fixes | v4.1 | 1/1 | Complete | 2026-04-26 |
+| 22. Voice Audio Serialization | v4.1 | 1/1 | Complete | 2026-04-26 |

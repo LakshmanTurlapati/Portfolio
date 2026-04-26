@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Parz Persona, Portfolio Context, and Site Control Refresh
 status: complete
-stopped_at: Phase 20 complete
-last_updated: "2026-04-26T04:03:00.000Z"
-last_activity: 2026-04-26 -- Phase 20 complete
+stopped_at: Phase 22 complete
+last_updated: "2026-04-26T00:50:00.000Z"
+last_activity: 2026-04-26 -- Phase 22 complete (voice audio serialization)
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 10
-  completed_plans: 10
+  total_phases: 7
+  completed_phases: 7
+  total_plans: 12
+  completed_plans: 12
   percent: 100
 ---
 
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** v4.1 milestone phases complete — ready for milestone audit/completion
+**Current focus:** v4.1 milestone phases complete (incl. retroactive audit-driven Phases 21 & 22) — ready for milestone audit/completion
 
 ## Current Position
 
-Phase: 20
+Phase: 22
 Plan: Complete
 Status: Complete
-Last activity: 2026-04-26 -- Phase 20 complete
+Last activity: 2026-04-26 -- Phase 22 complete (voice audio serialization)
 
 ```
-v4.1 Progress: [████████████████████] 100% complete
+v4.1 Progress: [████████████████████] 100% complete (7 / 7 phases)
 ```
 
 ## Performance Metrics
@@ -46,12 +46,14 @@ v4.1 Progress: [████████████████████] 10
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 16-20 | 5 | TBD | TBD |
+| 16-22 | 7 | TBD | TBD |
 | 16 | 3 | 3 | - |
 | 17 | 2 | 2 | - |
 | 18 | 3 | - | - |
 | 19 | 1 | 1 | - |
 | 20 | 1 | 1 | - |
+| 21 | 1 | 1 | - |
+| 22 | 1 | 1 | - |
 
 ## Accumulated Context
 
@@ -68,6 +70,13 @@ v4.1 Progress: [████████████████████] 10
 - [phase-19]: FSB overlay is pointer-safe, monochrome, and uses exact badge copy `powered by FSB` while preserving browser, voice, nav, and scroll controls.
 - [phase-20]: v4.1 verification uses deterministic local Vitest contract tests and a focused Playwright E2E test instead of live Grok, ElevenLabs, Amplify, or custom-domain dependencies.
 - [phase-20]: Playwright runs the portfolio dev server on port 3100 to avoid accidentally reusing unrelated local apps on port 3000.
+- [phase-21]: No hardcoded tour. Tours are LLM-driven via existing `navigate` / `openProject` / `scrollTo` tool calls, paced one step per turn through chat-route instructions. The only remaining hardcoded trigger in the voice path is `isStopIntent`, kept for instant abort without a network round-trip.
+- [phase-21]: Filed retroactively after the user authorized off-roadmap edits ("continue the wave in autonomous mode"). The audit deliverable was produced before the plan; plan and summary describe the work as it actually happened.
+- [phase-21]: Wave 2 (P1 audit findings — STT/TTS timeouts, callback registration, exception wrapping, openTextChat 400ms race) is intentionally out of scope. Tracked in `21-AUDIT.md` for a future phase.
+- [phase-22]: User reported "overlapping voices" after Phase 21 shipped; second mini-audit catalogued five overlap modes (O-1..O-5, see `22-AUDIT.md`) — none of which were touched by Wave 1.
+- [phase-22]: Single `cancelAllAudio` primitive owns all in-flight TTS teardown (BufferSource, SpeechSynthesis queue, `/api/tts` fetch via `AbortController`, RMS loop, Promise resolver). It does NOT mutate `VoiceBus.state`; the caller decides the new state.
+- [phase-22]: `BufferSource.onended` and `SpeechSynthesisUtterance.onend` now identity-check against ref-tracked current values so a cancelled handler can never reset state on top of a newer speak.
+- [phase-22]: `handleUserTurn` increments `turnGenerationRef` and bails at the post-SSE-parse checkpoint when a newer turn arrives, so Web Speech multi-final firing parallel turns ends up with only the latest dispatching tools and speaking.
 
 ### Pending Todos
 
@@ -80,13 +89,14 @@ v4.1 Progress: [████████████████████] 10
 
 ## Session Continuity
 
-Last session: /gsd-autonomous --only 20
-Stopped at: Phase 20 complete
-Resume file: .planning/phases/20-verification-and-regression-coverage/20-VERIFICATION.md
+Last session: Phase 22 (voice audio serialization)
+Stopped at: Phase 22 complete
+Resume file: .planning/phases/22-voice-audio-serialization/22-VERIFICATION.md
 
-**Next:** Run `/gsd-autonomous` without `--only` to trigger milestone audit/complete/cleanup, or run `/gsd-audit-milestone`.
+**Next:** Deploy to fly.io test portfolio for live verification, then run `/gsd-audit-milestone` to validate v4.1 against original intent before archiving, or `/gsd-complete-milestone` to archive v4.1 and start v4.2 for remaining Wave 2 P1 fixes.
 
-**Planned Phase:** 20 (Verification and Regression Coverage) — 1 plans — 2026-04-26T03:58:41.105Z
-**Completed Phase:** 20 (Verification and Regression Coverage) — 1 plans — 2026-04-26T04:03:00.000Z
-**Completed Phase:** 19 (FSB-Inspired Control Overlay) — 1 plans — 2026-04-26T03:45:00.000Z
+**Completed Phase:** 22 (Voice Audio Serialization) — 1 plan — 2026-04-26T00:50:00.000Z
+**Completed Phase:** 21 (Voice Audit and Wave 1 Fixes) — 1 plan — 2026-04-26T00:25:00.000Z
+**Completed Phase:** 20 (Verification and Regression Coverage) — 1 plan — 2026-04-26T04:03:00.000Z
+**Completed Phase:** 19 (FSB-Inspired Control Overlay) — 1 plan — 2026-04-26T03:45:00.000Z
 **Completed Phase:** 17 (Direct Inbuilt Project Browser) — 2 plans — 2026-04-26T03:25:00.000Z
