@@ -50,9 +50,9 @@ Requirements for the current milestone. Each maps to exactly one roadmap phase.
 
 ### FSB-Inspired Control Overlay
 
-- [ ] **FSB-01**: User sees a monochrome FSB-inspired overlay while Parz is actively navigating, opening a project, scrolling, or controlling the browser shell.
-- [ ] **FSB-02**: User sees a small bottom-left `powered by FSB` badge during Parz control actions.
-- [ ] **FSB-03**: The overlay does not block core controls such as closing the inbuilt browser, voice controls, page navigation, or user scrolling.
+- [x] **FSB-01**: User sees a monochrome FSB-inspired overlay while Parz is actively navigating, opening a project, scrolling, or controlling the browser shell.
+- [x] **FSB-02**: User sees a small bottom-left `powered by FSB` badge during Parz control actions.
+- [x] **FSB-03**: The overlay does not block core controls such as closing the inbuilt browser, voice controls, page navigation, or user scrolling.
 
 ### Evaluation and Verification
 
@@ -125,9 +125,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CTRL-03 | Phase 18 | Complete |
 | CTRL-04 | Phase 18 | Complete |
 | CTRL-05 | Phase 18 | Complete |
-| FSB-01 | Phase 19 | Pending |
-| FSB-02 | Phase 19 | Pending |
-| FSB-03 | Phase 19 | Pending |
+| FSB-01 | Phase 19 | Complete |
+| FSB-02 | Phase 19 | Complete |
+| FSB-03 | Phase 19 | Complete |
 | EVAL-01 | Phase 20 | Pending |
 | EVAL-02 | Phase 20 | Pending |
 | EVAL-03 | Phase 20 | Pending |

@@ -16,7 +16,7 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
 - [x] **Phase 16: Public-Safe Persona and Content Refresh** - Parz, About, Experience, and flagship project content share the same approved public facts and guardrails. (completed 2026-04-26)
 - [x] **Phase 17: Direct Inbuilt Project Browser** - Manual project clicks resolve approved targets and open directly in the inbuilt browser without the right-side ProjectDetail path. (completed 2026-04-26)
 - [x] **Phase 18: Global Parz Site Control** - Parz can navigate, scroll, open projects, and operate feasible viewer shell actions from any page. (completed 2026-04-26)
-- [ ] **Phase 19: FSB-Inspired Control Overlay** - Users see a monochrome control overlay and powered-by-FSB badge during real Parz control actions.
+- [x] **Phase 19: FSB-Inspired Control Overlay** - Users see a monochrome control overlay and powered-by-FSB badge during real Parz control actions. (completed 2026-04-26)
 - [ ] **Phase 20: Verification and Regression Coverage** - Evals and E2E tests prove persona, safety, content parity, target resolution, and site-control behavior.
 
 ## Phase Details
@@ -44,7 +44,7 @@ v4.1 refreshes Parz's public-facing brain, portfolio facts, project browsing pat
   3. Project openings prefer the correct public target: public GitHub for open-source projects, public website for products like GitFly, and existing fallback handling for unembeddable hosts.
   4. User sees a clean fallback when a project target is unknown, blocked, or unembeddable instead of a broken browser view.
   5. Project and link opens resolve through approved local records or allowlisted URLs, not arbitrary model-generated destinations.
-**Plans**: TBD
+**Plans**: 19-01
 **UI hint**: yes
 
 ### Phase 18: Global Parz Site Control
@@ -137,5 +137,5 @@ Every v4.1 requirement maps to exactly one phase.
 | 16. Public-Safe Persona and Content Refresh | v4.1 | 3/3 | Complete    | 2026-04-26 |
 | 17. Direct Inbuilt Project Browser | v4.1 | 2/2 | Complete | 2026-04-26 |
 | 18. Global Parz Site Control | v4.1 | 3/3 | Complete    | 2026-04-26 |
-| 19. FSB-Inspired Control Overlay | v4.1 | 0/TBD | Not started | - |
+| 19. FSB-Inspired Control Overlay | v4.1 | 1/1 | Complete | 2026-04-26 |
 | 20. Verification and Regression Coverage | v4.1 | 0/TBD | Not started | - |
