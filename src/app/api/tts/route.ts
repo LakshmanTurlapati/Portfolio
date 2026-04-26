@@ -8,9 +8,7 @@ import { hasEnvVar } from '@/lib/env';
 const ALLOWED_VOICE_ID = 'dMWVPH9DSxWOMrrrUso3'; // per D-02, locked
 
 export async function POST(req: Request) {
-  const t0 = Date.now();
   if (!hasEnvVar('ELEVENLABS_API_KEY')) {
-    console.warn('[tts] 503 — ELEVENLABS_API_KEY missing');
     return new Response(
       JSON.stringify({ error: 'TTS not configured' }),
       { status: 503, headers: { 'Content-Type': 'application/json' } }
@@ -26,21 +24,17 @@ export async function POST(req: Request) {
     // Security: allowlist voice ID per D-02 threat mitigation
     if (voiceId !== ALLOWED_VOICE_ID) voiceId = ALLOWED_VOICE_ID;
     if (!text) {
-      console.warn('[tts] 400 — empty text');
       return new Response(
         JSON.stringify({ error: 'text is required' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
   } catch {
-    console.warn('[tts] 400 — invalid body');
     return new Response(
       JSON.stringify({ error: 'Invalid request body' }),
       { status: 400, headers: { 'Content-Type': 'application/json' } }
     );
   }
-
-  console.warn(`[tts] in: chars=${text.length} text="${text.slice(0, 60)}"`);
 
   try {
     const client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY });
@@ -51,12 +45,10 @@ export async function POST(req: Request) {
       outputFormat: 'mp3_44100_128',
     });
 
-    console.warn(`[tts] out: streaming, ${Date.now() - t0}ms`);
     return new Response(audioStream as ReadableStream, {
       headers: { 'Content-Type': 'audio/mpeg' },
     });
-  } catch (err) {
-    console.warn(`[tts] error after ${Date.now() - t0}ms:`, err instanceof Error ? err.message : err);
+  } catch {
     return new Response(
       JSON.stringify({ error: 'TTS failed' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
