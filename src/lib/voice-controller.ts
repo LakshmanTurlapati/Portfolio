@@ -413,9 +413,27 @@ export function useVoiceController({
               }
               resolve();
             };
-            u.onend = finishSynth;
-            u.onerror = finishSynth;
+            // VOICE-07: wrap onend/onerror to clear the worst-case guard before
+            // calling finishSynth. Identity check inside finishSynth is the final
+            // safety net if both fire (RESEARCH.md Pitfall 3).
+            const wrappedFinishSynth = () => {
+              clearSynthGuard();
+              finishSynth();
+            };
+            u.onend = wrappedFinishSynth;
+            u.onerror = wrappedFinishSynth;
             speakingRef.current = true;
+            // VOICE-07: worst-case timeout (50ms/char, 1s floor, 30s cap).
+            // Some browsers (notably Safari with disabled synth) silently no-op
+            // synth.speak() and never fire onend/onerror -- this guard ensures
+            // finishSynth is called and the speak() Promise resolves. Cleared by
+            // wrappedFinishSynth above and by clearSynthGuard() in cancelAllAudio.
+            const guardMs = Math.min(30000, Math.max(1000, text.length * 50));
+            synthGuardRef.current = setTimeout(() => {
+              synthGuardRef.current = null;
+              try { synth.cancel(); } catch {}
+              finishSynth(); // identity-checked finalizer -- safe even if onend already fired
+            }, guardMs);
             synth.speak(u);
           });
       });
