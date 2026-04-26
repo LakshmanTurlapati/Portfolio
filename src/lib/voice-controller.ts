@@ -119,9 +119,43 @@ export function useVoiceController({
     }
   }, []);
 
+  // VOICE-09: runTool wraps every tool callback invocation so a throwing callback
+  // does not abort the voice turn. Emits 'tool-executing' before invocation and
+  // 'tool-success' / 'tool-error' on settle. Returns { ok } so callers can inspect
+  // outcome (synchronous path only -- async resolves to ok=true optimistically).
+  const runTool = (name: string, fn: () => unknown): { ok: boolean } => {
+    const hasBus = typeof window !== 'undefined' && !!window.VoiceBus;
+    if (hasBus) window.VoiceBus.emit('tool-executing');
+    try {
+      const result = fn();
+      if (result && typeof (result as { then?: unknown }).then === 'function') {
+        (result as Promise<unknown>).then(
+          (r) => {
+            const ok = !(r && typeof r === 'object' && 'ok' in (r as object) && (r as { ok: boolean }).ok === false);
+            if (hasBus) window.VoiceBus.emit(ok ? 'tool-success' : 'tool-error');
+          },
+          (err) => {
+            console.error(`[VoiceController] ${name} rejected:`, err);
+            if (hasBus) window.VoiceBus.emit('tool-error');
+          }
+        );
+        return { ok: true };
+      }
+      const ok = !(result && typeof result === 'object' && 'ok' in (result as object) && (result as { ok: boolean }).ok === false);
+      if (hasBus) window.VoiceBus.emit(ok ? 'tool-success' : 'tool-error');
+      return { ok };
+    } catch (err) {
+      console.error(`[VoiceController] ${name} threw:`, err);
+      if (hasBus) window.VoiceBus.emit('tool-error');
+      return { ok: false };
+    }
+  };
+
   // dispatchToolCall — single dispatch point for all step.call entries and AI tool responses.
   // Per D-19: openProject is wired when toolCallbacks.openProject provided; others console.warn on miss.
   // Phase 13: emits VoiceBus 'tool-executing' before callback and 'tool-success'/'tool-error' after.
+  // Phase 25 / VOICE-09: callback invocations now route through runTool so a throwing callback
+  // no longer aborts the voice turn.
   const dispatchToolCall = useCallback(
     (name: string, args: Record<string, unknown>): void => {
       switch (name) {
