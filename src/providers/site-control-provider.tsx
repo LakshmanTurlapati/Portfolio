@@ -4,12 +4,14 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
   type ReactNode,
 } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
+import { FsbControlOverlay } from '@/components/fsb-control-overlay';
 import { IframeViewer } from '@/components/iframe-viewer';
 import { getProjectBrowserTarget, resolveProject } from '@/data/projects';
 import { useTransition } from '@/providers/transition-provider';
@@ -73,69 +75,101 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
   const { resolvedTheme } = useTheme();
   const { navigateWithReveal } = useTransition();
   const [browser, setBrowser] = useState<BrowserState | null>(null);
+  const [controlOverlayActive, setControlOverlayActive] = useState(false);
   const aboutScrollerRef = useRef<((section: ControlSection) => void) | null>(null);
   const pendingSectionRef = useRef<ControlSection | null>(null);
+  const overlayHideTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (overlayHideTimerRef.current) window.clearTimeout(overlayHideTimerRef.current);
+    };
+  }, []);
+
+  const runWithControlOverlay = useCallback((action: () => ControlResult): ControlResult => {
+    if (overlayHideTimerRef.current) window.clearTimeout(overlayHideTimerRef.current);
+    setControlOverlayActive(true);
+
+    try {
+      return action();
+    } finally {
+      overlayHideTimerRef.current = window.setTimeout(() => {
+        setControlOverlayActive(false);
+        overlayHideTimerRef.current = null;
+      }, 900);
+    }
+  }, []);
 
   const navigate = useCallback(
     (page: ControlPage): ControlResult => {
-      navigateWithReveal(PAGE_PATHS[page], window.innerWidth / 2, window.innerHeight / 2);
-      return { ok: true, message: `Heading to ${page}.` };
+      return runWithControlOverlay(() => {
+        navigateWithReveal(PAGE_PATHS[page], window.innerWidth / 2, window.innerHeight / 2);
+        return { ok: true, message: `Heading to ${page}.` };
+      });
     },
-    [navigateWithReveal]
+    [navigateWithReveal, runWithControlOverlay]
   );
 
   const openProject = useCallback((input: string): ControlResult => {
-    const project = resolveProject(input);
-    const target = project ? getProjectBrowserTarget(project) : null;
+    return runWithControlOverlay(() => {
+      const project = resolveProject(input);
+      const target = project ? getProjectBrowserTarget(project) : null;
 
-    if (!project || !target) {
-      return { ok: false, message: "I couldn't find an approved project target for that." };
-    }
+      if (!project || !target) {
+        return { ok: false, message: "I couldn't find an approved project target for that." };
+      }
 
-    setBrowser({ ...target, projectName: project.name });
-    return { ok: true, message: `Opening ${project.name}.` };
-  }, []);
+      setBrowser({ ...target, projectName: project.name });
+      return { ok: true, message: `Opening ${project.name}.` };
+    });
+  }, [runWithControlOverlay]);
 
   const scrollTo = useCallback(
     (sectionInput: ControlSection | string): ControlResult => {
-      const section = normalizeSection(sectionInput);
-      if (!section) return { ok: false, message: "I couldn't find that portfolio section." };
+      return runWithControlOverlay(() => {
+        const section = normalizeSection(sectionInput);
+        if (!section) return { ok: false, message: "I couldn't find that portfolio section." };
 
-      if (pathname !== '/about') {
+        if (pathname !== '/about') {
+          pendingSectionRef.current = section;
+          navigateWithReveal(PAGE_PATHS.about, window.innerWidth / 2, window.innerHeight / 2);
+          return { ok: true, message: `Taking you to ${section}.` };
+        }
+
+        if (aboutScrollerRef.current) {
+          aboutScrollerRef.current(section);
+          return { ok: true, message: `Taking you to ${section}.` };
+        }
+
         pendingSectionRef.current = section;
-        navigate('about');
         return { ok: true, message: `Taking you to ${section}.` };
-      }
-
-      if (aboutScrollerRef.current) {
-        aboutScrollerRef.current(section);
-        return { ok: true, message: `Taking you to ${section}.` };
-      }
-
-      pendingSectionRef.current = section;
-      return { ok: true, message: `Taking you to ${section}.` };
+      });
     },
-    [navigate, pathname]
+    [navigateWithReveal, pathname, runWithControlOverlay]
   );
 
   const closeBrowser = useCallback((): ControlResult => {
-    if (!browser) return { ok: false, message: 'There is no project browser open right now.' };
-    setBrowser(null);
-    return { ok: true, message: 'Closing the browser view.' };
-  }, [browser]);
+    return runWithControlOverlay(() => {
+      if (!browser) return { ok: false, message: 'There is no project browser open right now.' };
+      setBrowser(null);
+      return { ok: true, message: 'Closing the browser view.' };
+    });
+  }, [browser, runWithControlOverlay]);
 
   const openCurrentProjectExternal = useCallback((): ControlResult => {
-    if (!browser) return { ok: false, message: 'There is no project browser open right now.' };
-    window.open(browser.url, '_blank', 'noopener,noreferrer');
-    return { ok: true, message: 'Opening the current project in a new tab.' };
-  }, [browser]);
+    return runWithControlOverlay(() => {
+      if (!browser) return { ok: false, message: 'There is no project browser open right now.' };
+      window.open(browser.url, '_blank', 'noopener,noreferrer');
+      return { ok: true, message: 'Opening the current project in a new tab.' };
+    });
+  }, [browser, runWithControlOverlay]);
 
   const unsupportedIframeControl = useCallback(
-    (): ControlResult => ({
+    (): ControlResult => runWithControlOverlay(() => ({
       ok: false,
       message: "I can control the portfolio shell, but I can't operate arbitrary controls inside a third-party iframe.",
-    }),
-    []
+    })),
+    [runWithControlOverlay]
   );
 
   const registerAboutScroller = useCallback((scroller: ((section: ControlSection) => void) | null) => {
@@ -165,6 +199,7 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
   return (
     <SiteControlContext.Provider value={value}>
       {children}
+      <FsbControlOverlay active={controlOverlayActive} />
       {browser && (
         <IframeViewer
           url={browser.url}

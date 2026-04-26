@@ -289,9 +289,137 @@ body {
   transition: box-shadow 200ms ease;
 }
 
+/* ─── Phase 19: FSB Control Overlay ───────────────────────────────────────── */
+@keyframes fsbControlScan {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to { background-position: 0 24px, 24px 0, 0 6px; }
+}
+
+.fsb-control-overlay {
+  z-index: 70;
+  color: rgb(var(--fsb-overlay-rgb));
+  mix-blend-mode: normal;
+}
+
+.fsb-control-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to bottom, rgba(var(--fsb-overlay-rgb), 0.08) 1px, transparent 1px),
+    linear-gradient(to right, rgba(var(--fsb-overlay-rgb), 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, transparent 0, transparent 50%, rgba(var(--fsb-overlay-rgb), 0.08) 50%, transparent 52%);
+  background-size: 100% 24px, 24px 100%, 100% 6px;
+  opacity: 0.75;
+  animation: fsbControlScan 1.6s linear infinite;
+}
+
+.fsb-control-corners {
+  position: absolute;
+  inset: 24px;
+  border: 1px solid rgba(var(--fsb-overlay-rgb), 0.22);
+  border-radius: 18px;
+  mask-image: linear-gradient(90deg, #000 0 80px, transparent 80px calc(100% - 80px), #000 calc(100% - 80px)),
+    linear-gradient(#000 0 80px, transparent 80px calc(100% - 80px), #000 calc(100% - 80px));
+  -webkit-mask-image: linear-gradient(90deg, #000 0 80px, transparent 80px calc(100% - 80px), #000 calc(100% - 80px)),
+    linear-gradient(#000 0 80px, transparent 80px calc(100% - 80px), #000 calc(100% - 80px));
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+}
+
+.fsb-control-corners::before,
+.fsb-control-corners::after {
+  content: "";
+  position: absolute;
+  width: 88px;
+  height: 1px;
+  background: rgba(var(--fsb-overlay-rgb), 0.32);
+}
+
+.fsb-control-corners::before {
+  top: 18px;
+  left: 18px;
+}
+
+.fsb-control-corners::after {
+  right: 18px;
+  bottom: 18px;
+}
+
+.fsb-control-target {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(var(--fsb-overlay-rgb), 0.22);
+  border-radius: 999px;
+}
+
+.fsb-control-target::before,
+.fsb-control-target::after {
+  content: "";
+  position: absolute;
+  background: rgba(var(--fsb-overlay-rgb), 0.25);
+}
+
+.fsb-control-target::before {
+  left: 50%;
+  top: -16px;
+  width: 1px;
+  height: 96px;
+}
+
+.fsb-control-target::after {
+  left: -16px;
+  top: 50%;
+  width: 96px;
+  height: 1px;
+}
+
+.fsb-control-badge {
+  position: fixed;
+  left: max(16px, env(safe-area-inset-left));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  padding: 8px 16px;
+  border: 1px solid rgba(var(--fsb-overlay-rgb), 0.28);
+  border-radius: 999px;
+  background: rgba(var(--fsb-overlay-rgb), 0.07);
+  color: rgb(var(--fsb-overlay-rgb));
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+@media (max-width: 37.5rem) {
+  .fsb-control-corners {
+    inset: 16px;
+    border-radius: 14px;
+  }
+
+  .fsb-control-target {
+    width: 44px;
+    height: 44px;
+    opacity: 0.7;
+  }
+
+  .fsb-control-badge {
+    padding: 8px 12px;
+    font-size: 9px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .voice-glow-listening {
     animation: none;
     box-shadow: 0 0 30px 10px rgba(var(--glow-color), 0.25);
+  }
+
+  .fsb-control-grid {
+    animation: none !important;
   }
 }
