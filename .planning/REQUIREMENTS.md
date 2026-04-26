@@ -50,8 +50,8 @@
 
 ### API Verification
 
-- [ ] **API-01**: Voice mode and text chat both reach xAI Grok-3-mini via /api/chat and return real AI responses
-- [ ] **API-02**: ElevenLabs TTS and STT keys are verified working in both local development and Amplify production environment
+- [x] **API-01**: Voice mode and text chat both reach xAI Grok via /api/chat and return real AI responses on the reachable deployed environment; live Amplify/custom-domain smoke testing is deferred
+- [x] **API-02**: ElevenLabs TTS and STT keys are verified working on the reachable deployed environment, and Amplify build-time key injection is configured; live Amplify/custom-domain smoke testing is deferred
 
 ## v3 Requirements (Validated)
 
@@ -91,6 +91,10 @@ All v3 redesign requirements completed in milestone v3. See git history for deta
 - **MOBV-01**: Voice mode on mobile with touch-based controls
 - **MOBV-02**: Mobile navbar voice panel layout
 
+### Amplify Production Verification (deferred from v4.0)
+
+- **API-03**: Restore or identify a reachable Amplify production URL and run `PRODUCTION_BASE_URL="<AMPLIFY_URL>" node scripts/verify-amplify-apis.mjs` to verify `/api/chat`, `/api/stt-token`, and `/api/tts` against Amplify/custom-domain production
+
 ## Out of Scope
 
 | Feature | Reason |
@@ -101,6 +105,7 @@ All v3 redesign requirements completed in milestone v3. See git history for deta
 | SEO optimization | Post-v4 |
 | Mobile voice mode | Deferred to future milestone |
 | DataGrid hover effects | Deferred from v3, not in v4.0 scope |
+| Live Amplify/custom-domain API smoke test | Deferred from v4.0 because `audienclature.com` DNS is unavailable; verifier script exists for future execution |
 
 ## Traceability
 
@@ -123,8 +128,9 @@ All v3 redesign requirements completed in milestone v3. See git history for deta
 | STT-01 | Phase 14 | Complete |
 | STT-02 | Phase 14 | Complete |
 | STT-03 | Phase 14 | Complete |
-| API-01 | Phase 15 | Pending |
-| API-02 | Phase 15 | Pending |
+| API-01 | Phase 15 | Complete |
+| API-02 | Phase 15 | Complete |
+| API-03 | Future | Deferred |
 
 **Coverage:**
 - v4.0 requirements: 19 total
@@ -133,4 +139,4 @@ All v3 redesign requirements completed in milestone v3. See git history for deta
 
 ---
 *Requirements defined: 2026-04-24*
-*Last updated: 2026-04-24 after roadmap creation (Phases 12-15)*
+*Last updated: 2026-04-26 after deferring live Amplify/custom-domain smoke testing from v4.0*

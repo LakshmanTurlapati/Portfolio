@@ -10,12 +10,12 @@ A visually striking, interactive portfolio that showcases projects with rich det
 
 ## Current Milestone: v4.0 Voice Mode Production
 
-**Goal:** Make voice mode fully functional and production-ready -- real Grok intelligence, ElevenLabs STT upgrade, wired tool calls, and persistent overlay across all pages.
+**Goal:** Make voice mode fully functional and production-ready -- real Grok intelligence, ElevenLabs STT upgrade, wired tool calls, persistent overlay across all pages, and deployment-ready API configuration. Live Amplify/custom-domain smoke testing is deferred because the production domain is currently unavailable.
 
 **Target features:**
 - Wire all voice tool callbacks (openProject, scrollTo, openLink, toggleTheme, navigate) so tour and AI commands actually execute
 - Upgrade STT from Web Speech API to ElevenLabs for better quality and cross-browser support
-- Verify Grok API key is present and voice/chat reach xAI Grok-3-mini
+- Verify Grok API key is present and voice/chat reach xAI Grok on a reachable deployment; keep a repeatable Amplify verifier for the deferred custom-domain production check
 - Persistent voice overlay that stays open across page navigation (layout-level, not page-level)
 - Voice mode accessible from all pages (portfolio, about, chat) -- not just home
 
@@ -47,11 +47,11 @@ A visually striking, interactive portfolio that showcases projects with rich det
 
 ### Active
 
-- [ ] Wire all voice tool callbacks (openProject, scrollTo, openLink, toggleTheme, navigate)
-- [ ] Upgrade STT from Web Speech API to ElevenLabs
-- [ ] Verify Grok API key and voice/chat API connectivity
-- [ ] Persistent voice overlay across page navigation (layout-level)
-- [ ] Voice mode accessible from all pages (portfolio, about, chat)
+- [x] Wire all voice tool callbacks (openProject, scrollTo, openLink, toggleTheme, navigate)
+- [x] Upgrade STT from Web Speech API to ElevenLabs
+- [x] Verify Grok and ElevenLabs API connectivity on a reachable deployment; live Amplify/custom-domain smoke test deferred
+- [x] Persistent voice overlay across page navigation (layout-level)
+- [x] Voice mode accessible from all pages through the persistent overlay once voice is active
 
 ### Out of Scope
 
@@ -60,6 +60,7 @@ A visually striking, interactive portfolio that showcases projects with rich det
 - Backend database or user authentication -- not in current version
 - SEO optimization beyond basic meta tags -- can be added post-v3
 - Internationalization -- not in current version
+- Live Amplify/custom-domain API smoke testing -- deferred until `audienclature.com` or the actual Amplify URL is publicly reachable
 
 ## Context
 
@@ -68,7 +69,7 @@ A visually striking, interactive portfolio that showcases projects with rich det
 - Several v3 components already implemented: DataGrid, ProjectDetail, IframeViewer, GitHub Stats, Ask Parz, particles.js, portfolio page redesign, updated project data
 - Circular reveal transition complete -- uses View Transitions API with clip-path on ::view-transition-new(root), matching Flutter's ClipPath behavior
 - Voice mode is the largest new feature -- requires Web Speech API integration
-- Deployed at audienclature.com on AWS Amplify
+- Deployment target remains AWS Amplify/audienclature.com; current live API smoke evidence is from the reachable Fly deployment, and `scripts/verify-amplify-apis.mjs` is ready for future Amplify/custom-domain verification
 
 ## Constraints
 
@@ -110,4 +111,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-24 after milestone v4.0 started*
+*Last updated: 2026-04-26 after v4.0 scope deferral for live Amplify/custom-domain smoke testing*

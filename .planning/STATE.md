@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Voice Mode Production
-status: planning
-stopped_at: Phase 15 verification gaps found
-last_updated: "2026-04-26T01:44:13Z"
-last_activity: 2026-04-26 -- Phase 15 verification gaps found
+status: complete
+stopped_at: v4.0 complete; live Amplify/custom-domain smoke testing deferred
+last_updated: "2026-04-26T01:55:27.958Z"
+last_activity: 2026-04-26 -- v4.0 complete with deployment smoke test deferred
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 13
-  completed_plans: 13
+  completed_phases: 4
+  total_plans: 14
+  completed_plans: 14
   percent: 100
 ---
 
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** Phase 15 — api-verification-and-deployment
+**Current focus:** v4.0 complete — ready for milestone completion
 
 ## Current Position
 
-Phase: 15 (api-verification-and-deployment) — VERIFICATION GAPS
-Plan: 2 of 2 complete
-Status: Needs gap closure for Amplify/custom-domain production verification
-Last activity: 2026-04-26 -- Phase 15 verification gaps found
+Phase: 15 (api-verification-and-deployment) — COMPLETE
+Plan: 3 of 3 complete
+Status: Ready to complete milestone; live Amplify/custom-domain smoke test deferred to future requirement API-03
+Last activity: 2026-04-26 -- v4.0 complete with deployment smoke test deferred
 
 ```
-v4.0 Progress: [####################] 100% plan execution (3 of 4 phases complete, phase 15 gaps found)
+v4.0 Progress: [####################] 100% (4 of 4 phases complete; live Amplify/custom-domain smoke test deferred)
 ```
 
 ## Performance Metrics

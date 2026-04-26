@@ -1,43 +1,25 @@
 ---
 phase: 15-api-verification-and-deployment
 verified: 2026-04-26T01:44:13Z
-status: gaps_found
-score: 3/6 must-haves verified
-gaps:
-  - truth: "All voice and chat API routes return real AI responses in Amplify production"
-    status: failed
-    reason: "The intended production/custom-domain target audienclature.com is DNS NXDOMAIN, so Amplify production could not be reached or verified. Smoke tests passed only on the user-approved Fly deployment substitute."
-    artifacts:
-      - path: ".planning/phases/15-api-verification-and-deployment/15-02-SUMMARY.md"
-        issue: "Documents deviation from audienclature.com/Amplify to https://portfolio-v4-test.fly.dev after DNS failure."
-      - path: "amplify.yml"
-        issue: "Build-time env injection is present, but actual Amplify Lambda runtime behavior was not directly observable."
-    missing:
-      - "Restore/verify audienclature.com or the actual Amplify production URL resolves publicly."
-      - "Run /api/chat with both text and voice-style payloads against the Amplify production endpoint and record HTTP 200 streaming AI output."
-  - truth: "POST /api/stt-token and POST /api/tts return successful ElevenLabs responses in Amplify production"
-    status: failed
-    reason: "The ElevenLabs endpoints returned valid responses on Fly, but the phase contract requires Amplify production confirmation that ELEVENLABS_API_KEY reaches the Lambda runtime. That target was unreachable."
-    artifacts:
-      - path: "src/app/api/stt-token/route.ts"
-        issue: "Implementation is real and env-gated, but production Amplify execution was not directly verified."
-      - path: "src/app/api/tts/route.ts"
-        issue: "Implementation is real and env-gated, but production Amplify execution was not directly verified."
-    missing:
-      - "Run POST /api/stt-token against the Amplify production endpoint and verify HTTP 200 with token present."
-      - "Run POST /api/tts against the Amplify production endpoint and verify HTTP 200 audio/mpeg valid MP3."
+status: passed
+score: 5/5 scoped must-haves verified
+deferred:
+  - truth: "Run live /api/chat, /api/stt-token, and /api/tts smoke tests against Amplify/custom-domain production"
+    reason: "User deferred deployment verification out of v4.0 because audienclature.com is DNS NXDOMAIN and no reachable Amplify production URL is available."
+    future_requirement: API-03
+    verifier: scripts/verify-amplify-apis.mjs
 ---
 
 # Phase 15: API Verification and Deployment Verification Report
 
-**Phase Goal:** All voice and chat API routes return real AI responses in Amplify production -- no 503s from missing env vars and both ElevenLabs keys verified working end-to-end
+**Phase Goal:** Voice and chat API routes are deployment-ready -- server-side key injection is configured, reachable deployment smoke tests pass, and a repeatable Amplify verifier exists for the deferred custom-domain production check
 **Verified:** 2026-04-26T01:44:13Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Status:** passed after scope deferral
+**Re-verification:** Scope updated on 2026-04-26 after user deferred live Amplify/custom-domain smoke testing out of v4.0
 
 ## Goal Achievement
 
-The implementation and substitute deployment are healthy, but the phase goal is explicitly scoped to **Amplify production**. Because `audienclature.com`/`www.audienclature.com` are DNS `NXDOMAIN`, the intended production target could not be directly tested. The user-approved Fly smoke tests are useful evidence that the routes and keys can work end-to-end, but they do not prove Amplify Lambda runtime env injection or the custom-domain production path.
+The implementation, key injection, reachable deployment smoke tests, and repeatable verifier script are complete. The original Amplify/custom-domain live smoke test could not run because `audienclature.com`/`www.audienclature.com` are DNS `NXDOMAIN`; the user explicitly deferred that deployment verification out of v4.0. The deferred work is tracked as future requirement API-03 and can be completed with `scripts/verify-amplify-apis.mjs` once an Amplify production URL is reachable.
 
 ### Observable Truths
 
@@ -46,11 +28,11 @@ The implementation and substitute deployment are healthy, but the phase goal is 
 | 1 | `amplify.yml` preBuild injects both `XAI_API_KEY` and `ELEVENLABS_API_KEY` into `.env.production` | ✓ VERIFIED | `amplify.yml` lines 10-11 echo both keys during preBuild. |
 | 2 | API route implementations are real provider calls, not stubs | ✓ VERIFIED | `/api/chat` uses `streamText` with `xai('grok-4-1-fast-non-reasoning')`; `/api/stt-token` calls `client.tokens.singleUse.create('realtime_scribe')`; `/api/tts` calls `client.textToSpeech.stream(...)`. |
 | 3 | Voice and text clients are wired to server API routes | ✓ VERIFIED | `voice-controller.ts` fetches `/api/chat`, `/api/stt-token`, and `/api/tts`; chat page and popup use `useChat`, which targets the app chat API. |
-| 4 | Sending a text chat message and making a voice query return real Grok responses in deployed Amplify production | ✗ FAILED | Fly `/api/chat` returned HTTP 200 `text/event-stream`, but Amplify/custom-domain endpoint was unreachable due DNS `ENOTFOUND`/`NXDOMAIN`. |
-| 5 | `POST /api/stt-token` returns 200 with token in Amplify production | ✗ FAILED | Fly endpoint returned HTTP 200 JSON with token present; Amplify/custom-domain endpoint was not reachable. |
-| 6 | `POST /api/tts` returns audio in Amplify production, confirming ElevenLabs env reaches Lambda runtime | ✗ FAILED | Fly endpoint returned HTTP 200 `audio/mpeg` valid MP3; Amplify/custom-domain endpoint was not reachable. |
+| 4 | Reachable deployment smoke tests prove `/api/chat`, `/api/stt-token`, and `/api/tts` execute real provider calls | ✓ VERIFIED | Fly deployment returned HTTP 200 `text/event-stream` for chat, HTTP 200 token JSON for STT, and HTTP 200 `audio/mpeg` valid MP3 for TTS. |
+| 5 | A repeatable verifier exists for future Amplify/custom-domain production checks and rejects the Fly substitute | ✓ VERIFIED | `scripts/verify-amplify-apis.mjs` requires `PRODUCTION_BASE_URL`, rejects `portfolio-v4-test.fly.dev`, resolves DNS first, and checks text chat, voice-style chat, STT token, and TTS MP3 output. |
+| D1 | Live Amplify/custom-domain production route smoke test | DEFERRED | Deferred to future requirement API-03 because no reachable Amplify/custom-domain URL is currently available. |
 
-**Score:** 3/6 truths verified
+**Score:** 5/5 scoped truths verified; 1 deployment verification item deferred
 
 ### Required Artifacts
 
@@ -60,6 +42,7 @@ The implementation and substitute deployment are healthy, but the phase goal is 
 | `src/app/api/chat/route.ts` | Real xAI Grok streaming route | ✓ VERIFIED | Env-gated route streams `xai('grok-4-1-fast-non-reasoning')` via AI SDK. |
 | `src/app/api/stt-token/route.ts` | Real ElevenLabs STT token route | ✓ VERIFIED | Env-gated route creates a single-use `realtime_scribe` token. |
 | `src/app/api/tts/route.ts` | Real ElevenLabs TTS route | ✓ VERIFIED | Env-gated route streams `audio/mpeg` using allowed voice ID and `eleven_turbo_v2_5`. |
+| `scripts/verify-amplify-apis.mjs` | Future Amplify/custom-domain smoke test runner | ✓ VERIFIED | Syntax-valid script committed in Plan 15-03; rejects Fly substitute and sanitizes token/audio output. |
 
 ### Key Link Verification
 
@@ -69,15 +52,16 @@ The implementation and substitute deployment are healthy, but the phase goal is 
 | Client voice controller | `/api/chat` | `fetch('/api/chat', { isVoice: true })` | ✓ VERIFIED | Voice queries are sent through the same server route with voice tools enabled. |
 | Client voice controller | `/api/stt-token` | `fetch('/api/stt-token', { method: 'POST' })` | ✓ VERIFIED | Browser receives a token from the server route, not the API key. |
 | Client voice controller | `/api/tts` | `fetch('/api/tts', ...)` | ✓ VERIFIED | TTS response is decoded as audio and played through `AudioContext`. |
-| Amplify production DNS/custom domain | API routes | `https://audienclature.com/api/...` | ✗ NOT WIRED/UNREACHABLE | DNS lookup for `audienclature.com` failed with `ENOTFOUND`; summary records NXDOMAIN from local resolver, 1.1.1.1, and 8.8.8.8. |
+| Amplify production DNS/custom domain | API routes | `https://audienclature.com/api/...` | DEFERRED | DNS lookup for `audienclature.com` failed with `ENOTFOUND`; future API-03 will run the verifier once DNS or an Amplify URL is available. |
 
 ### Data-Flow Trace (Level 4)
 
 | Artifact | Data Variable | Source | Produces Real Data | Status |
 |----------|---------------|--------|--------------------|--------|
-| `/api/chat` | streamed AI response | xAI via AI SDK `streamText` | Yes when env configured; Fly smoke test returned stream bytes | ✓ FLOWING on Fly; ✗ unverified on Amplify |
-| `/api/stt-token` | `token` | ElevenLabs `tokens.singleUse.create` | Yes on Fly smoke test | ✓ FLOWING on Fly; ✗ unverified on Amplify |
-| `/api/tts` | MP3 audio stream | ElevenLabs `textToSpeech.stream` | Yes on Fly smoke test | ✓ FLOWING on Fly; ✗ unverified on Amplify |
+| `/api/chat` | streamed AI response | xAI via AI SDK `streamText` | Yes when env configured; Fly smoke test returned stream bytes | ✓ FLOWING on reachable deployment; Amplify live check deferred |
+| `/api/stt-token` | `token` | ElevenLabs `tokens.singleUse.create` | Yes on Fly smoke test | ✓ FLOWING on reachable deployment; Amplify live check deferred |
+| `/api/tts` | MP3 audio stream | ElevenLabs `textToSpeech.stream` | Yes on Fly smoke test | ✓ FLOWING on reachable deployment; Amplify live check deferred |
+| `scripts/verify-amplify-apis.mjs` | sanitized verification output | `PRODUCTION_BASE_URL` + production route fetches | Yes when an Amplify URL is supplied | ✓ READY for future API-03 |
 
 ### Behavioral Spot-Checks
 
@@ -87,15 +71,18 @@ The implementation and substitute deployment are healthy, but the phase goal is 
 | Substitute Fly `/api/chat` streams | sanitized Node `fetch` POST to `https://portfolio-v4-test.fly.dev/api/chat` | HTTP 200 `text/event-stream`, first chunk 24 bytes | ✓ PASS (substitute only) |
 | Substitute Fly `/api/stt-token` returns token | sanitized Node `fetch` POST, token value not printed | HTTP 200 `application/json`, `token_present true` | ✓ PASS (substitute only) |
 | Substitute Fly `/api/tts` returns MP3 | sanitized Node `fetch` POST | HTTP 200 `audio/mpeg`, 16345 bytes, MP3 signature true | ✓ PASS (substitute only) |
+| Amplify verifier script syntax | `node --check scripts/verify-amplify-apis.mjs` | exits 0 | ✓ PASS |
+| Amplify verifier rejects Fly | `PRODUCTION_BASE_URL="https://portfolio-v4-test.fly.dev" node scripts/verify-amplify-apis.mjs` | exits nonzero with explicit rejection message | ✓ PASS |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|-------------|-------------|--------|----------|
-| API-01 | 15-01, 15-02 | Voice mode and text chat both reach xAI Grok-3-mini via `/api/chat` and return real AI responses | ✗ PARTIAL/BLOCKED | Code wiring is real and Fly `/api/chat` passed, but Amplify production/custom-domain target could not be reached. |
-| API-02 | 15-01, 15-02 | ElevenLabs TTS and STT keys are verified working in both local development and Amplify production environment | ✗ PARTIAL/BLOCKED | Fly STT/TTS passed and `amplify.yml` injection is present, but actual Amplify production Lambda runtime could not be verified. |
+| API-01 | 15-01, 15-02, 15-03 | Voice mode and text chat both reach xAI Grok via `/api/chat` and return real AI responses on the reachable deployed environment; Amplify-specific smoke test deferred | ✓ COMPLETE | Code wiring is real, reachable deployment `/api/chat` passed, and future Amplify verification is scripted. |
+| API-02 | 15-01, 15-02, 15-03 | ElevenLabs TTS and STT keys are verified working on the reachable deployed environment, and Amplify build-time key injection is configured; live Amplify/custom-domain smoke testing is deferred | ✓ COMPLETE | Reachable deployment STT/TTS passed, `amplify.yml` injection is present, and future Amplify verification is scripted. |
+| API-03 | Future | Restore or identify a reachable Amplify production URL and run `scripts/verify-amplify-apis.mjs` | DEFERRED | User explicitly deferred deployment verification out of v4.0. |
 
-No orphaned Phase 15 requirements found: `.planning/REQUIREMENTS.md` maps only API-01 and API-02 to Phase 15, and both plans claim both IDs.
+No orphaned Phase 15 requirements found: `.planning/REQUIREMENTS.md` maps API-01 and API-02 to Phase 15. API-03 is intentionally future/deferred.
 
 ### Anti-Patterns Found
 
@@ -105,7 +92,7 @@ No orphaned Phase 15 requirements found: `.planning/REQUIREMENTS.md` maps only A
 
 ### Human Verification Required
 
-The following follow-up is required after DNS/Amplify access is restored:
+The following follow-up is deferred after DNS/Amplify access is restored:
 
 ### 1. Amplify production route smoke test
 
@@ -113,9 +100,9 @@ The following follow-up is required after DNS/Amplify access is restored:
 **Expected:** `/api/chat` returns HTTP 200 streaming text; `/api/stt-token` returns HTTP 200 JSON with token present; `/api/tts` returns HTTP 200 `audio/mpeg` valid MP3. No route returns 503.
 **Why human:** Requires a reachable Amplify production deployment/custom domain and potentially AWS Console/build-log access.
 
-### Gaps Summary
+### Deferred Work Summary
 
-The code-level fix is correct and all reachable Fly smoke tests passed, but the goal was not achieved as written because the required Amplify production/custom-domain endpoint was unreachable. The remaining work is deployment/DNS verification, not route implementation.
+The code-level fix, reachable deployment smoke tests, and verifier tooling are complete. The only remaining work is future deployment/DNS verification: run `PRODUCTION_BASE_URL="<AMPLIFY_URL>" node scripts/verify-amplify-apis.mjs` once `audienclature.com` or the actual Amplify URL is publicly reachable.
 
 ---
 
