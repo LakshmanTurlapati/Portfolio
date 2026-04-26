@@ -10,9 +10,9 @@ A visually striking, interactive portfolio that showcases projects with rich det
 
 ## Current State
 
-**Shipped:** v4.1 Phase 17 Direct Inbuilt Project Browser (2026-04-26)
+**Shipped:** v4.1 Phase 18 Global Parz Site Control (2026-04-26)
 
-Parz now uses a public-safe profile source of truth for current work, personality, flagship projects, and refusal boundaries. About, Experience, and project content now reflect InfiniteChoice/Voyza, FSB / Full Self Browsing, GitFly, and the refined AI-builder narrative, with private GitFly source and non-public employer/product details explicitly guarded. Portfolio project cards now open approved project targets directly in the inbuilt browser, with canonical aliases and local-record target safety replacing the right-side project detail detour.
+Parz now uses a public-safe profile source of truth for current work, personality, flagship projects, and refusal boundaries. About, Experience, and project content now reflect InfiniteChoice/Voyza, FSB / Full Self Browsing, GitFly, and the refined AI-builder narrative, with private GitFly source and non-public employer/product details explicitly guarded. Portfolio project cards now open approved project targets directly in the inbuilt browser, and Parz can now use the same safe project resolver from any page to navigate, scroll about-page sections, open projects globally, close the browser shell, open the current project externally, and honestly refuse unsupported third-party iframe control.
 
 ## Current Milestone: v4.1 Parz Persona, Portfolio Context, and Site Control Refresh
 
@@ -78,13 +78,16 @@ Parz now uses a public-safe profile source of truth for current work, personalit
 - ✓ Project cards open approved public targets directly in the inbuilt browser instead of the right-side ProjectDetail panel — v4.1 Phase 17
 - ✓ Canonical project aliases resolve FSB, Full Self Browsing, GitFly, Review Gate, T2S, and Parz-AI through local project records — v4.1 Phase 17
 - ✓ Project opening is constrained to approved local project URLs, with GitFly linking only to https://gitfly.ai — v4.1 Phase 17
+- ✓ Parz can open approved projects from any page through a global inbuilt-browser shell without navigating to portfolio first — v4.1 Phase 18
+- ✓ Parz can navigate to home, portfolio, and about, then scroll About, Experience, or Academics through the about page's internal scroll container — v4.1 Phase 18
+- ✓ Parz can close the inbuilt browser shell, open the current project externally, and honestly decline unsupported third-party iframe control — v4.1 Phase 18
 
 ### Active
 
 - [ ] Add prompt tests/evals covering personality, factual grounding, flagship project answers, rude-user behavior, and internal-detail refusal
 - [x] Remove the right-side ProjectDetail panel path and make project opening use the inbuilt browser directly
-- [ ] Let Parz open a specific project's GitHub/website/browser target from any page, including home, without always navigating to portfolio first
-- [ ] Expand Parz site control for precise navigation, scrolling, project opening, and inbuilt-browser actions inspired by FSB
+- [x] Let Parz open a specific project's GitHub/website/browser target from any page, including home, without always navigating to portfolio first
+- [x] Expand Parz site control for precise navigation, scrolling, project opening, and inbuilt-browser actions inspired by FSB
 - [ ] Show an FSB-inspired monochrome overlay during Parz navigation/control actions with a small bottom-left "powered by FSB" badge
 
 ### Out of Scope
@@ -117,6 +120,7 @@ Parz now uses a public-safe profile source of truth for current work, personalit
 - Conversation behavior: answer directly first; add personality through wording rather than unsolicited extra chatter; use humor only when the user is casual.
 - Site-control goal: Parz should have meaningful control over the portfolio, not just scripted navigation. It should open project browser views directly, scroll/navigate precisely, and avoid unnecessary detours through the portfolio page when a project can be shown from the current page.
 - Phase 17 browser foundation: project records now carry approved aliases and preferred browser targets, and portfolio-local project opens resolve through those records before opening the inbuilt browser.
+- Phase 18 global control foundation: `SiteControlProvider` owns shell navigation, global project browser state, about-section scroll delegation, browser close/external-open actions, and unsupported iframe-control limitation handling for both text and voice Parz.
 - FSB visual inspiration: While Parz is navigating or controlling the site, show a monochrome overlay inspired by FSB and include a small bottom-left "powered by FSB" badge.
 
 ## Constraints
@@ -146,6 +150,7 @@ Parz now uses a public-safe profile source of truth for current work, personalit
 | Remove right-side project panel | User clarified it was never part of the intended design; project display now uses the inbuilt browser | ✓ Good |
 | FSB-inspired Parz control overlay | AI navigation/control should feel visible and intentional, with a monochrome overlay and "powered by FSB" badge | -- Pending |
 | Public-safe profile source of truth | Phase 16 centralized approved public facts and protected categories in `src/data/public-profile.ts` | ✓ Good |
+| Global Parz site-control provider | Phase 18 centralized navigation, project opening, about-section scrolling, and browser shell actions in `src/providers/site-control-provider.tsx` | ✓ Good |
 
 ## Evolution
 
@@ -165,4 +170,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26 after v4.1 Phase 17 completion*
+*Last updated: 2026-04-26 after v4.1 Phase 18 completion*
