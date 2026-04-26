@@ -369,9 +369,17 @@ export function useVoiceController({
     [streamTTS]
   );
 
-  // handleUserTurn — ALL utterances go to Grok (except local stop for instant response)
+  // handleUserTurn — ALL utterances go to Grok (except local stop for instant response).
+  // Phase 23: optional `kind` arg supports an LLM-driven greet — no hardcoded speech.
+  // - kind 'user' (default): existing path. Utterance is the user's transcription.
+  //   It IS appended to history and the LLM sees it as a real user turn.
+  // - kind 'greet': utterance is a synthetic kickoff instruction (e.g. "[Voice mode
+  //   just opened on the home page. Greet briefly...]"). It is NOT appended to history
+  //   because the user never said it. Only the assistant's response goes to history.
   const handleUserTurn = useCallback(
-    async (utterance: string) => {
+    async (utterance: string, opts: { kind?: 'user' | 'greet' } = {}) => {
+      const kind = opts.kind ?? 'user';
+
       // Close Scribe connection immediately to prevent TTS echo feedback loop.
       // Without this, Scribe hears Parz's TTS response via the mic and transcribes
       // it as another user utterance, causing double/overlapping speech.
@@ -392,36 +400,54 @@ export function useVoiceController({
       window.VoiceBus.setState('thinking');
       setCaption('Thinking\u2026');
 
-      const u = utterance.toLowerCase();
-
-      // Stop intent stays local for instant response (no network latency)
-      if (isStopIntent(u)) {
-        stopAll();
-        return;
+      // Local stop-intent fast path is for real user utterances only — a greet
+      // trigger is never a stop, so skip the check when kind === 'greet'.
+      if (kind === 'user') {
+        const u = utterance.toLowerCase();
+        if (isStopIntent(u)) {
+          stopAll();
+          return;
+        }
       }
 
       // Everything else goes to Grok — it decides intent via tool calls
       try {
-        historyRef.current = [
-          ...historyRef.current,
-          { role: 'user', content: utterance },
-        ];
+        // For real user turns: append to history so the LLM sees it.
+        // For greet: do NOT append — the trigger is synthetic, the user never said it.
+        if (kind === 'user') {
+          historyRef.current = [
+            ...historyRef.current,
+            { role: 'user', content: utterance },
+          ];
+        }
 
         const voiceInstruction =
           'Keep replies under 2 sentences. This is a voice channel — no markdown, no lists, no emoji. ';
 
-        const messages = [
-          ...historyRef.current.slice(-20).map((m) => ({
-            id: Math.random().toString(36).slice(2),
-            role: m.role as 'user' | 'assistant',
-            content: m.role === 'user' && m.content === utterance
-              ? voiceInstruction + m.content
-              : m.content,
-            parts: [{ type: 'text' as const, text: m.role === 'user' && m.content === utterance
-              ? voiceInstruction + m.content
-              : m.content }],
-          })),
-        ];
+        const baseMessages = historyRef.current.slice(-20).map((m) => ({
+          id: Math.random().toString(36).slice(2),
+          role: m.role as 'user' | 'assistant',
+          content: m.role === 'user' && kind === 'user' && m.content === utterance
+            ? voiceInstruction + m.content
+            : m.content,
+          parts: [{ type: 'text' as const, text: m.role === 'user' && kind === 'user' && m.content === utterance
+            ? voiceInstruction + m.content
+            : m.content }],
+        }));
+
+        // For greet: append the synthetic trigger as a one-shot user message
+        // so the LLM has something to respond to. It is not in history.
+        const messages = kind === 'greet'
+          ? [
+              ...baseMessages,
+              {
+                id: Math.random().toString(36).slice(2),
+                role: 'user' as const,
+                content: voiceInstruction + utterance,
+                parts: [{ type: 'text' as const, text: voiceInstruction + utterance }],
+              },
+            ]
+          : baseMessages;
 
         const res = await fetch('/api/chat', {
           method: 'POST',
@@ -532,14 +558,21 @@ export function useVoiceController({
           }
         }
 
-        // Speak the text response (if any)
+        // Speak the text response (if any). Phase 23: removed the empty-response
+        // hardcoded fallback. If Grok returns no text and no tools, we go silent —
+        // every word the user hears is now LLM-generated or nothing at all.
         if (clean) {
           await speak(clean);
         } else if (toolCalls.length === 0) {
-          await speak("Hmm, I lost my train of thought.");
+          window.VoiceBus.setState('idle');
+          setCaption('');
         }
       } catch {
-        await speak("My server's glitching. Give me a sec and try again.");
+        // Phase 23: removed hardcoded server-error speak. Surface a UI caption
+        // (on-screen text, not voice) and fall to idle. The LLM is unreachable
+        // by definition in this branch, so we have nothing dynamic to say.
+        window.VoiceBus.setState('idle');
+        setCaption('Server hiccup \u2014 try again.');
       }
     },
     [goPage, openTextChat, speak, stopAll, dispatchToolCall, cancelAllAudio]
@@ -705,6 +738,13 @@ export function useVoiceController({
   // F-03: threshold scales with the prefers-reduced-motion cap so a11y users
   // keep functional barge-in. The 0.35 baseline (raised from 0.15) handles
   // ElevenLabs TTS's consistently high amplitude and prevents self-interruption.
+  //
+  // Phase 23 regression fix: ONLY react to live analyser readings. setState()
+  // emits a fallback default level (0.75 for 'speaking') when no analyser is
+  // running — that's higher than the 0.35 threshold, so without the _liveAudio
+  // guard the very first setState('speaking') in streamTTS triggered an instant
+  // self-barge-in that aborted the TTS fetch (Phase 22's AbortController made
+  // the cancel cascade complete) and Parz never spoke at all.
   useEffect(() => {
     if (typeof window === 'undefined' || !window.VoiceBus) return;
 
@@ -712,7 +752,11 @@ export function useVoiceController({
       const level = lvl as number;
       const effectiveLevel = prefersReduced ? Math.min(level, 0.2) : level;
       const threshold = prefersReduced ? 0.15 : 0.35;
-      if (window.VoiceBus.state === 'speaking' && effectiveLevel > threshold) {
+      if (
+        window.VoiceBus._liveAudio &&
+        window.VoiceBus.state === 'speaking' &&
+        effectiveLevel > threshold
+      ) {
         bargeIn();
       }
     });
@@ -720,24 +764,23 @@ export function useVoiceController({
     return unsubLevel as () => void;
   }, [bargeIn, prefersReduced]);
 
-  // open — activate voice mode and greet after morph settles.
-  // Phase 22: guard the timer so a fast user (push-to-talk before 480ms) doesn't
-  // hear the greeting overlap their answer (overlap mode O-2). Skip greet if voice
-  // was closed in the interim, if a speak is already in flight, or if state has
-  // already moved on (listening / thinking / speaking).
+  // open — activate voice mode and kick off an LLM-generated greeting after the
+  // navbar morph settles. Phase 22: guard the timer so a fast user doesn't hear
+  // the greet overlap their answer (mode O-2). Phase 23: the greet is no longer
+  // hardcoded — handleUserTurn(trigger, { kind: 'greet' }) sends a synthetic
+  // kickoff instruction to the LLM and speaks whatever Parz writes back. The
+  // trigger is a prompt, not user-facing speech.
   const open = useCallback(() => {
     setActive(true);
     setTimeout(() => {
       if (!activeRef.current) return;
       if (speakingRef.current) return;
       if (typeof window !== 'undefined' && window.VoiceBus && window.VoiceBus.state !== 'idle') return;
-      const greetMessage =
-        currentPage === 'home'
-          ? "Hey, I'm Parz. I can give you a tour, or just chat. What are we doing?"
-          : "Parz here. Ask me anything, or say take me home.";
-      speak(greetMessage);
+      const page = currentPage ?? 'home';
+      const trigger = `[Voice mode just opened on the ${page} page. Greet briefly and offer help — under 2 sentences, voice channel: no markdown, no lists, no emoji.]`;
+      void handleUserTurn(trigger, { kind: 'greet' });
     }, 480);
-  }, [currentPage, speak]);
+  }, [currentPage, handleUserTurn]);
 
   // close — stop all audio and persist history to localStorage (per D-22)
   const close = useCallback(() => {
