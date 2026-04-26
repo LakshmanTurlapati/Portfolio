@@ -281,11 +281,12 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Sending a text chat message and making a voice query both return real Grok-3-mini responses (not fallback errors) in the deployed Amplify environment
   2. POST /api/stt-token returns 200 with a token in production; POST /api/tts returns audio in production -- confirming ElevenLabs keys are injected into the Lambda runtime
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
 - [x] 15-01-PLAN.md -- Fix amplify.yml to inject ELEVENLABS_API_KEY at build time
 - [x] 15-02-PLAN.md -- Human: add env var in Amplify Console, redeploy, smoke test all 3 API routes
+- [ ] 15-03-PLAN.md -- Gap closure: restore/identify Amplify production URL and smoke test chat, STT, and TTS routes with sanitized evidence
 
 ---
 
@@ -311,4 +312,4 @@ v1.0 phases 1-4, then v3 phases 5-11, then v4.0 phases 12-15.
 | 12. Persistent Voice Overlay | v4.0 | 4/4 | Complete    | 2026-04-25 |
 | 13. Tool Callbacks and Visual Feedback | v4.0 | 4/4 | Complete    | 2026-04-25 |
 | 14. ElevenLabs STT Upgrade | v4.0 | 3/3 | Complete    | 2026-04-25 |
-| 15. API Verification and Deployment | v4.0 | 2/2 | Gaps found | - |
+| 15. API Verification and Deployment | v4.0 | 2/3 | Gaps found | - |
