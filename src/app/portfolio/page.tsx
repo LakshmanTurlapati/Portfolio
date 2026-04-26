@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { FaArrowLeft, FaSliders } from 'react-icons/fa6';
+import { FaArrowLeft, FaSliders, FaXmark } from 'react-icons/fa6';
 import { useTheme } from 'next-themes';
 import { getProjectBrowserTarget, pinnedProjects, resolveProject, shuffleableProjects } from '@/data/projects';
 import type { Project } from '@/data/projects';
@@ -37,10 +37,19 @@ export default function PortfolioPage() {
   const [dgCfg, setDgCfg] = useState<DataGridConfig>(DEFAULT_DG_CFG);
   const [panelOpen, setPanelOpen] = useState(false);
   const [viewer, setViewer] = useState<{ url: string; label: string } | null>(null);
+  const [browserFallback, setBrowserFallback] = useState<{ heading: string; body: string } | null>(null);
 
   const openProject = useCallback((project: Project) => {
     const target = getProjectBrowserTarget(project);
-    if (target) setViewer(target);
+    if (target) {
+      setBrowserFallback(null);
+      setViewer(target);
+      return;
+    }
+    setBrowserFallback({
+      heading: 'Project unavailable',
+      body: 'I could not find an approved browser target for this project.',
+    });
   }, []);
 
   const openInViewer = useCallback((url: string, label: string) => {
@@ -75,7 +84,11 @@ export default function PortfolioPage() {
           openProject(project);
           return;
         }
-        console.warn(`[PortfolioPage] Unknown project requested: ${slug}`);
+        setViewer(null);
+        setBrowserFallback({
+          heading: 'Project unavailable',
+          body: `I could not find an approved browser target for "${slug}".`,
+        });
       },
     });
     // Deregister on unmount — prevents stale callbacks when navigating away
@@ -184,6 +197,57 @@ export default function PortfolioPage() {
           onClose={() => setViewer(null)}
         />
       )}
+
+      {/* Browser fallback */}
+      {browserFallback && (
+        <ProjectBrowserFallback
+          heading={browserFallback.heading}
+          body={browserFallback.body}
+          isDark={isDark}
+          onClose={() => setBrowserFallback(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ProjectBrowserFallback({
+  heading, body, isDark, onClose,
+}: {
+  heading: string;
+  body: string;
+  isDark: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] grid place-items-center px-6"
+      onClick={onClose}
+      style={{
+        background: isDark ? 'rgba(250,249,245,0.55)' : 'rgba(10,10,12,0.55)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+      }}
+    >
+      <div
+        className="relative w-full max-w-md rounded-2xl px-6 py-7 text-center"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: isDark ? '#fafaf7' : '#1a1a1c',
+          color: isDark ? '#1a1a1a' : '#f3f2ee',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
+        }}
+      >
+        <button
+          className="absolute right-3 top-3 w-8 h-8 rounded-lg grid place-items-center text-xs opacity-60 hover:opacity-100 transition-opacity"
+          onClick={onClose}
+          title="Close"
+        >
+          <FaXmark />
+        </button>
+        <h3 className="text-xl font-bold">{heading}</h3>
+        <p className="mt-3 text-sm opacity-60">{body}</p>
+      </div>
     </div>
   );
 }
