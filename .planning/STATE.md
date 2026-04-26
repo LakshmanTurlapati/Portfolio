@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Voice Mode Production
-status: complete
-stopped_at: v4.0 complete; live Amplify/custom-domain smoke testing deferred
-last_updated: "2026-04-26T01:55:27.958Z"
-last_activity: 2026-04-26 -- v4.0 complete with deployment smoke test deferred
+status: completed
+stopped_at: v4.0 milestone archived
+last_updated: "2026-04-26T01:58:46.378Z"
+last_activity: 2026-04-26
 progress:
   total_phases: 4
   completed_phases: 4
@@ -18,20 +18,20 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-24)
+See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** v4.0 complete — ready for milestone completion
+**Current focus:** Between milestones — ready to start next milestone
 
 ## Current Position
 
-Phase: 15 (api-verification-and-deployment) — COMPLETE
-Plan: 3 of 3 complete
-Status: Ready to complete milestone; live Amplify/custom-domain smoke test deferred to future requirement API-03
-Last activity: 2026-04-26 -- v4.0 complete with deployment smoke test deferred
+Phase: None — v4.0 archived
+Plan: None
+Status: Ready for `/gsd-new-milestone`; live Amplify/custom-domain smoke test deferred to future requirement API-03
+Last activity: 2026-04-26
 
 ```
-v4.0 Progress: [####################] 100% (4 of 4 phases complete; live Amplify/custom-domain smoke test deferred)
+v4.0 Progress: [####################] 100% archived (4 of 4 phases complete; live Amplify/custom-domain smoke test deferred)
 ```
 
 ## Performance Metrics
@@ -115,21 +115,18 @@ v4.0 Progress: [####################] 100% (4 of 4 phases complete; live Amplify
 
 ### Pending Todos
 
-- Plan Phase 12: Persistent Voice Overlay (VoiceSessionProvider + LayoutShell)
-- Verify @elevenlabs/client v1.3.1 installs without peer dependency conflicts before Phase 14
-- Verify openProject slug casing against src/data/projects.ts before Phase 13 (TOUR_STEPS uses 'Parz-AI' -- confirm exact field name)
+- API-03: Run `scripts/verify-amplify-apis.mjs` against a reachable Amplify/custom-domain production URL in a future milestone
 
 ### Blockers/Concerns
 
-- [v4.0]: AudioWorklet chunk size and downsampling strategy need profiling against actual Scribe WebSocket -- validate with isolated test script before Phase 14 integration
-- [v4.0]: Barge-in threshold (currently 0.15) may cause Parz to interrupt its own TTS at full volume -- likely raise to 0.35 or disable during speaking state; calibrate in Phase 14
+- `audienclature.com` / `www.audienclature.com` DNS was NXDOMAIN during v4.0 completion, so live Amplify/custom-domain smoke testing is deferred.
 
 ## Session Continuity
 
-Last session: 2026-04-25T23:15:20Z
-Stopped at: Phase 14 Plan 02 complete
-Resume file: .planning/phases/14-elevenlabs-stt-upgrade/14-02-SUMMARY.md
+Last session: 2026-04-26T01:58:46Z
+Stopped at: v4.0 milestone archived
+Resume file: .planning/MILESTONES.md
 
-**Next:** Execute Phase 14 Plan 03
+**Next:** Start next milestone with `/gsd-new-milestone`
 
-**Planned Phase:** 15 (API Verification and Deployment) — 2 plans — 2026-04-26T00:12:37.854Z
+**Deferred:** API-03 — run `scripts/verify-amplify-apis.mjs` against a reachable Amplify/custom-domain production URL.

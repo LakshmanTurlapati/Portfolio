@@ -8,9 +8,11 @@ A Next.js portfolio site (audienclature.com) with Tailwind CSS, featuring an int
 
 A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona -- same creative energy as the Flutter version but with modern web capabilities.
 
-## Current Milestone: v4.0 Voice Mode Production
+## Current State
 
-**Goal:** Make voice mode fully functional and production-ready -- real Grok intelligence, ElevenLabs STT upgrade, wired tool calls, persistent overlay across all pages, and deployment-ready API configuration. Live Amplify/custom-domain smoke testing is deferred because the production domain is currently unavailable.
+**Shipped:** v4.0 Voice Mode Production (2026-04-26)
+
+Voice mode is now production-ready in-app: the session persists across routes, tool callbacks execute real UI actions, ElevenLabs Scribe v2 handles STT through server-issued tokens, voice state has visual glow feedback, and API routes are wired to real xAI/ElevenLabs providers. Live Amplify/custom-domain smoke testing is deferred because the production domain is currently unavailable.
 
 **Target features:**
 - Wire all voice tool callbacks (openProject, scrollTo, openLink, toggleTheme, navigate) so tour and AI commands actually execute
@@ -18,6 +20,12 @@ A visually striking, interactive portfolio that showcases projects with rich det
 - Verify Grok API key is present and voice/chat reach xAI Grok on a reachable deployment; keep a repeatable Amplify verifier for the deferred custom-domain production check
 - Persistent voice overlay that stays open across page navigation (layout-level, not page-level)
 - Voice mode accessible from all pages (portfolio, about, chat) -- not just home
+
+## Next Milestone Candidates
+
+- API-03: Restore or identify a reachable Amplify production URL and run `scripts/verify-amplify-apis.mjs` against `/api/chat`, `/api/stt-token`, and `/api/tts`.
+- Mobile voice mode refinements, if mobile UX becomes the next priority.
+- Deferred portfolio DataGrid hover effects and project-card polish, if visual completion becomes the next priority.
 
 ## Requirements
 
@@ -45,13 +53,17 @@ A visually striking, interactive portfolio that showcases projects with rich det
 - Chat QoL (loading messages, friendly errors, suggestion chips) -- v3
 - IframeViewer browser previews (Figma, YouTube, GitHub, fallback CTAs) -- v3
 
+### Validated in v4.0
+
+- ✓ Persistent voice overlay across page navigation — v4.0
+- ✓ Voice tool callbacks for openProject, scrollTo, openLink, toggleTheme, navigate, and tour actions — v4.0
+- ✓ Voice glow visual feedback for listening/executing/success/error states — v4.0
+- ✓ ElevenLabs Scribe v2 STT with server-issued `/api/stt-token` tokens — v4.0
+- ✓ Grok/ElevenLabs API routes verified on a reachable deployment, with live Amplify/custom-domain verification deferred — v4.0
+
 ### Active
 
-- [x] Wire all voice tool callbacks (openProject, scrollTo, openLink, toggleTheme, navigate)
-- [x] Upgrade STT from Web Speech API to ElevenLabs
-- [x] Verify Grok and ElevenLabs API connectivity on a reachable deployment; live Amplify/custom-domain smoke test deferred
-- [x] Persistent voice overlay across page navigation (layout-level)
-- [x] Voice mode accessible from all pages through the persistent overlay once voice is active
+- [ ] API-03: Run `scripts/verify-amplify-apis.mjs` against a reachable Amplify/custom-domain production URL
 
 ### Out of Scope
 
@@ -111,4 +123,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26 after v4.0 scope deferral for live Amplify/custom-domain smoke testing*
+*Last updated: 2026-04-26 after v4.0 milestone completion*
