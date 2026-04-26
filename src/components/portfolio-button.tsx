@@ -79,7 +79,11 @@ export function PortfolioButton({ variant, isDark, className }: PortfolioButtonP
     );
   }
 
-  // Mobile variant -- uses image instead of text
+  // Mobile variant -- uses image instead of text.
+  // Sized so the image (after scale-[1.4]) fits inside its flex slot on the
+  // smallest expected phones (320px viewport → 56px button); overflow-hidden
+  // is a belt-and-suspenders guard so any future scaling can't bleed into
+  // adjacent navbar slots.
   return (
     <div
       ref={glowRef}
@@ -90,14 +94,14 @@ export function PortfolioButton({ variant, isDark, className }: PortfolioButtonP
     >
       <button
         onClick={handleClick}
-        className="flex items-center justify-center w-[90%] h-[80%] rounded-[20px] no-underline cursor-pointer border-none"
+        className="flex items-center justify-center w-[90%] h-[80%] rounded-[20px] no-underline cursor-pointer border-none overflow-hidden"
         style={{ backgroundColor: 'var(--color-portfolio-btn-bg)' }}
       >
         <Image
           src={isDark ? '/icons/portfolio_light.png' : '/icons/portfolio.png'}
           alt="Portfolio"
-          width={112}
-          height={28}
+          width={64}
+          height={16}
           className="scale-[1.4]"
           priority
         />

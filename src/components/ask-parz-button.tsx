@@ -66,7 +66,9 @@ export function AskParzButton({ isDark, onClick, variant = 'desktop' }: AskParzB
         transform: isMobile
           ? (hover ? 'scale(1.04)' : 'none')
           : (hover ? 'translateY(-50%) scale(1.04)' : 'translateY(-50%)'),
-        padding: '0 16px 0 13px',
+        // Mobile: dot-only, tighter padding so the button stays inside its 62px
+        // flex slot on the narrowest phones. Desktop: keep the label-friendly padding.
+        padding: isMobile ? '0 10px' : '0 16px 0 13px',
         background: isDark
           ? (hover ? 'rgba(0,0,0,0.10)' : 'rgba(0,0,0,0.05)')
           : (hover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)'),
@@ -115,10 +117,10 @@ export function AskParzButton({ isDark, onClick, variant = 'desktop' }: AskParzB
         }}
       />
 
-      {/* Label — always shown in the mobile variant (dedicated flex slot);
-          hidden on narrow desktop widths in the desktop variant where the label
-          would crowd the navbar. */}
-      <span className={`relative z-[1] whitespace-nowrap ${isMobile ? '' : 'max-[760px]:hidden'}`}>Parz</span>
+      {/* Label — hidden on the mobile variant (the dot+halo is enough affordance
+          and the 62px flex slot can't fit "Parz" without overflowing into adjacent
+          navbar slots). On the desktop variant, hidden at narrow widths only. */}
+      <span className={`relative z-[1] whitespace-nowrap ${isMobile ? 'hidden' : 'max-[760px]:hidden'}`}>Parz</span>
     </button>
   );
 }
