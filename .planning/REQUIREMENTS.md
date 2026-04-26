@@ -99,46 +99,47 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PERS-01 | TBD | Pending |
-| PERS-02 | TBD | Pending |
-| PERS-03 | TBD | Pending |
-| PERS-04 | TBD | Pending |
-| PERS-05 | TBD | Pending |
-| CONT-01 | TBD | Pending |
-| CONT-02 | TBD | Pending |
-| CONT-03 | TBD | Pending |
-| CONT-04 | TBD | Pending |
-| CONT-05 | TBD | Pending |
-| SAFE-01 | TBD | Pending |
-| SAFE-02 | TBD | Pending |
-| SAFE-03 | TBD | Pending |
-| SAFE-04 | TBD | Pending |
-| SAFE-05 | TBD | Pending |
-| SAFE-06 | TBD | Pending |
-| BROW-01 | TBD | Pending |
-| BROW-02 | TBD | Pending |
-| BROW-03 | TBD | Pending |
-| BROW-04 | TBD | Pending |
-| BROW-05 | TBD | Pending |
-| CTRL-01 | TBD | Pending |
-| CTRL-02 | TBD | Pending |
-| CTRL-03 | TBD | Pending |
-| CTRL-04 | TBD | Pending |
-| CTRL-05 | TBD | Pending |
-| FSB-01 | TBD | Pending |
-| FSB-02 | TBD | Pending |
-| FSB-03 | TBD | Pending |
-| EVAL-01 | TBD | Pending |
-| EVAL-02 | TBD | Pending |
-| EVAL-03 | TBD | Pending |
-| EVAL-04 | TBD | Pending |
-| EVAL-05 | TBD | Pending |
+| PERS-01 | Phase 16 | Pending |
+| PERS-02 | Phase 16 | Pending |
+| PERS-03 | Phase 16 | Pending |
+| PERS-04 | Phase 16 | Pending |
+| PERS-05 | Phase 16 | Pending |
+| CONT-01 | Phase 16 | Pending |
+| CONT-02 | Phase 16 | Pending |
+| CONT-03 | Phase 16 | Pending |
+| CONT-04 | Phase 16 | Pending |
+| CONT-05 | Phase 16 | Pending |
+| SAFE-01 | Phase 16 | Pending |
+| SAFE-02 | Phase 16 | Pending |
+| SAFE-03 | Phase 16 | Pending |
+| SAFE-04 | Phase 16 | Pending |
+| SAFE-05 | Phase 16 | Pending |
+| SAFE-06 | Phase 17 | Pending |
+| BROW-01 | Phase 17 | Pending |
+| BROW-02 | Phase 17 | Pending |
+| BROW-03 | Phase 17 | Pending |
+| BROW-04 | Phase 17 | Pending |
+| BROW-05 | Phase 17 | Pending |
+| CTRL-01 | Phase 18 | Pending |
+| CTRL-02 | Phase 18 | Pending |
+| CTRL-03 | Phase 18 | Pending |
+| CTRL-04 | Phase 18 | Pending |
+| CTRL-05 | Phase 18 | Pending |
+| FSB-01 | Phase 19 | Pending |
+| FSB-02 | Phase 19 | Pending |
+| FSB-03 | Phase 19 | Pending |
+| EVAL-01 | Phase 20 | Pending |
+| EVAL-02 | Phase 20 | Pending |
+| EVAL-03 | Phase 20 | Pending |
+| EVAL-04 | Phase 20 | Pending |
+| EVAL-05 | Phase 20 | Pending |
 
 **Coverage:**
 - v4.1 requirements: 34 total
-- Mapped to phases: 0
-- Unmapped: 34 (pending roadmap)
+- Mapped to phases: 34
+- Unmapped: 0
+- Coverage: 100% ✓
 
 ---
 *Requirements defined: 2026-04-26*
-*Last updated: 2026-04-26 after v4.1 requirements definition*
+*Last updated: 2026-04-26 after v4.1 roadmap creation*

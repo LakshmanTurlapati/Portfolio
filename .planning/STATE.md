@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v4.1
 milestone_name: Parz Persona, Portfolio Context, and Site Control Refresh
-status: defining_requirements
-stopped_at: defining requirements
-last_updated: "2026-04-26T02:30:00.000Z"
+status: ready_to_plan
+stopped_at: roadmap created
+last_updated: "2026-04-26T00:00:00.000Z"
 last_activity: 2026-04-26
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,125 +21,55 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** v4.1 Parz persona, portfolio context, and site control refresh
+**Current focus:** Phase 16 — Public-Safe Persona and Content Refresh
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: -
-Status: Defining requirements
-Last activity: 2026-04-26 - Milestone v4.1 started
+Phase: 16 of 20 (Public-Safe Persona and Content Refresh)
+Plan: Not planned yet
+Status: Ready to plan
+Last activity: 2026-04-26 — Created v4.1 roadmap covering Phases 16-20 and mapped 34/34 requirements.
 
 ```
-v4.1 Progress: [--------------------] 0% defining requirements
+v4.1 Progress: [--------------------] 0% ready to plan
 ```
 
 ## Performance Metrics
 
 **Velocity:**
+- Total plans completed: 37+ from previous milestones
+- Average duration: tracked during execution
+- Total execution time: tracked during execution
 
-- Total plans completed: 37 (from v1.0 + v3)
-- Average duration: ~4min
-- Total execution time: ~0.5 hours
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 16-20 | TBD | TBD | TBD |
 
 ## Accumulated Context
 
 ### Decisions
 
-- [v1.0]: Coarse granularity -- 4 phases grouping Foundation+Navigation, Animations+HomePage, ContentPages+Chat, Transitions+Deployment
-- [v1.0]: Tailwind CSS v4 CSS-first config with @custom-variant dark for class-based dark mode
-- [v1.0]: Data files pattern established in src/data/ with typed interfaces and exported const arrays
-- [v3-session]: Several v3 components already implemented directly from design prototype (DataGrid, ProjectDetail, IframeViewer, GitHub Stats, Ask Parz, particles.js, portfolio page, project data) -- Phase 5 and 6 are validate/polish, not scratch builds
-- [v3-session]: Circular reveal transition attempted 3 times but not matching Flutter ClipPath behavior -- isolated as Phase 7 for dedicated focus
-- [v3]: Voice mode isolated as Phase 8 (largest new feature, Web Speech API, VoiceBus state machine)
-- [05-01]: GithubPreview uses inline styles (not CSS classes) to avoid globals.css scope conflicts with IframeViewer
-- [05-01]: Mermaid rendering intentionally omitted from GithubPreview (out-of-scope dependency)
-- 05-03: PROJECT_DETAILS content ported verbatim from v3 prototype -- all 21 projects covered, DATA-01 satisfied
-- Tooltip-based GitHub contribution scraping (not data-level which is 0-4 intensity; data-count removed ~2023)
-- ISR revalidate=3600 on /api/github-stats caps upstream GitHub requests to 3/hour regardless of traffic
-- ChatPopup uses useChat hook from @ai-sdk/react (same as chat/page.tsx) -- no raw fetch, consistent with existing infrastructure
-- AskParzButton on mobile rendered in compact flex slot -- label hidden via existing max-[760px]:hidden class on button
-- Particle cleanup audit Phase 6: all three steps confirmed correct (destroypJS → clear array → remove canvas)
-- View Transitions API as primary circular reveal path with GSAP overlay fallback -- old page snapshot remains visible around expanding circle
-- useRef guard (synchronous) + shadow useState (reactive) dual pattern for isTransitioning -- eliminates rapid-click race condition
-- Safety setTimeout 600ms alongside transition.finished per T-07-04 threat mitigation
-- Fixed prefer-const ESLint violation in data-grid.tsx -- const correct since Object.assign mutates in place
-- All 5 circular reveal visual tests passed -- View Transitions API matches Flutter ClipPath behavior (Phase 7 complete)
-- VoiceState/VoiceBusInstance in declare global{} (not module scope) so globally accessible without imports across all TS files
-- ElevenLabs stream() cast to ReadableStream and passed directly to Response() -- for-await-of fails on ES2017 tsconfig target
-- npm install --legacy-peer-deps needed for ElevenLabs due to pre-existing ai-sdk/react peer conflict with react@19.1.0
-- SpeechRecognition typed as any -- TypeScript DOM lib does not expose SpeechRecognition/SpeechRecognitionEvent/SpeechRecognitionErrorEvent even with dom lib target
-- streamTTS Promise wraps source.onended -- enables sequential await speak() in tour without event emitter complexity
-- dispatchToolCall inside hook body -- single dispatch for all TOUR_STEPS tool calls; openProject wired via toolCallbacks, others console.warn on miss
-- Import Flip from gsap/all to avoid macOS case-insensitive FS TS1149 casing conflict between gsap/Flip and gsap/flip
-- VoiceNavProps = Omit<VoicePanelProps, 'isDark' | 'micDenied'> in navbars -- controller voiceProps excludes theme/mic fields that navbars inject themselves
-- ParticleContainer type alias collocated in particle-background.tsx -- __vmTick is an implementation detail of breathing, not a VoiceBus concern
-- breathCancelled + breathRaf are closure-local in init() -- ensures zero React re-renders; each theme-switch reinit gets an isolated breathing loop
-- All 5 VOIC requirements verified end-to-end by human visual inspection -- navbar morph, STT, TTS, particle breathing, and voice commands all confirmed working
-- [09-01]: PARZ_ERRORS displayed via currentError state (useEffect on error) -- never leak raw error.message to UI per T-09-01 threat mitigation
-- [09-01]: DATA_STORE project names normalized to match projects.ts displayed names exactly so Parz can answer questions about all 21 projects
-- SpotlightEffect uses CSS custom properties --mx/--my updated synchronously on mousemove -- eliminates setInterval/lerp overhead; opacity transition for show/hide; 500px radius matching v3 prototype
-- [09-03]: All 4 Phase 9 requirements (CHAT-01, CHAT-02, CHAT-03, ABUT-01) confirmed working by human visual inspection -- Phase 9 complete
-- isUnembeddable exported directly from iframe-viewer.tsx -- single source of truth for embeddability checks shared with portfolio/page.tsx
-- openProject calls setViewer directly on card click -- matches v3 D-01/D-02; ProjectDetail retained for secondary access via onOpenLink (D-03)
-- All 5 circular reveal visual tests passed (Phase 10): View Transitions API + WAAPI clip-path on ::view-transition-new(root) confirmed working, TRAN-01 and TRAN-02 satisfied
-- [v4.0-roadmap]: Persistent overlay (Phase 12) is the unambiguous prerequisite gate -- every other v4.0 feature requires or benefits from VoiceSessionProvider at layout level
-- [v4.0-roadmap]: Tool callbacks and visual feedback combined into Phase 13 (coarse granularity) -- both require stable layout-level session, neither adds new architectural risk
-- [v4.0-roadmap]: STT isolated as Phase 14 -- AudioWorklet + WebSocket has the highest technical risk in the milestone; validate with standalone test before integrating into voice-controller.ts
-- [v4.0-roadmap]: @elevenlabs/client v1.3.1 is the browser-safe STT SDK (ScribeRealtime in elevenlabs-js is Node.js-only -- confirmed from type declarations)
-- [v4.0-roadmap]: Separate sttCtx (16kHz AudioContext) mandatory -- sharing VoiceBus._ctx with STT creates TTS echo feedback loop
-- [v4.0-roadmap]: /api/stt-token route issues 15-minute single-use tokens -- NEXT_PUBLIC_ELEVENLABS_API_KEY must never be used
-- openTextChat dispatches parz:open-text-chat CustomEvent with 400ms delay for View Transitions API compatibility
-- currentPage derived dynamically from usePathname() in VoiceSessionProvider — not hardcoded as 'home'
-- VoiceOverlay returns null on pathname === '/' to prevent double panel — home page renders its own VoicePanel inside navbar morph
-- VoiceSessionProvider inside VoiceBusProvider in layout.tsx — useVoiceController depends on window.VoiceBus which VoiceBusProvider initializes
-- useVoiceController has exactly one call site (voice-session-provider.tsx) — page.tsx consumes voice state via useVoiceSession() context
-- parz:open-text-chat CustomEvent listener registered in page.tsx useEffect — allows VoiceSessionProvider.openTextChat to trigger ChatPopup from layout level
-- [13-01]: toolCallbacksRef uses useRef not useState — prevents stale closure in dispatchToolCall memoization; ref object reference is stable so controller always reads fresh callbacks
-- [13-01]: toggleTheme and openLink wired once in VoiceSessionProvider useEffect — no per-page registration needed, they have no page-specific state
-- [13-01]: waitForPage uses Promise.race with 1500ms timeout — handles both fast page-ready events and already-mounted pages where no event fires
-- [13-01]: navigate and endCall excluded from VoiceBus tool signals — internal routing, not user-facing tool calls
-- [13-02]: --glow-color CSS custom property set on glow div via inline style from resolvedTheme — avoids duplicating dark/light logic in CSS; single source of truth in component
-- [13-02]: functional setGlowState callback for VoiceBus state event — prevents executing/error glow from being wiped by intermediate thinking/speaking transitions
-- [13-02]: success reset timer (1000ms setTimeout) matches voiceGlowSuccess keyframe duration exactly — clean handoff from animation end to idle
-- openProject voice callback calls setSelectedProject directly (not local openProject) — opens ProjectDetail overlay, not IframeViewer
-- scrollTo callback in about/page.tsx delegates to scrollToSection() — correctly handles scrollable div container not window scroll
-- Voice selector alias map (work→experience, education/school→academics) covers natural speech in scrollTo callback
-- [14-01]: Response.json() shorthand used in stt-token route — lighter than new Response + JSON.stringify + headers
-- [14-01]: POST handler has no req parameter since token minting takes no request body
-- [14-01]: pcm-processor.js placed in public/ so Next.js serves it at /pcm-processor.js (required for audioWorklet.addModule URL)
-- [14-02]: startListeningFallback declared before startListening — required by useCallback dependency order
-- [14-02]: sttCtx AudioContext created before first await in startListening — AudioContext autoplay policy compliance (Pitfall 3)
-- [14-02]: void guard used on startListening() call sites — startListening is now async; prevents unhandled rejection when offline
-- [14-02]: Barge-in threshold raised from 0.15 to 0.35 — ElevenLabs TTS amplitude is consistently higher than Web Speech API synthesis
-- [v4.1-scope]: Milestone focuses on Parz's brain/content, not a chat UI redesign -- user chose "same UI, better brain".
-- [v4.1-current-work]: Public-safe role context is AI Enablement Engineer at InfiniteChoice building Voyza, an AI-first hotel booking platform; keep brief and avoid internal employer/product details.
-- [v4.1-flagships]: Current flagship projects are FSB / Full Self Browsing and GitFly; GitFly must link only to https://gitfly.ai because source is private.
-- [v4.1-persona]: Parz should be ambitious, curious, playful, kind, warm, high-energy, direct, practical, inclusive, and story-first without sounding corporate, robotic, or overly formal.
-- [v4.1-persona]: Lakshman's intensity should be framed as alignment-driven gap radar and high internal standards, not simply chasing success.
-- [v4.1-builder-style]: Ship first, use AI as leverage, care about aesthetic feel, and obsess over gaps until solved.
-- [v4.1-guardrails]: Parz must not expose data store/internal context, private source details, API keys/secrets/config, non-public employer/client details, or voice bot internals.
-- [v4.1-rude-mode]: Parz may match profanity/roast when users are rude, but must avoid slurs, threats, hate, and punching down.
-- [v4.1-control]: User wants meaningful AI control inspired by FSB, not just scripted route changes -- Parz should open projects, scroll pages, navigate precisely, and control inbuilt browser experiences where feasible.
-- [v4.1-project-ui]: Remove the right-side ProjectDetail panel path; user said it was never part of the intended design. Project opening should use the inbuilt browser directly.
-- [v4.1-project-open]: Parz should be able to open a specific project from the home page or current page without always navigating to the portfolio page first.
-- [v4.1-fsb-overlay]: Show an FSB-inspired monochrome overlay while Parz is navigating/controlling, with a small bottom-left "powered by FSB" badge.
+- [v4.1-roadmap]: Continue numbering from v4.0; v4.1 starts at Phase 16 and ends at Phase 20.
+- [v4.1-roadmap]: Coarse granularity compresses the milestone into five delivery boundaries: public-safe brain/content, browser path, global control, overlay, verification.
+- [v4.1-current-work]: Public-safe role context is AI Enablement Engineer at InfiniteChoice building Voyza, an AI-first hotel booking platform; keep brief and avoid internal details.
+- [v4.1-flagships]: FSB / Full Self Browsing and GitFly are current flagships; GitFly links only to https://gitfly.ai because source is private.
+- [v4.1-project-ui]: Remove the right-side ProjectDetail primary path; project opening should use the inbuilt browser directly from manual cards and Parz commands.
 
 ### Pending Todos
 
-- API-03: Run `scripts/verify-amplify-apis.mjs` against a reachable Amplify/custom-domain production URL in a future milestone
-- v4.1: Define requirements and roadmap for Parz persona/content/site-control refresh
+- API-03 remains deferred: run `scripts/verify-amplify-apis.mjs` against a reachable Amplify/custom-domain production URL in a future milestone.
 
 ### Blockers/Concerns
 
-- `audienclature.com` / `www.audienclature.com` DNS was NXDOMAIN during v4.0 completion, so live Amplify/custom-domain smoke testing is deferred.
+- Live Amplify/custom-domain API smoke testing is deferred until `audienclature.com` or the actual Amplify URL is publicly reachable.
+- Final Parz copy/eval thresholds may need owner approval and tuning during Phase 16/20 planning.
 
 ## Session Continuity
 
-Last session: 2026-04-26T02:30:00Z
-Stopped at: defining v4.1 requirements
-Resume file: .planning/PROJECT.md
+Last session: 2026-04-26
+Stopped at: v4.1 roadmap created
+Resume file: .planning/ROADMAP.md
 
-**Next:** Finish requirements, then create v4.1 roadmap
-
-**Deferred:** API-03 — run `scripts/verify-amplify-apis.mjs` against a reachable Amplify/custom-domain production URL.
+**Next:** Run `/gsd-plan-phase 16`.
