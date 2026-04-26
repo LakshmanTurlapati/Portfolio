@@ -14,13 +14,19 @@ A visually striking, interactive portfolio that showcases projects with rich det
 
 v4.1 is complete and live at https://portfolio-v4-test.fly.dev/. Parz grounds answers in a typed `public-profile.ts` source of truth (current work, personality, flagship projects, refusal boundaries). About / Experience / project content shares the same approved facts as the system prompt, locked by Phase 20 contract tests. Project cards open approved targets directly in the inbuilt browser, and Parz can navigate, scroll, open projects, close the shell, and refuse third-party iframe control from any current page — all wrapped in a pointer-safe monochrome FSB control overlay. The voice pipeline was audited end-to-end and three additional waves of fixes (Phases 21-23) shipped: hardcoded tour scaffolding ripped out for LLM-driven walkthroughs, audio serialization rebuilt around a single `cancelAllAudio` primitive plus AbortController plus turn-generation counter, every word the user hears is now LLM-generated. Phase 24 closed out the mobile pass and iOS safe-area support (`viewport-fit=cover` + `env(safe-area-inset-*)` on all fixed mobile elements).
 
-## Next Milestone Candidates
+## Current Milestone: v4.2 Carry-forward Polish & Hardening
 
-- Wave 2 P1 voice audit findings still open in `21-AUDIT.md`: STT session-started timeout, SpeechSynthesis fallback timeout, registerToolCallbacks deregister, tool-callback exception wrapping, openTextChat 400 ms race.
-- API-03: Live Amplify / custom-domain smoke test against `audienclature.com` (script ready at `scripts/verify-amplify-apis.mjs`, blocked on a reachable production URL).
-- Mobile polish remaining: particle-background mobile performance, chat input iOS keyboard handling, project-detail full-screen mobile UX.
-- FSB-04 (overlay action captions), FSB-05 (mobile-specific overlay treatment), CHAT-UI-01 (chat popup/page redesign).
-- Deferred portfolio DataGrid hover effects and project-card polish.
+**Goal:** Close out v4.1's deferred items -- voice reliability hardening, mobile UX gaps, FSB overlay polish, and a chat UI redesign -- without regressing shipped behavior.
+
+**Target features:**
+
+- Voice Wave 2 hardening: F-05 openTextChat race, F-06 STT session-started timeout, F-07 SpeechSynthesis fallback timeout, F-08 registerToolCallbacks deregister, F-09 tool-callback exception wrapping (all from `21-AUDIT.md`)
+- Mobile UX pass: particle-background mobile performance, chat input iOS keyboard handling, project-detail full-screen mobile layout
+- FSB overlay polish: FSB-04 dynamic action captions, FSB-05 mobile-specific overlay treatment
+- Chat UI redesign (CHAT-UI-01): visual / UX polish of the chat popup
+- API-03 verification: live Amplify / custom-domain smoke test (gated on a reachable production URL; may stay deferred)
+
+**Key context:** All scope is carry-forward from v4.1. Voice items batch well together. CHAT-UI-01 is design-driven and benefits from a UI-SPEC phase. API-03 is infra-blocked, not code-blocked -- it ships only if a reachable Amplify URL exists, otherwise it stays deferred with that reason logged.
 
 ## Requirements
 
@@ -75,12 +81,13 @@ v4.1 is complete and live at https://portfolio-v4-test.fly.dev/. Parz grounds an
 - ✓ All hardcoded `speak()` strings removed; greet is LLM-generated via synthetic kickoff turn; R-1 barge-in regression hotfix shipped — v4.1 Phase 23
 - ✓ Mobile pass + iOS safe-area: `viewport-fit=cover`, `env(safe-area-inset-*)` on all fixed mobile elements, variant-aware AskParz button, portfolio image clipping, compact mobile voice panel — v4.1 Phase 24
 
-### Active (next milestone candidates)
+### Active (v4.2 milestone)
 
 - [ ] Wave 2 P1 voice audit findings (`21-AUDIT.md`): F-05 openTextChat 400ms race, F-06 STT session-started timeout, F-07 SpeechSynthesis fallback timeout, F-08 registerToolCallbacks deregister, F-09 tool-callback exception wrapping
-- [ ] API-03: Live Amplify / custom-domain smoke test against `audienclature.com` (script ready at `scripts/verify-amplify-apis.mjs`)
 - [ ] Particle-background mobile performance, chat input iOS keyboard handling, project-detail full-screen mobile UX
-- [ ] FSB-04 overlay action captions, FSB-05 mobile-specific overlay treatment, CHAT-UI-01 chat popup/page redesign
+- [ ] FSB-04 overlay action captions, FSB-05 mobile-specific overlay treatment
+- [ ] CHAT-UI-01 chat popup/page redesign (design-driven; UI-SPEC phase)
+- [ ] API-03: Live Amplify / custom-domain smoke test against `audienclature.com` (script ready at `scripts/verify-amplify-apis.mjs`; gated on reachable production URL)
 
 ### Out of Scope
 
@@ -162,4 +169,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26 after v4.1 Phase 18 completion*
+*Last updated: 2026-04-26 -- v4.2 Carry-forward Polish & Hardening milestone started*
