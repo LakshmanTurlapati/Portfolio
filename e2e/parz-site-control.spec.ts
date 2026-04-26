@@ -6,14 +6,10 @@ type ParzSiteControl = {
   openProject: (name: string) => { ok: boolean; message: string };
 };
 
-declare global {
-  interface Window {
-    __parzSiteControl?: ParzSiteControl;
-  }
-}
+type WindowWithSiteControl = Window & { __parzSiteControl?: ParzSiteControl };
 
 async function waitForSiteControl(page: import('@playwright/test').Page) {
-  await page.waitForFunction(() => Boolean(window.__parzSiteControl));
+  await page.waitForFunction(() => Boolean((window as WindowWithSiteControl).__parzSiteControl));
 }
 
 async function waitForControlIdle(page: import('@playwright/test').Page) {
@@ -24,18 +20,18 @@ test('Parz site control navigates, scrolls, opens GitFly, and shows FSB overlay'
   await page.goto('/');
   await waitForSiteControl(page);
 
-  await page.evaluate(() => window.__parzSiteControl?.navigate('portfolio'));
+  await page.evaluate(() => (window as WindowWithSiteControl).__parzSiteControl?.navigate('portfolio'));
   await expect(page).toHaveURL(/\/portfolio$/);
   await expect(page.getByText('powered by FSB')).toBeVisible();
   await waitForControlIdle(page);
 
   await waitForSiteControl(page);
-  await page.evaluate(() => window.__parzSiteControl?.scrollTo('experience'));
+  await page.evaluate(() => (window as WindowWithSiteControl).__parzSiteControl?.scrollTo('experience'));
   await expect(page).toHaveURL(/\/about$/);
   await expect(page.getByRole('heading', { name: 'Experience' })).toBeVisible();
 
   await waitForSiteControl(page);
-  await page.evaluate(() => window.__parzSiteControl?.openProject('GitFly'));
+  await page.evaluate(() => (window as WindowWithSiteControl).__parzSiteControl?.openProject('GitFly'));
   await expect(page.getByText('powered by FSB')).toBeVisible();
   await expect(page.getByText('gitfly.ai', { exact: true })).toBeVisible();
 });
