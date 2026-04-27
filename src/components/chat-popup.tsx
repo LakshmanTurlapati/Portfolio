@@ -220,8 +220,8 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
       {/* Keyframe animations scoped to this component */}
       <style>{`
         @keyframes popupIn {
-          from { transform: translate(-50%, 30px); opacity: 0; }
-          to { transform: translate(-50%, 0); opacity: 1; }
+          from { opacity: 0; transform: scale(0.96); }
+          to { opacity: 1; transform: scale(1); }
         }
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -234,6 +234,14 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
         @keyframes popup-shimmer {
           0% { background-position: -200px 0; }
           100% { background-position: calc(200px + 100%) 0; }
+        }
+        @keyframes messageAppear {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes sendSuccessPulse {
+          from { box-shadow: 0 0 0 0 rgba(169, 227, 75, 0.55); }
+          to { box-shadow: 0 0 0 6px rgba(169, 227, 75, 0); }
         }
         .popup-shimmer-text {
           background: linear-gradient(
@@ -248,17 +256,37 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
           -webkit-text-fill-color: transparent;
           animation: popup-shimmer 2s linear infinite;
         }
+        @media (prefers-reduced-motion: reduce) {
+          [data-chat-popup-card],
+          [data-chat-popup-backdrop],
+          [data-chat-message-wrapper] {
+            animation: none !important;
+          }
+          [data-chat-loading-dot] {
+            animation: none !important;
+            opacity: 0.6 !important;
+          }
+          .popup-shimmer-text {
+            animation: none !important;
+            background: var(--color-text) !important;
+            -webkit-text-fill-color: var(--color-text) !important;
+          }
+          [data-chat-send-pulse] {
+            animation: none !important;
+          }
+        }
       `}</style>
 
       {/* Backdrop */}
       <div
+        data-chat-popup-backdrop="true"
         style={{
           position: 'fixed',
           inset: 0,
           zIndex: 40,
           background: 'rgba(42,42,42,0.3)',
           backdropFilter: 'blur(2px)',
-          animation: 'fadeIn 0.2s ease',
+          animation: 'fadeIn 200ms ease-out',
         }}
         onClick={onClose}
       />
@@ -266,6 +294,9 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
       {/* Popup panel */}
       <div
         role="dialog"
+        aria-modal="true"
+        aria-labelledby="chat-popup-heading"
+        data-chat-popup-card="true"
         style={{
           position: 'fixed',
           zIndex: 50,
@@ -276,6 +307,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
           backdropFilter: 'blur(14px)',
           border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
           boxShadow: '0 24px 64px rgba(0,0,0,0.30)',
+          animation: 'popupIn 200ms cubic-bezier(0.2, 0.9, 0.2, 1)',
           ...(isDesktop
             ? {
                 right: '24px',
@@ -405,10 +437,12 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
             return (
               <div
                 key={message.id}
+                data-chat-message-wrapper="true"
                 style={{
                   display: 'flex',
                   justifyContent: isUser ? 'flex-end' : 'flex-start',
                   marginBottom: '12px',
+                  animation: 'messageAppear 180ms ease-out',
                 }}
               >
                 <div
@@ -461,6 +495,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
+                      data-chat-loading-dot="true"
                       style={{
                         width: '7px',
                         height: '7px',
