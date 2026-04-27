@@ -312,15 +312,41 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
               id="chat-popup-heading"
               style={{
                 margin: 0,
+                fontFamily: 'var(--font-instrument-serif), serif',
+                fontStyle: 'italic',
+                fontSize: '22px',
+                fontWeight: 400,
+                lineHeight: 1.2,
                 color: 'var(--color-text)',
-                // Visual typography (Instrument Serif italic 22px) added in Plan 02.
               }}
             >
               Parz
             </h2>
+            <span
+              style={{
+                fontFamily: 'var(--font-lato), sans-serif',
+                fontSize: '12px',
+                fontWeight: 400,
+                lineHeight: 1.3,
+                color: 'var(--color-text)',
+                opacity: 0.55,
+              }}
+            >
+              Lakshman&apos;s digital twin
+            </span>
           </div>
           <button
             onClick={onClose}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.backgroundColor = isDark
+                ? 'rgba(255,255,255,0.05)'
+                : 'rgba(0,0,0,0.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.7';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
             style={{
               width: '32px',
               height: '32px',
@@ -334,6 +360,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
               justifyContent: 'center',
               borderRadius: '8px',
               opacity: 0.7,
+              transition: 'opacity 200ms ease, background-color 200ms ease',
             }}
             aria-label="Close chat"
           >
@@ -355,10 +382,12 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
           {messages.length === 0 && !isLoading && (
             <div
               style={{
-                padding: '16px 0',
+                padding: '32px 16px 16px',
                 color: 'var(--color-text)',
                 opacity: 0.7,
+                fontFamily: 'var(--font-lato), sans-serif',
                 fontSize: '14px',
+                fontWeight: 400,
                 lineHeight: 1.6,
               }}
             >
@@ -383,19 +412,25 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
               >
                 <div
                   style={{
-                    maxWidth: '80%',
+                    maxWidth: '85%',
+                    padding: '10px 14px',
+                    fontFamily: 'var(--font-lato), sans-serif',
+                    fontSize: '15px',
+                    fontWeight: isUser ? 500 : 400,
+                    lineHeight: 1.5,
+                    wordBreak: 'break-word',
+                    color: isUser ? 'var(--color-bg)' : 'var(--color-text)',
+                    backgroundColor: isUser
+                      ? 'var(--color-text)'
+                      : isDark
+                        ? 'rgba(255,255,255,0.06)'
+                        : 'rgba(0,0,0,0.04)',
+                    border: isUser
+                      ? 'none'
+                      : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
                     borderRadius: '16px',
                     borderBottomRightRadius: isUser ? '4px' : '16px',
                     borderBottomLeftRadius: isUser ? '16px' : '4px',
-                    padding: '10px 14px',
-                    backgroundColor: isUser ? 'var(--color-text)' : 'transparent',
-                    color: isUser ? 'var(--color-bg)' : 'var(--color-text)',
-                    border: isUser
-                      ? 'none'
-                      : `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
-                    fontSize: '14px',
-                    lineHeight: 1.6,
-                    wordBreak: 'break-word',
                   }}
                 >
                   {isUser ? (
@@ -413,10 +448,11 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
             <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
               <div
                 style={{
+                  padding: '10px 14px',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                   borderRadius: '16px',
                   borderBottomLeftRadius: '4px',
-                  padding: '10px 14px',
-                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
                 }}
               >
                 {/* Three dots wave animation */}
@@ -447,14 +483,17 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
             <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
               <div
                 style={{
-                  maxWidth: '80%',
+                  maxWidth: '85%',
+                  padding: '10px 14px',
+                  fontFamily: 'var(--font-lato), sans-serif',
+                  fontSize: '14px',
+                  fontWeight: 400,
+                  lineHeight: 1.5,
+                  backgroundColor: 'rgba(239, 68, 68, 0.10)',
+                  border: '1px solid rgba(239, 68, 68, 0.30)',
+                  color: 'var(--color-text)',
                   borderRadius: '16px',
                   borderBottomLeftRadius: '4px',
-                  padding: '10px 14px',
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: 'var(--color-text)',
-                  fontSize: '14px',
                 }}
               >
                 {currentError}
