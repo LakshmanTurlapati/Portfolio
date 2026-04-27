@@ -114,9 +114,9 @@ See `milestones/v3-ROADMAP.md` (merged with v3 carry-forward).
   3. User on mobile opens the chat popup and sees the redesign respect MOB-02's keyboard / safe-area behavior — no regression in iOS input handling.
   4. User sending and receiving messages, hitting suggestion chips, and seeing loading / error states experiences the same functional behavior as the v4.1 popup — redesign is visual / UX polish, not a behavior change.
 **Plans**: 3 plans
-- [ ] 28-01-PLAN.md — Surface + layout scaffold (popup card, header, messages area geometry per UI-SPEC §5)
-- [ ] 28-02-PLAN.md — Typography + color + bubbles + suggestion chips + input + send button (UI-SPEC §3, §4, §5.4-§5.10)
-- [ ] 28-03-PLAN.md — Motion (popupIn, messageAppear, sendSuccessPulse, reduced-motion) + a11y (dialog/log/status/alert/group, Escape, focus capture, focus rings) per UI-SPEC §7, §8 — includes manual cross-device + a11y checkpoint
+- [x] 28-01-PLAN.md — Surface + layout scaffold (popup card, header, messages area geometry per UI-SPEC §5)
+- [x] 28-02-PLAN.md — Typography + color + bubbles + suggestion chips + input + send button (UI-SPEC §3, §4, §5.4-§5.10)
+- [x] 28-03-PLAN.md — Motion (popupIn, messageAppear, sendSuccessPulse, reduced-motion) + a11y (dialog/log/status/alert/group, Escape, focus capture, focus rings) per UI-SPEC §7, §8 — includes manual cross-device + a11y checkpoint
 **UI hint**: yes
 
 ## Progress
@@ -138,4 +138,4 @@ Phases execute in numeric order: 25 → 26 → 27 → 28
 | 25. Voice Wave 2 Hardening                  | v4.2 | 5/5 | Complete    | 2026-04-26 |
 | 26. Mobile UX Pass                          | v4.2 | 3/3 | Complete    | 2026-04-26 |
 | 27. FSB Overlay Polish                      | v4.2 | 3/3 | Complete    | 2026-04-27 |
-| 28. Chat UI Redesign                        | v4.2 | 0/3   | Not started | -          |
+| 28. Chat UI Redesign                        | v4.2 | 3/3 | Complete    | 2026-04-27 |
