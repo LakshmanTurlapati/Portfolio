@@ -54,7 +54,7 @@ See `milestones/v3-ROADMAP.md` (merged with v3 carry-forward).
 
 - [x] **Phase 25: Voice Wave 2 Hardening** — Close the five P1 audit findings (F-05..F-09) so voice survives slow networks, Safari quirks, page navigation, and throwing tool callbacks (completed 2026-04-26)
 - [x] **Phase 26: Mobile UX Pass** — Smooth particles on mobile, sane iOS keyboard handling for chat input, readable project-detail layout on small screens (completed 2026-04-26)
-- [ ] **Phase 27: FSB Overlay Polish** — Dynamic action captions in the overlay during Parz tool runs, plus a mobile-tuned overlay treatment
+- [x] **Phase 27: FSB Overlay Polish** — Dynamic action captions in the overlay during Parz tool runs, plus a mobile-tuned overlay treatment (completed 2026-04-27)
 - [x] **Phase 28: Chat UI Redesign** — Run a UI-SPEC against `chat-popup.tsx`, then ship the visual / UX polish on top of the Phase 26 mobile baseline (completed 2026-04-26)
 
 ## Phase Details
@@ -99,9 +99,9 @@ See `milestones/v3-ROADMAP.md` (merged with v3 carry-forward).
   2. User on mobile sees an overlay treatment scaled for small screens — the desktop grid is hidden, badge dimensions tuned for mobile, and pointer-safety preserved (FSB-05).
   3. User on desktop sees the overlay continue to behave exactly as it did at end of Phase 19 / 23 — no regression on monochrome styling, badge copy `powered by FSB`, or pointer-safety (FSB-04, FSB-05).
 **Plans**: 3 plans
-- [ ] 27-01-PLAN.md — FSB-04: Extend runTool helper to emit { name, args } payload (Wave 1)
-- [ ] 27-02-PLAN.md — FSB-04: Caption state machine + per-tool resolver in fsb-control-overlay.tsx + overlay lifetime reconciliation (Wave 2)
-- [ ] 27-03-PLAN.md — FSB-05: Mobile breakpoint gate for grid + WCAG 2.5.5 badge sizing + 600/768px breakpoint reconciliation (Wave 3)
+- [x] 27-01-PLAN.md — FSB-04: Extend runTool helper to emit { name, args } payload (Wave 1)
+- [x] 27-02-PLAN.md — FSB-04: Caption state machine + per-tool resolver in fsb-control-overlay.tsx + overlay lifetime reconciliation (Wave 2)
+- [x] 27-03-PLAN.md — FSB-05: Mobile breakpoint gate for grid + WCAG 2.5.5 badge sizing + 600/768px breakpoint reconciliation (Wave 3)
 **UI hint**: yes
 
 ### Phase 28: Chat UI Redesign
@@ -134,5 +134,5 @@ Phases execute in numeric order: 25 → 26 → 27 → 28
 | 24. Mobile Pass + Voice Stabilization       | v4.1 | 1/1 | Complete    | 2026-04-26 |
 | 25. Voice Wave 2 Hardening                  | v4.2 | 5/5 | Complete    | 2026-04-26 |
 | 26. Mobile UX Pass                          | v4.2 | 3/3 | Complete    | 2026-04-26 |
-| 27. FSB Overlay Polish                      | v4.2 | 0/3 | Planned     | -          |
+| 27. FSB Overlay Polish                      | v4.2 | 3/3 | Complete    | 2026-04-27 |
 | 28. Chat UI Redesign                        | v4.2 | 0/TBD | Not started | -          |
