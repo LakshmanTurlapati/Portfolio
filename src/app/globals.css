@@ -294,25 +294,6 @@ body {
   to { transform: rotate(1turn); }
 }
 
-@keyframes fsbControlActionPulse {
-  0%, 100% {
-    opacity: 0.72;
-    transform: translate(-50%, -50%) scale(1);
-    box-shadow:
-      0 0 8px rgba(var(--fsb-glow-rgb), 0.42),
-      0 0 28px rgba(var(--fsb-glow-rgb), 0.22),
-      0 0 54px rgba(var(--fsb-glow-rgb), 0.12);
-  }
-  50% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.025);
-    box-shadow:
-      0 0 12px rgba(var(--fsb-glow-rgb), 0.62),
-      0 0 38px rgba(var(--fsb-glow-rgb), 0.34),
-      0 0 72px rgba(var(--fsb-glow-rgb), 0.18);
-  }
-}
-
 @keyframes fsbControlProgressSweep {
   0% { transform: translateX(-125%) scaleX(0.42); }
   100% { transform: translateX(260%) scaleX(0.42); }
@@ -399,21 +380,6 @@ body {
   mask-composite: exclude;
 }
 
-.fsb-control-action-pulse {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  width: min(320px, 34vw);
-  min-width: 168px;
-  height: min(112px, 18vh);
-  min-height: 72px;
-  border: 2px solid rgba(var(--fsb-glow-rgb), 0.78);
-  border-radius: 12px;
-  background: rgba(var(--fsb-glow-rgb), 0.035);
-  animation: fsbControlActionPulse 1.5s ease-in-out infinite;
-  transform: translate(-50%, -50%);
-}
-
 .fsb-control-badge {
   position: fixed;
   left: max(16px, env(safe-area-inset-left));
@@ -497,12 +463,62 @@ body {
   animation: none;
 }
 
+.fsb-preview-control-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  pointer-events: none;
+  --fsb-preview-glow-rgb: 255, 255, 255;
+  --fsb-preview-glow-opacity: 0.82;
+  opacity: var(--fsb-preview-glow-opacity);
+  box-shadow:
+    inset 0 0 48px rgba(var(--fsb-preview-glow-rgb), 0.16),
+    inset 0 0 108px rgba(var(--fsb-preview-glow-rgb), 0.08);
+}
+
+.fsb-preview-control-overlay--on-light {
+  --fsb-preview-glow-rgb: 0, 0, 0;
+  --fsb-preview-glow-opacity: 0.72;
+}
+
+.fsb-preview-control-overlay::before,
+.fsb-preview-control-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fsb-preview-control-overlay::before {
+  border: 1px solid rgba(var(--fsb-preview-glow-rgb), 0.28);
+  box-shadow: inset 0 0 18px rgba(var(--fsb-preview-glow-rgb), 0.12);
+}
+
+.fsb-preview-control-overlay::after {
+  padding: 3px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 286deg,
+    rgba(var(--fsb-preview-glow-rgb), 0.72) 318deg,
+    rgba(var(--fsb-preview-glow-rgb), 1) 342deg,
+    transparent 360deg
+  );
+  filter: blur(1.5px) brightness(1.45);
+  animation: fsbControlViewportSweep 4.8s linear infinite;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
 /* Phase 27 / FSB-05: mobile badge sizing tuned for WCAG 2.5.5 (>= 44px hit area). */
 @media (max-width: 47.99rem) {
-  .fsb-control-action-pulse {
-    display: none;
-  }
-
   .fsb-control-badge {
     width: min(300px, calc(100vw - 24px));
     left: max(12px, env(safe-area-inset-left));
@@ -519,7 +535,7 @@ body {
   }
 
   .fsb-control-viewport-glow::after,
-  .fsb-control-action-pulse,
+  .fsb-preview-control-overlay::after,
   .fsb-control-progress span {
     animation: none !important;
   }

@@ -173,6 +173,7 @@ describe('site-control tool wiring', () => {
     expect(voice).toContain("runTool('scrollProjectPreview'");
     expect(provider).toContain('scrollProjectPreview: (direction?');
     expect(iframeViewer).toContain('onRegisterPreviewScroller');
+    expect(iframeViewer).toContain('controlOverlayActive');
     expect(githubPreview).toContain('onRegisterScroller');
     expect(githubPreview).toContain('shell.scrollTo');
     expect(chatPage).toContain("toolCall.name === 'scrollProjectPreview'");
@@ -186,6 +187,21 @@ describe('site-control tool wiring', () => {
     );
 
     expect(voice).toContain("case 'navigate':\n              dispatchToolCall('navigate', tc.args);");
+  });
+
+  it('scopes FSB preview scrolling to the preview surface while keeping the page overlay', () => {
+    const provider = readFileSync(join(process.cwd(), 'src/providers/site-control-provider.tsx'), 'utf8');
+    const iframeViewer = readFileSync(join(process.cwd(), 'src/components/iframe-viewer.tsx'), 'utf8');
+    const overlay = readFileSync(join(process.cwd(), 'src/components/fsb-control-overlay.tsx'), 'utf8');
+
+    expect(provider).toContain("type ControlOverlayScope = 'page' | 'preview'");
+    expect(provider).toContain("}, 'preview');");
+    expect(provider).toContain('controlOverlayActive={controlOverlayActive && controlOverlayScope === \'preview\'}');
+    expect(iframeViewer).toContain('function PreviewControlOverlay');
+    expect(iframeViewer).toContain('samplePreviewOverlayTone');
+    expect(iframeViewer).toContain('document.elementsFromPoint');
+    expect(overlay).toContain('fsb-control-viewport-glow');
+    expect(overlay).not.toContain('fsb-control-action-pulse');
   });
 });
 
@@ -210,7 +226,10 @@ describe('FSB overlay contrast contract', () => {
     expect(fsbCss).toContain('--fsb-glow-rgb: 255, 255, 255');
     expect(fsbCss).toContain('--fsb-glow-rgb: 0, 0, 0');
     expect(fsbCss).toContain('.fsb-control-viewport-glow');
-    expect(fsbCss).toContain('.fsb-control-action-pulse');
+    expect(fsbCss).not.toContain('.fsb-control-action-pulse');
+    expect(fsbCss).toContain('.fsb-preview-control-overlay');
+    expect(fsbCss).toContain('--fsb-preview-glow-rgb: 255, 255, 255');
+    expect(fsbCss).toContain('--fsb-preview-glow-rgb: 0, 0, 0');
     expect(fsbCss).toContain('.fsb-control-progress');
     expect(fsbCss).toContain('rgba(var(--fsb-glow-rgb)');
     expect(fsbCss).not.toContain('#ff8c00');

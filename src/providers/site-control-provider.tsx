@@ -37,6 +37,8 @@ interface BrowserState {
   projectName: string;
 }
 
+type ControlOverlayScope = 'page' | 'preview';
+
 interface SiteControlContextType {
   navigate: (page: ControlPage) => ControlResult;
   openProject: (input: string) => ControlResult;
@@ -74,6 +76,7 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
   const { navigateWithReveal } = useTransition();
   const [browser, setBrowser] = useState<BrowserState | null>(null);
   const [controlOverlayActive, setControlOverlayActive] = useState(false);
+  const [controlOverlayScope, setControlOverlayScope] = useState<ControlOverlayScope>('page');
   const aboutScrollerRef = useRef<((section: ControlSection) => void) | null>(null);
   const previewScrollerRef = useRef<PreviewScroller | null>(null);
   const pendingSectionRef = useRef<ControlSection | null>(null);
@@ -85,8 +88,12 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const runWithControlOverlay = useCallback((action: () => ControlResult): ControlResult => {
+  const runWithControlOverlay = useCallback((
+    action: () => ControlResult,
+    scope: ControlOverlayScope = 'page',
+  ): ControlResult => {
     if (overlayHideTimerRef.current) window.clearTimeout(overlayHideTimerRef.current);
+    setControlOverlayScope(scope);
     setControlOverlayActive(true);
 
     try {
@@ -98,6 +105,7 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
       // 3500ms = 3000ms (error hold) + 200ms (fade-out) + 300ms (safety margin).
       overlayHideTimerRef.current = window.setTimeout(() => {
         setControlOverlayActive(false);
+        setControlOverlayScope('page');
         overlayHideTimerRef.current = null;
       }, 3500);
     }
@@ -177,7 +185,7 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
         return scroller(direction)
           ? { ok: true, message: `Scrolling the project preview ${direction}.` }
           : { ok: false, message: "I couldn't scroll this preview right now." };
-      });
+      }, 'preview');
     },
     [browser, runWithControlOverlay],
   );
@@ -254,6 +262,7 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
           url={browser.url}
           label={`${browser.projectName} · ${browser.label}`}
           isDark={resolvedTheme === 'dark'}
+          controlOverlayActive={controlOverlayActive && controlOverlayScope === 'preview'}
           onClose={() => {
             previewScrollerRef.current = null;
             setBrowser(null);

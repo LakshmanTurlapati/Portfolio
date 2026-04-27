@@ -1,11 +1,131 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { FaXmark, FaArrowUpRightFromSquare, FaLink, FaFigma, FaGithub } from 'react-icons/fa6';
 import { GithubPreview } from './github-preview';
 import type { PreviewScroller } from '@/lib/site-control-utils';
 
 type ViewerKind = 'figma' | 'github' | 'web';
+type PreviewOverlayTone = 'on-light' | 'on-dark';
+
+function parseCssRgb(value: string): { r: number; g: number; b: number; a: number } | null {
+  const match = value.match(/rgba?\(([^)]+)\)/);
+  if (!match) return null;
+  const parts = match[1]
+    .replace(/\//g, ' ')
+    .split(/[,\s]+/)
+    .filter(Boolean)
+    .map((part) => Number.parseFloat(part));
+  if (parts.length < 3 || parts.some((part) => Number.isNaN(part))) return null;
+  return {
+    r: parts[0],
+    g: parts[1],
+    b: parts[2],
+    a: parts[3] ?? 1,
+  };
+}
+
+function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }): number {
+  const [lr, lg, lb] = [r, g, b].map((channel) => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+}
+
+function samplePreviewOverlayTone(
+  overlay: HTMLElement,
+  fallback: PreviewOverlayTone,
+): PreviewOverlayTone {
+  if (typeof window === 'undefined') return fallback;
+  const rect = overlay.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return fallback;
+
+  const points = [
+    [rect.left + Math.min(48, rect.width * 0.2), rect.top + Math.min(48, rect.height * 0.2)],
+    [rect.left + rect.width / 2, rect.top + rect.height / 2],
+    [rect.right - Math.min(48, rect.width * 0.2), rect.bottom - Math.min(48, rect.height * 0.2)],
+  ];
+  const luminanceSamples: number[] = [];
+
+  for (const [x, y] of points) {
+    const stack = document.elementsFromPoint(x, y);
+    for (const element of stack) {
+      if (!(element instanceof HTMLElement) || overlay.contains(element)) continue;
+      let current: HTMLElement | null = element;
+      while (current && current !== document.documentElement) {
+        const bg = parseCssRgb(getComputedStyle(current).backgroundColor);
+        if (bg && bg.a > 0.05) {
+          luminanceSamples.push(relativeLuminance(bg));
+          current = null;
+          break;
+        }
+        current = current.parentElement;
+      }
+      break;
+    }
+  }
+
+  if (luminanceSamples.length === 0) return fallback;
+  const avg = luminanceSamples.reduce((sum, value) => sum + value, 0) / luminanceSamples.length;
+  return avg > 0.45 ? 'on-light' : 'on-dark';
+}
+
+function previewToneFallback(kind: ViewerKind, isDark: boolean): PreviewOverlayTone {
+  if (kind === 'github') return isDark ? 'on-dark' : 'on-light';
+  return isDark ? 'on-light' : 'on-dark';
+}
+
+function PreviewControlOverlay({
+  active,
+  isDark,
+  kind,
+}: {
+  active: boolean;
+  isDark: boolean;
+  kind: ViewerKind;
+}) {
+  const fallbackTone = previewToneFallback(kind, isDark);
+  const [tone, setTone] = useState<PreviewOverlayTone>(fallbackTone);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  const updateTone = useCallback(() => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    setTone(samplePreviewOverlayTone(overlay, fallbackTone));
+  }, [fallbackTone]);
+
+  useEffect(() => {
+    if (!active) return;
+    setTone(fallbackTone);
+    updateTone();
+    let raf: number | null = null;
+    const schedule = () => {
+      if (raf !== null) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(updateTone);
+    };
+    window.addEventListener('resize', schedule);
+    window.addEventListener('scroll', schedule, true);
+    const interval = window.setInterval(updateTone, 500);
+    return () => {
+      if (raf !== null) cancelAnimationFrame(raf);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('scroll', schedule, true);
+      window.clearInterval(interval);
+    };
+  }, [active, fallbackTone, updateTone]);
+
+  if (!active) return null;
+
+  return (
+    <div
+      ref={overlayRef}
+      aria-hidden="true"
+      className={`fsb-preview-control-overlay fsb-preview-control-overlay--${tone}`}
+      data-testid="fsb-preview-control-overlay"
+    />
+  );
+}
 
 function detectKind(url: string): ViewerKind {
   try {
@@ -52,6 +172,7 @@ interface IframeViewerProps {
   url: string;
   label?: string;
   isDark: boolean;
+  controlOverlayActive?: boolean;
   onClose: () => void;
   onRegisterPreviewScroller?: (scroller: PreviewScroller | null) => void;
 }
@@ -60,6 +181,7 @@ export function IframeViewer({
   url,
   label,
   isDark,
+  controlOverlayActive = false,
   onClose,
   onRegisterPreviewScroller,
 }: IframeViewerProps) {
@@ -221,6 +343,7 @@ export function IframeViewer({
               )}
             </>
           )}
+          <PreviewControlOverlay active={controlOverlayActive} isDark={isDark} kind={kind} />
         </div>
       </div>
     </div>
