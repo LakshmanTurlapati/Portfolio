@@ -7,6 +7,7 @@ import { FaXmark, FaArrowUp } from 'react-icons/fa6';
 import { sanitizeText } from '@/lib/sanitize-text';
 import { linkifyText, type LinkPart } from '@/lib/linkify';
 import { useSiteControl, type ControlPage } from '@/providers/site-control-provider';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 // Suggestion chips data
 const smallQuestions = ['Who are you?', 'Your age?', 'Where from?'];
@@ -104,6 +105,7 @@ interface ChatPopupProps {
 
 export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
   const siteControl = useSiteControl();
+  const isDesktop = useMediaQuery('(min-width: 768px)');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const handledToolCallsRef = useRef<Set<string>>(new Set());
@@ -262,21 +264,34 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
 
       {/* Popup panel */}
       <div
+        role="dialog"
         style={{
           position: 'fixed',
-          left: '50%',
-          bottom: '20px',
-          transform: 'translateX(-50%)',
-          width: 'min(720px, calc(100vw - 40px))',
-          maxHeight: '70vh',
+          zIndex: 50,
           display: 'flex',
           flexDirection: 'column',
-          zIndex: 50,
           borderRadius: '20px',
-          background: isDark ? 'rgba(20,20,20,0.92)' : 'rgba(255,255,255,0.92)',
+          background: isDark ? '#1a1a1c' : '#fafaf7',
           backdropFilter: 'blur(14px)',
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-          animation: 'popupIn 0.4s cubic-bezier(0.2,0.9,0.2,1)',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+          boxShadow: '0 24px 64px rgba(0,0,0,0.30)',
+          ...(isDesktop
+            ? {
+                right: '24px',
+                bottom: '24px',
+                width: '420px',
+                maxWidth: '420px',
+                height: 'min(640px, calc(100vh - 48px))',
+                minHeight: '420px',
+              }
+            : {
+                inset: '8px',
+                width: 'calc(100vw - 16px)',
+                maxWidth: '100%',
+                height:
+                  'calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
+                minHeight: '360px',
+              }),
         }}
         onClick={(e) => e.stopPropagation()}
       >
