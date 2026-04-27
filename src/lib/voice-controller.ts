@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { isStopIntent } from './voice-commands';
+import { calculateRms, VoiceBargeInDetector } from './voice-barge-in';
 import { Scribe, RealtimeEvents, CommitStrategy } from '@elevenlabs/client';
 import type { RealtimeConnection } from '@elevenlabs/client';
 import type { ControlResult } from '@/providers/site-control-provider';
@@ -88,9 +89,14 @@ export function useVoiceController({
   // 1s floor, 30s cap). Cleared in onend/onerror and from cancelAllAudio.
   const synthGuardRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const detachMicRef = useRef<(() => void) | null>(null);
+  const bargeInStopRef = useRef<(() => void) | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const historyRef = useRef<HistoryMessage[]>([]);
   const activeRef = useRef(false);  // shadow ref to read active in callbacks
+  const micPermissionGrantedRef = useRef(false);
+  const startingListenRef = useRef(false);
+  const listenGenerationRef = useRef(0);
+  const startListeningRef = useRef<(() => Promise<void>) | null>(null);
 
   // Audio-serialization refs (Phase 22 — overlap fix).
   // speakResolverRef holds the resolver of the in-flight speak() Promise so cancelAllAudio
@@ -267,11 +273,21 @@ export function useVoiceController({
     }
   };
 
+  const stopBargeInMonitor = useCallback(() => {
+    const stop = bargeInStopRef.current;
+    bargeInStopRef.current = null;
+    if (stop) {
+      try { stop(); } catch {}
+    }
+  }, []);
+
   // cancelAllAudio — single source of truth for stopping in-flight TTS, including
   // BufferSource playback, queued SpeechSynthesis utterances, and any /api/tts fetch
   // that is still in flight. Also unblocks any awaiter on speak() so old handleUserTurn
   // calls don't hang. Does NOT change VoiceBus state — the caller decides the new state.
   const cancelAllAudio = useCallback(() => {
+    stopBargeInMonitor();
+
     // VOICE-06: clear Scribe stall guard so a stop-while-connecting doesn't
     // leave a 5s timer firing into a torn-down session.
     clearSessionGuard();
@@ -304,10 +320,134 @@ export function useVoiceController({
 
     window.VoiceBus._stopLoop();
     speakingRef.current = false;
-  }, []);
+  }, [stopBargeInMonitor]);
+
+  const handleBargeInDetected = useCallback(() => {
+    stopBargeInMonitor();
+    cancelAllAudio();
+    if (!activeRef.current) {
+      window.VoiceBus.setState('idle');
+      return;
+    }
+
+    const start = startListeningRef.current;
+    if (start) void start();
+    else window.VoiceBus.setState('idle');
+  }, [cancelAllAudio, stopBargeInMonitor]);
+
+  const startBargeInMonitor = useCallback(() => {
+    if (!micPermissionGrantedRef.current) return;
+    if (bargeInStopRef.current) return;
+    if (
+      typeof window === 'undefined' ||
+      typeof navigator === 'undefined' ||
+      !navigator.mediaDevices?.getUserMedia
+    ) {
+      return;
+    }
+
+    const AudioContextCtor =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextCtor) return;
+
+    let cancelled = false;
+    let raf: number | null = null;
+    let stream: MediaStream | null = null;
+    let ctx: AudioContext | null = null;
+    let source: MediaStreamAudioSourceNode | null = null;
+    const detector = new VoiceBargeInDetector();
+
+    const cleanup = () => {
+      cancelled = true;
+      if (raf !== null) {
+        cancelAnimationFrame(raf);
+        raf = null;
+      }
+      try { source?.disconnect(); } catch {}
+      try { stream?.getTracks().forEach((track) => track.stop()); } catch {}
+      if (ctx && ctx.state !== 'closed') {
+        ctx.close().catch(() => {});
+      }
+      source = null;
+      stream = null;
+      ctx = null;
+      if (bargeInStopRef.current === cleanup) bargeInStopRef.current = null;
+    };
+
+    bargeInStopRef.current = cleanup;
+
+    navigator.mediaDevices
+      .getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      })
+      .then(async (mediaStream) => {
+        if (cancelled) {
+          try { mediaStream.getTracks().forEach((track) => track.stop()); } catch {}
+          return;
+        }
+
+        stream = mediaStream;
+        try {
+          ctx = new AudioContextCtor({ sampleRate: 16000 });
+        } catch {
+          ctx = new AudioContextCtor();
+        }
+        if (ctx.state === 'suspended') {
+          try { await ctx.resume(); } catch {}
+        }
+        if (cancelled || !stream) {
+          cleanup();
+          return;
+        }
+
+        source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 1024;
+        source.connect(analyser);
+        const buffer = new Uint8Array(analyser.fftSize);
+        detector.reset(performance.now());
+
+        const tick = () => {
+          if (cancelled) return;
+          if (!activeRef.current || !speakingRef.current || window.VoiceBus.state !== 'speaking') {
+            cleanup();
+            return;
+          }
+
+          analyser.getByteTimeDomainData(buffer);
+          const nowMs = performance.now();
+          if (detector.sample({ rms: calculateRms(buffer), nowMs })) {
+            handleBargeInDetected();
+            return;
+          }
+
+          raf = requestAnimationFrame(tick);
+        };
+
+        raf = requestAnimationFrame(tick);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          const name = err instanceof DOMException ? err.name : '';
+          if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+            micPermissionGrantedRef.current = false;
+            setMicDenied(true);
+          }
+          console.warn('[VoiceController] mic barge-in monitor unavailable:', err);
+        }
+        cleanup();
+      });
+  }, [handleBargeInDetected]);
 
   // stopAll — cancel all ongoing audio/speech/recognition
   const stopAll = useCallback(() => {
+    listenGenerationRef.current += 1;
+    startingListenRef.current = false;
     try { connectionRef.current?.close(); } catch {}
     connectionRef.current = null;
     cancelAllAudio();
@@ -378,6 +518,7 @@ export function useVoiceController({
               // Identity check: only mutate state if THIS source is still current.
               // A cancelled source whose onended fires late must not touch state.
               if (audioSourceRef.current === source) {
+                stopBargeInMonitor();
                 window.VoiceBus._stopLoop();
                 window.VoiceBus.setState('idle');
                 speakingRef.current = false;
@@ -390,6 +531,7 @@ export function useVoiceController({
 
             speakingRef.current = true;
             source.start();
+            startBargeInMonitor();
           })
           .catch((err) => {
             // Cancelled by us — do not fall back to synth, do not resolve here
@@ -417,6 +559,7 @@ export function useVoiceController({
             window.VoiceBus.attachTTSFake(u);
             const finishSynth = () => {
               if (speechUtteranceRef.current === u) {
+                stopBargeInMonitor();
                 window.VoiceBus.setState('idle');
                 speakingRef.current = false;
                 speechUtteranceRef.current = null;
@@ -447,10 +590,11 @@ export function useVoiceController({
               finishSynth(); // identity-checked finalizer -- safe even if onend already fired
             }, guardMs);
             synth.speak(u);
+            startBargeInMonitor();
           });
       });
     },
-    [cancelAllAudio]
+    [cancelAllAudio, startBargeInMonitor, stopBargeInMonitor]
   );
 
   // speak — public wrapper around streamTTS
@@ -671,7 +815,7 @@ export function useVoiceController({
         setCaption('Server hiccup \u2014 try again.');
       }
     },
-    [goPage, openTextChat, speak, stopAll, dispatchToolCall, cancelAllAudio]
+    [openTextChat, speak, stopAll, dispatchToolCall, cancelAllAudio]
   );
 
   // startListeningFallback — existing Web Speech API STT, called when ElevenLabs fails (per D-02)
@@ -685,6 +829,7 @@ export function useVoiceController({
     }
 
     try { connectionRef.current?.close(); } catch {}
+    stopBargeInMonitor();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const r = new SR() as any;
@@ -693,6 +838,8 @@ export function useVoiceController({
     r.lang = 'en-US';
 
     r.onstart = () => {
+      micPermissionGrantedRef.current = true;
+      setMicDenied(false);
       window.VoiceBus.setState('listening');
       setCaption('Listening\u2026');
       window.VoiceBus.attachMic().then((detach: () => void) => {
@@ -721,6 +868,7 @@ export function useVoiceController({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     r.onerror = (e: any) => {
       if (e.error === 'not-allowed') {
+        micPermissionGrantedRef.current = false;
         setMicDenied(true);
         setCaption('Mic access denied. Click to retry.');
       } else {
@@ -743,23 +891,32 @@ export function useVoiceController({
     try { r.start(); } catch (e) {
       setCaption("Couldn't start mic: " + (e as Error).message);
     }
-  }, [handleUserTurn]);
+  }, [handleUserTurn, stopBargeInMonitor]);
 
   // startListening — ElevenLabs Scribe v2 primary STT, Web Speech API fallback (per D-01, D-02)
   const startListening = useCallback(async () => {
+    if (startingListenRef.current || window.VoiceBus.state === 'listening') return;
+    startingListenRef.current = true;
+    const myListen = ++listenGenerationRef.current;
+    stopBargeInMonitor();
     window.VoiceBus.setState('listening');
     setCaption('Listening\u2026');
 
     // Create sttCtx BEFORE first await — keeps creation in user gesture frame
     // (RESEARCH.md Pitfall 3: AudioContext autoplay policy blocks creation after await)
     // Per D-06: separate 16kHz AudioContext avoids TTS echo on VoiceBus._ctx
-    const sttCtx = new AudioContext({ sampleRate: 16000 });
+    let sttCtx: AudioContext | null = new AudioContext({ sampleRate: 16000 });
 
     try {
       // 1. Fetch single-use token — never cache, fresh per session (per D-03, D-04)
       const res = await fetch('/api/stt-token', { method: 'POST' });
       if (!res.ok) throw new Error(`stt-token ${res.status}`);
       const { token } = await res.json() as { token: string };
+      if (myListen !== listenGenerationRef.current || !activeRef.current) {
+        sttCtx.close().catch(() => {});
+        sttCtx = null;
+        return;
+      }
 
       // 2. Connect Scribe — SDK manages getUserMedia internally (per D-05)
       const connection = Scribe.connect({
@@ -787,7 +944,13 @@ export function useVoiceController({
 
       // 3. Wire transcript events
       connection.on(RealtimeEvents.SESSION_STARTED, () => {
+        if (myListen !== listenGenerationRef.current || !activeRef.current) {
+          try { connection.close(); } catch {}
+          return;
+        }
         clearSessionGuard();
+        micPermissionGrantedRef.current = true;
+        setMicDenied(false);
         // Per D-06: attach VoiceBus mic AFTER session confirmed — mirrors existing r.onstart pattern
         window.VoiceBus.attachMic().then((detach: () => void) => {
           if (window.VoiceBus.state !== 'listening') { detach(); return; }
@@ -807,6 +970,7 @@ export function useVoiceController({
 
       connection.on(RealtimeEvents.AUTH_ERROR, () => {
         clearSessionGuard();
+        micPermissionGrantedRef.current = false;
         setMicDenied(true);
         setCaption('Mic access denied. Click to retry.');
         window.VoiceBus.setState('idle');
@@ -821,7 +985,8 @@ export function useVoiceController({
       });
 
       connection.on(RealtimeEvents.CLOSE, () => {
-        sttCtx.close().catch(() => {});
+        sttCtx?.close().catch(() => {});
+        sttCtx = null;
         detachMicRef.current?.();
         detachMicRef.current = null;
         if (window.VoiceBus.state === 'listening') window.VoiceBus.setState('idle');
@@ -834,47 +999,26 @@ export function useVoiceController({
       // yet, but clearSessionGuard is idempotent).
       clearSessionGuard();
       // Token fetch failed or SDK unavailable — silent fallback to Web Speech API (per D-02)
-      sttCtx.close().catch(() => {});
-      startListeningFallback();
-    }
-  }, [handleUserTurn, startListeningFallback]);
-
-  // bargeIn — energy-threshold barge-in during speaking state (per D-21)
-  const bargeIn = useCallback(() => {
-    cancelAllAudio();
-    window.VoiceBus.setState('listening');
-    void startListening(); // void guard: startListening is now async
-  }, [cancelAllAudio, startListening]);
-
-  // Subscribe to VoiceBus 'level' events for barge-in detection (per D-21).
-  // F-03: threshold scales with the prefers-reduced-motion cap so a11y users
-  // keep functional barge-in. The 0.35 baseline (raised from 0.15) handles
-  // ElevenLabs TTS's consistently high amplitude and prevents self-interruption.
-  //
-  // Phase 23 regression fix: ONLY react to live analyser readings. setState()
-  // emits a fallback default level (0.75 for 'speaking') when no analyser is
-  // running — that's higher than the 0.35 threshold, so without the _liveAudio
-  // guard the very first setState('speaking') in streamTTS triggered an instant
-  // self-barge-in that aborted the TTS fetch (Phase 22's AbortController made
-  // the cancel cascade complete) and Parz never spoke at all.
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.VoiceBus) return;
-
-    const unsubLevel = window.VoiceBus.on('level', (lvl) => {
-      const level = lvl as number;
-      const effectiveLevel = prefersReduced ? Math.min(level, 0.2) : level;
-      const threshold = prefersReduced ? 0.15 : 0.35;
-      if (
-        window.VoiceBus._liveAudio &&
-        window.VoiceBus.state === 'speaking' &&
-        effectiveLevel > threshold
-      ) {
-        bargeIn();
+      sttCtx?.close().catch(() => {});
+      sttCtx = null;
+      if (myListen === listenGenerationRef.current && activeRef.current) {
+        startListeningFallback();
       }
-    });
+    } finally {
+      if (myListen === listenGenerationRef.current) {
+        startingListenRef.current = false;
+      }
+    }
+  }, [handleUserTurn, startListeningFallback, stopBargeInMonitor]);
 
-    return unsubLevel as () => void;
-  }, [bargeIn, prefersReduced]);
+  startListeningRef.current = startListening;
+
+  const startManualListening = useCallback(() => {
+    if (speakingRef.current || window.VoiceBus.state === 'speaking') {
+      cancelAllAudio();
+    }
+    void startListening();
+  }, [cancelAllAudio, startListening]);
 
   // open — activate voice mode and kick off an LLM-generated greeting after the
   // navbar morph settles. Phase 22: guard the timer so a fast user doesn't hear
@@ -933,7 +1077,7 @@ export function useVoiceController({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !isTypingTarget(e.target) && window.VoiceBus.state !== 'listening') {
         e.preventDefault();
-        void startListening();
+        startManualListening();
       }
       if (e.code === 'Escape') {
         close();
@@ -954,7 +1098,7 @@ export function useVoiceController({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [active, startListening, close]);
+  }, [active, startManualListening, close]);
 
   return {
     active,
@@ -966,7 +1110,7 @@ export function useVoiceController({
       state: voiceState,
       caption,
       transcript,
-      onMic: voiceState === 'listening' ? stopAll : startListening,
+      onMic: voiceState === 'listening' ? stopAll : startManualListening,
       onStop: stopAll,
       onClose: close,
       onFallbackChat: () => {
