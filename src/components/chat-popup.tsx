@@ -114,6 +114,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
   const [suggestionClicked, setSuggestionClicked] = useState(false);
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const [currentError, setCurrentError] = useState<string | null>(null);
+  const [sendHover, setSendHover] = useState(false);
 
   // Randomly pick suggestion chips on mount (1 small + 1 big)
   const [suggestions] = useState(() => ({
@@ -508,28 +509,42 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
         {showSuggestions && (
           <div
             style={{
-              padding: '8px 16px',
               display: 'flex',
               gap: '8px',
-              justifyContent: 'center',
+              padding: '8px 16px',
               flexShrink: 0,
+              ...(isDesktop
+                ? { flexWrap: 'wrap' as const, justifyContent: 'center' }
+                : {
+                    flexWrap: 'nowrap' as const,
+                    overflowX: 'auto' as const,
+                    WebkitOverflowScrolling: 'touch' as const,
+                    scrollbarWidth: 'none' as const,
+                  }),
             }}
           >
             <button
               onClick={() => handleSuggestionClick(suggestions.small)}
               style={{
                 padding: '8px 16px',
-                borderRadius: '20px',
+                borderRadius: '999px',
+                fontFamily: 'var(--font-lato), sans-serif',
                 fontSize: '13px',
+                fontWeight: 500,
+                letterSpacing: '0.005em',
+                lineHeight: 1.3,
                 cursor: 'pointer',
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'}`,
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.15)'}`,
                 color: 'var(--color-text)',
-                backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-                backdropFilter: 'blur(10px)',
-                transition: 'transform 0.15s ease',
+                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                transition: 'transform 200ms ease, border-color 200ms ease',
+                whiteSpace: 'nowrap' as const,
+                flexShrink: 0,
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.04)')}
               onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+              onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.98)')}
+              onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1.04)')}
             >
               {suggestions.small}
             </button>
@@ -537,17 +552,24 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
               onClick={() => handleSuggestionClick(suggestions.big)}
               style={{
                 padding: '8px 16px',
-                borderRadius: '20px',
+                borderRadius: '999px',
+                fontFamily: 'var(--font-lato), sans-serif',
                 fontSize: '13px',
+                fontWeight: 500,
+                letterSpacing: '0.005em',
+                lineHeight: 1.3,
                 cursor: 'pointer',
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'}`,
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.15)'}`,
                 color: 'var(--color-text)',
-                backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-                backdropFilter: 'blur(10px)',
-                transition: 'transform 0.15s ease',
+                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                transition: 'transform 200ms ease, border-color 200ms ease',
+                whiteSpace: 'nowrap' as const,
+                flexShrink: 0,
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.04)')}
               onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+              onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.98)')}
+              onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1.04)')}
             >
               {suggestions.big}
             </button>
@@ -557,12 +579,19 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
         {/* Input row */}
         <div
           style={{
-            padding: '8px 16px 16px',
+            padding: '8px 16px',
             paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
             flexShrink: 0,
           }}
         >
-          <div style={{ position: 'relative' }}>
+          <div
+            style={{
+              position: 'relative',
+              borderRadius: '24px',
+              border: `1px solid ${currentError ? 'rgba(239, 68, 68, 0.45)' : 'transparent'}`,
+              transition: 'border-color 200ms ease-in-out',
+            }}
+          >
             <input
               ref={inputRef}
               type="text"
@@ -570,7 +599,10 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
               enterKeyHint="send"
               autoComplete="off"
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                if (e.target.value.length > 0 && currentError) setCurrentError(null);
+              }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
                 setTimeout(() => {
@@ -582,40 +614,67 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
               style={{
                 width: '100%',
                 borderRadius: '24px',
-                padding: '12px 52px 12px 20px',
+                padding: '12px 56px 12px 20px',
+                fontFamily: 'var(--font-lato), sans-serif',
                 fontSize: '14px',
+                fontWeight: 400,
+                lineHeight: 1.5,
                 outline: 'none',
-                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                 color: 'var(--color-text)',
                 backdropFilter: 'blur(10px)',
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}`,
-                boxSizing: 'border-box',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'}`,
+                boxSizing: 'border-box' as const,
+                opacity: isLoading ? 0.6 : 1,
+                cursor: isLoading ? 'not-allowed' : 'text',
               }}
             />
             <button
               onClick={handleSend}
               disabled={!inputValue.trim() || isLoading}
+              onMouseEnter={() => setSendHover(true)}
+              onMouseLeave={() => setSendHover(false)}
+              onMouseDown={(e) => {
+                if (inputValue.trim() && !isLoading) {
+                  e.currentTarget.style.transform = 'translateY(-50%) scale(0.94)';
+                }
+              }}
+              onMouseUp={(e) => {
+                if (inputValue.trim() && !isLoading) {
+                  e.currentTarget.style.transform = sendHover
+                    ? 'translateY(-50%) scale(1.04)'
+                    : 'translateY(-50%)';
+                }
+              }}
               style={{
-                position: 'absolute',
-                right: '8px',
+                position: 'absolute' as const,
+                right: '6px',
                 top: '50%',
-                transform: 'translateY(-50%)',
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
+                transform:
+                  sendHover && inputValue.trim() && !isLoading
+                    ? 'translateY(-50%) scale(1.04)'
+                    : 'translateY(-50%)',
+                width: '44px',
+                height: '44px',
+                borderRadius: '999px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: inputValue.trim() && !isLoading ? 'pointer' : 'not-allowed',
-                backgroundColor: 'var(--color-text)',
-                color: 'var(--color-bg)',
-                border: 'none',
-                opacity: inputValue.trim() && !isLoading ? 1 : 0.3,
-                transition: 'opacity 0.2s ease',
+                backgroundColor:
+                  inputValue.trim() && !isLoading ? 'var(--color-text)' : 'transparent',
+                color: inputValue.trim() && !isLoading ? 'var(--color-bg)' : 'var(--color-text)',
+                opacity: inputValue.trim() && !isLoading ? 1 : 0.30,
+                border:
+                  inputValue.trim() && !isLoading
+                    ? 'none'
+                    : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                transition:
+                  'transform 150ms ease, background-color 200ms ease, opacity 200ms ease, color 200ms ease',
               }}
               aria-label="Send message"
             >
-              <FaArrowUp size={14} />
+              <FaArrowUp size={16} />
             </button>
           </div>
         </div>
