@@ -15,7 +15,13 @@ import { useTheme } from 'next-themes';
 import { FsbControlOverlay } from '@/components/fsb-control-overlay';
 import { IframeViewer } from '@/components/iframe-viewer';
 import { getProjectBrowserTarget, resolveProject } from '@/data/projects';
-import { normalizeSection, type ControlSection } from '@/lib/site-control-utils';
+import {
+  normalizePreviewScrollDirection,
+  normalizeSection,
+  type ControlSection,
+  type PreviewScrollDirection,
+  type PreviewScroller,
+} from '@/lib/site-control-utils';
 import { useTransition } from '@/providers/transition-provider';
 
 export type ControlPage = 'home' | 'portfolio' | 'about';
@@ -35,6 +41,7 @@ interface SiteControlContextType {
   navigate: (page: ControlPage) => ControlResult;
   openProject: (input: string) => ControlResult;
   scrollTo: (section: ControlSection | string) => ControlResult;
+  scrollProjectPreview: (direction?: PreviewScrollDirection | string) => ControlResult;
   closeBrowser: () => ControlResult;
   openCurrentProjectExternal: () => ControlResult;
   unsupportedIframeControl: () => ControlResult;
@@ -68,6 +75,7 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
   const [browser, setBrowser] = useState<BrowserState | null>(null);
   const [controlOverlayActive, setControlOverlayActive] = useState(false);
   const aboutScrollerRef = useRef<((section: ControlSection) => void) | null>(null);
+  const previewScrollerRef = useRef<PreviewScroller | null>(null);
   const pendingSectionRef = useRef<ControlSection | null>(null);
   const overlayHideTimerRef = useRef<number | null>(null);
 
@@ -114,6 +122,7 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
         return { ok: false, message: "I couldn't find an approved project target for that." };
       }
 
+      previewScrollerRef.current = null;
       setBrowser({ ...target, projectName: project.name });
       return { ok: true, message: `Opening ${project.name}.` };
     });
@@ -146,10 +155,32 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
   const closeBrowser = useCallback((): ControlResult => {
     return runWithControlOverlay(() => {
       if (!browser) return { ok: false, message: 'There is no project browser open right now.' };
+      previewScrollerRef.current = null;
       setBrowser(null);
       return { ok: true, message: 'Closing the browser view.' };
     });
   }, [browser, runWithControlOverlay]);
+
+  const scrollProjectPreview = useCallback(
+    (directionInput: PreviewScrollDirection | string = 'down'): ControlResult => {
+      return runWithControlOverlay(() => {
+        if (!browser) return { ok: false, message: 'There is no project browser open right now.' };
+        const direction = normalizePreviewScrollDirection(directionInput);
+        if (!direction) return { ok: false, message: "I couldn't use that preview scroll direction." };
+        const scroller = previewScrollerRef.current;
+        if (!scroller) {
+          return {
+            ok: false,
+            message: "I can open and close this preview, but I can't scroll inside that external iframe.",
+          };
+        }
+        return scroller(direction)
+          ? { ok: true, message: `Scrolling the project preview ${direction}.` }
+          : { ok: false, message: "I couldn't scroll this preview right now." };
+      });
+    },
+    [browser, runWithControlOverlay],
+  );
 
   const openCurrentProjectExternal = useCallback((): ControlResult => {
     return runWithControlOverlay(() => {
@@ -181,10 +212,15 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const registerPreviewScroller = useCallback((scroller: PreviewScroller | null) => {
+    previewScrollerRef.current = scroller;
+  }, []);
+
   const value: SiteControlContextType = useMemo(() => ({
     navigate,
     openProject,
     scrollTo,
+    scrollProjectPreview,
     closeBrowser,
     openCurrentProjectExternal,
     unsupportedIframeControl,
@@ -196,6 +232,7 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
     openProject,
     registerAboutScroller,
     scrollTo,
+    scrollProjectPreview,
     unsupportedIframeControl,
   ]);
 
@@ -217,7 +254,11 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
           url={browser.url}
           label={`${browser.projectName} · ${browser.label}`}
           isDark={resolvedTheme === 'dark'}
-          onClose={() => setBrowser(null)}
+          onClose={() => {
+            previewScrollerRef.current = null;
+            setBrowser(null);
+          }}
+          onRegisterPreviewScroller={registerPreviewScroller}
         />
       )}
     </SiteControlContext.Provider>

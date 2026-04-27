@@ -12,6 +12,8 @@ describe('Parz persona contract', () => {
   it('anchors direct tone, current work, flagship projects, and gap-radar explanation', () => {
     expect(systemPrompt).toContain('direct-first');
     expect(systemPrompt).toContain('warm, practical builder friend');
+    expect(systemPrompt).toContain('Be blunt and opinionated');
+    expect(systemPrompt).toContain('Mild profanity is fine');
     expect(systemPrompt).toContain(publicProfile.currentWork.role);
     expect(systemPrompt).toContain(publicProfile.currentWork.company);
     expect(systemPrompt).toContain(publicProfile.currentWork.product);
@@ -31,6 +33,15 @@ describe('Parz persona contract', () => {
     expect(systemPrompt).toContain('non-public InfiniteChoice or Voyza');
     expect(systemPrompt).toContain('secrets/config/API key');
     expect(systemPrompt).toContain(publicProfile.guardrails.rudeUserBoundary);
+  });
+
+  it('allows broad-topic answers while separating public facts from general reasoning', () => {
+    expect(systemPrompt).toContain('For general topics outside the portfolio, answer normally with general reasoning');
+    expect(systemPrompt).toContain('technology, AI, careers, strategy, tools, games, music, taste, culture');
+    expect(systemPrompt).toContain('Do not refuse normal broad-topic questions');
+    expect(systemPrompt).toContain('use only public-safe facts from the profile and public project data');
+    expect(systemPrompt).toContain('do not invent private personal facts');
+    expect(systemPrompt).toContain('private datastore');
   });
 });
 

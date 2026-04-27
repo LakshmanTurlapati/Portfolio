@@ -290,142 +290,223 @@ body {
 }
 
 /* ─── Phase 19: FSB Control Overlay ───────────────────────────────────────── */
-@keyframes fsbControlScan {
-  from { background-position: 0 0, 0 0, 0 0; }
-  to { background-position: 0 24px, 24px 0, 0 6px; }
+@keyframes fsbControlViewportSweep {
+  to { transform: rotate(1turn); }
+}
+
+@keyframes fsbControlActionPulse {
+  0%, 100% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow:
+      0 0 8px rgba(255, 140, 0, 0.42),
+      0 0 28px rgba(255, 140, 0, 0.22),
+      0 0 54px rgba(255, 102, 0, 0.12);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.025);
+    box-shadow:
+      0 0 12px rgba(255, 140, 0, 0.62),
+      0 0 38px rgba(255, 140, 0, 0.34),
+      0 0 72px rgba(255, 102, 0, 0.18);
+  }
+}
+
+@keyframes fsbControlProgressSweep {
+  0% { transform: translateX(-125%) scaleX(0.42); }
+  100% { transform: translateX(260%) scaleX(0.42); }
 }
 
 .fsb-control-overlay {
   z-index: 120;
-  color: rgb(var(--fsb-overlay-rgb));
-  mix-blend-mode: normal;
+  --fsb-primary: #ff8c00;
+  --fsb-primary-hot: #ff6600;
+  --fsb-state-1: var(--fsb-primary);
+  --fsb-state-2: var(--fsb-primary-hot);
+  --fsb-panel-bg: rgba(255, 255, 255, 0.92);
+  --fsb-panel-fg: #0b0b0c;
+  --fsb-panel-muted: rgba(15, 23, 42, 0.66);
+  --fsb-panel-border: rgba(255, 140, 0, 0.46);
+  --fsb-panel-track: rgba(15, 23, 42, 0.12);
+  --fsb-glow-opacity: 0.82;
+  color: var(--fsb-panel-fg);
 }
 
-.fsb-control-grid {
+.fsb-control-overlay--on-light {
+  --fsb-panel-bg: rgba(0, 0, 0, 0.88);
+  --fsb-panel-fg: #ffffff;
+  --fsb-panel-muted: rgba(255, 255, 255, 0.68);
+  --fsb-panel-border: rgba(255, 140, 0, 0.42);
+  --fsb-panel-track: rgba(255, 255, 255, 0.13);
+  --fsb-glow-opacity: 0.68;
+}
+
+.fsb-control-overlay--success {
+  --fsb-state-1: #34d399;
+  --fsb-state-2: #10b981;
+}
+
+.fsb-control-overlay--error {
+  --fsb-state-1: #ef4444;
+  --fsb-state-2: #f97316;
+}
+
+.fsb-control-viewport-glow {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  opacity: var(--fsb-glow-opacity);
+  box-shadow:
+    inset 0 0 72px rgba(255, 140, 0, 0.16),
+    inset 0 0 150px rgba(255, 102, 0, 0.08);
+}
+
+.fsb-control-viewport-glow::before,
+.fsb-control-viewport-glow::after {
+  content: "";
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(to bottom, rgba(var(--fsb-overlay-rgb), 0.08) 1px, transparent 1px),
-    linear-gradient(to right, rgba(var(--fsb-overlay-rgb), 0.055) 1px, transparent 1px),
-    linear-gradient(to bottom, transparent 0, transparent 50%, rgba(var(--fsb-overlay-rgb), 0.08) 50%, transparent 52%);
-  background-size: 100% 24px, 24px 100%, 100% 6px;
-  opacity: 0.75;
-  animation: fsbControlScan 1.6s linear infinite;
+  pointer-events: none;
 }
 
-.fsb-control-corners {
-  position: absolute;
-  inset: 24px;
-  border: 1px solid rgba(var(--fsb-overlay-rgb), 0.22);
-  border-radius: 18px;
-  mask-image: linear-gradient(90deg, #000 0 80px, transparent 80px calc(100% - 80px), #000 calc(100% - 80px)),
-    linear-gradient(#000 0 80px, transparent 80px calc(100% - 80px), #000 calc(100% - 80px));
-  -webkit-mask-image: linear-gradient(90deg, #000 0 80px, transparent 80px calc(100% - 80px), #000 calc(100% - 80px)),
-    linear-gradient(#000 0 80px, transparent 80px calc(100% - 80px), #000 calc(100% - 80px));
-  mask-composite: intersect;
-  -webkit-mask-composite: source-in;
+.fsb-control-viewport-glow::before {
+  border: 1px solid rgba(255, 140, 0, 0.22);
+  box-shadow: inset 0 0 18px rgba(255, 140, 0, 0.1);
 }
 
-.fsb-control-corners::before,
-.fsb-control-corners::after {
-  content: "";
-  position: absolute;
-  width: 88px;
-  height: 1px;
-  background: rgba(var(--fsb-overlay-rgb), 0.32);
+.fsb-control-viewport-glow::after {
+  padding: 3px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 286deg,
+    var(--fsb-state-1) 318deg,
+    var(--fsb-state-2) 342deg,
+    transparent 360deg
+  );
+  filter: blur(1.5px) brightness(1.45);
+  animation: fsbControlViewportSweep 4.8s linear infinite;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
 }
 
-.fsb-control-corners::before {
-  top: 18px;
-  left: 18px;
-}
-
-.fsb-control-corners::after {
-  right: 18px;
-  bottom: 18px;
-}
-
-.fsb-control-target {
-  position: absolute;
+.fsb-control-action-pulse {
+  position: fixed;
   left: 50%;
   top: 50%;
-  width: 64px;
-  height: 64px;
+  width: min(320px, 34vw);
+  min-width: 168px;
+  height: min(112px, 18vh);
+  min-height: 72px;
+  border: 2px solid rgba(255, 140, 0, 0.78);
+  border-radius: 12px;
+  background: rgba(255, 140, 0, 0.035);
+  animation: fsbControlActionPulse 1.5s ease-in-out infinite;
   transform: translate(-50%, -50%);
-  border: 1px solid rgba(var(--fsb-overlay-rgb), 0.22);
-  border-radius: 999px;
-}
-
-.fsb-control-target::before,
-.fsb-control-target::after {
-  content: "";
-  position: absolute;
-  background: rgba(var(--fsb-overlay-rgb), 0.25);
-}
-
-.fsb-control-target::before {
-  left: 50%;
-  top: -16px;
-  width: 1px;
-  height: 96px;
-}
-
-.fsb-control-target::after {
-  left: -16px;
-  top: 50%;
-  width: 96px;
-  height: 1px;
 }
 
 .fsb-control-badge {
   position: fixed;
   left: max(16px, env(safe-area-inset-left));
   bottom: max(16px, env(safe-area-inset-bottom));
-  padding: 8px 16px;
-  border: 1px solid rgba(var(--fsb-overlay-rgb), 0.28);
-  border-radius: 999px;
-  background: rgba(var(--fsb-overlay-rgb), 0.07);
-  color: rgb(var(--fsb-overlay-rgb));
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  line-height: 1.2;
-  text-transform: uppercase;
-  /* Phase 27 / FSB-04: lock width so caption changes don't layout-shift.
-     220px accommodates the longest caption ("NAVIGATING TO PORTFOLIO…"). */
-  min-width: 220px;
-  text-align: center;
+  width: min(320px, calc(100vw - 32px));
+  padding: 10px 12px 9px;
+  border: 1px solid var(--fsb-panel-border);
+  border-radius: 10px;
+  background: var(--fsb-panel-bg);
+  color: var(--fsb-panel-fg);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 140, 0, 0.12),
+    0 0 22px rgba(255, 140, 0, 0.14);
   box-sizing: border-box;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(12px) saturate(1.12);
+  -webkit-backdrop-filter: blur(12px) saturate(1.12);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  contain: layout paint;
 }
 
-@media (max-width: 37.5rem) {
-  .fsb-control-corners {
-    inset: 16px;
-    border-radius: 14px;
-  }
-
-  .fsb-control-target {
-    width: 44px;
-    height: 44px;
-    opacity: 0.7;
-  }
+.fsb-control-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
-/* Phase 27 / FSB-05: mobile badge sizing tuned for WCAG 2.5.5 (>= 44px hit area).
-   Breakpoint matches Plan 27-03 Task 1's `useMediaQuery('(min-width: 768px)')`
-   grid gate so the badge transitions in lock-step with the grid. */
+.fsb-control-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--fsb-state-1), var(--fsb-state-2));
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.fsb-control-badge-text {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fsb-panel-fg);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fsb-control-progress {
+  position: relative;
+  height: 4px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--fsb-panel-track);
+}
+
+.fsb-control-progress span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 42%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--fsb-state-1), var(--fsb-state-2));
+  transform-origin: center;
+  animation: fsbControlProgressSweep 1.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+.fsb-control-overlay--success .fsb-control-progress span,
+.fsb-control-overlay--error .fsb-control-progress span {
+  width: 100%;
+  transform: none;
+  animation: none;
+}
+
+/* Phase 27 / FSB-05: mobile badge sizing tuned for WCAG 2.5.5 (>= 44px hit area). */
 @media (max-width: 47.99rem) {
+  .fsb-control-action-pulse {
+    display: none;
+  }
+
   .fsb-control-badge {
-    padding: 12px 16px;
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    min-width: 180px;
+    width: min(300px, calc(100vw - 24px));
+    left: max(12px, env(safe-area-inset-left));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    padding: 11px 12px 10px;
     min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
   }
 }
 
@@ -435,7 +516,9 @@ body {
     box-shadow: 0 0 30px 10px rgba(var(--glow-color), 0.25);
   }
 
-  .fsb-control-grid {
+  .fsb-control-viewport-glow::after,
+  .fsb-control-action-pulse,
+  .fsb-control-progress span {
     animation: none !important;
   }
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getProjectBrowserTarget,
   isApprovedProjectUrl,
+  normalizePreviewScrollDirection,
   normalizeSection,
   resolveProject,
 } from './test-imports';
@@ -32,5 +33,12 @@ describe('project resolution safety', () => {
     expect(normalizeSection('education')).toBe('academics');
     expect(normalizeSection('bio')).toBe('about');
     expect(normalizeSection('secrets')).toBeNull();
+  });
+
+  it('normalizes supported project-preview scroll directions only', () => {
+    expect(normalizePreviewScrollDirection(undefined)).toBe('down');
+    expect(normalizePreviewScrollDirection('up')).toBe('up');
+    expect(normalizePreviewScrollDirection('bottom')).toBe('bottom');
+    expect(normalizePreviewScrollDirection('sideways')).toBeNull();
   });
 });

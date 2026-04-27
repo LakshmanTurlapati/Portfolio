@@ -69,6 +69,9 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     toolCallbacksRef.current.scrollTo = ({ selector }: { selector: string }) => {
       return siteControl.scrollTo(selector);
     };
+    toolCallbacksRef.current.scrollProjectPreview = ({ direction }: { direction?: string }) => {
+      return siteControl.scrollProjectPreview(direction);
+    };
     toolCallbacksRef.current.closeBrowser = siteControl.closeBrowser;
     toolCallbacksRef.current.openCurrentProjectExternal = siteControl.openCurrentProjectExternal;
     toolCallbacksRef.current.unsupportedIframeControl = siteControl.unsupportedIframeControl;

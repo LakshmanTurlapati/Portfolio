@@ -3,4 +3,4 @@ export {
   isApprovedProjectUrl,
   resolveProject,
 } from '@/data/projects';
-export { normalizeSection } from '@/lib/site-control-utils';
+export { normalizePreviewScrollDirection, normalizeSection } from '@/lib/site-control-utils';

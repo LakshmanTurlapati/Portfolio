@@ -1,45 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, type ReactNode } from 'react';
 import { FaGithub, FaFire, FaArrowUpRightFromSquare } from 'react-icons/fa6';
-
-const FALLBACK_STATS = {
-  totalContrib: '4,755',
-  currentStreak: 49,
-  longestStreak: 49,
-  repos: 74,
-  stars: '1.6k',
-  yearlyCommits: '4.8k',
-};
+import type { GitHubActivity } from '@/lib/github-activity';
 
 interface GitHubStatsProps {
   isDark: boolean;
+  activity: GitHubActivity | null;
+  isLoading: boolean;
+  hasError: boolean;
 }
 
-export function GitHubStats({ isDark }: GitHubStatsProps) {
+export function GitHubStats({ isDark, activity, isLoading, hasError }: GitHubStatsProps) {
   const [hover, setHover] = useState(false);
-  const [stats, setStats] = useState(FALLBACK_STATS);
   const open = () => window.open('https://github.com/LakshmanTurlapati', '_blank');
-
-  useEffect(() => {
-    fetch('/api/github-stats')
-      .then((r) => r.json())
-      .then((data) => {
-        setStats({
-          totalContrib: data.totalContributions.toLocaleString(),
-          currentStreak: data.currentStreak,
-          longestStreak: data.longestStreak,
-          repos: data.repos,
-          stars: data.stars >= 1000
-            ? (data.stars / 1000).toFixed(1) + 'k'
-            : String(data.stars),
-          yearlyCommits: data.yearlyCommits >= 1000
-            ? (data.yearlyCommits / 1000).toFixed(1) + 'k'
-            : String(data.yearlyCommits),
-        });
-      })
-      .catch(() => { /* keep fallback */ });
-  }, []);
+  const stats = formatStats(activity);
+  const statusLabel = getStatusLabel(activity, isLoading, hasError);
+  const degraded = hasError || activity?.source === 'fallback';
 
   return (
     <div
@@ -64,22 +41,27 @@ export function GitHubStats({ isDark }: GitHubStatsProps) {
       <div className="flex items-center gap-3.5">
         <FaGithub className="text-lg opacity-85 mr-0.5" />
 
-        <StatCell num={stats.totalContrib} label="contributions" />
+        <StatCell num={stats.totalContrib} label="contributions" muted={isLoading || degraded} />
         <Divider />
         <StatCell
           num={
             <>
               {stats.currentStreak}
-              <span className="text-[10px] font-medium opacity-60 ml-px">d</span>
-              <FaFire className="text-[10px] ml-1 opacity-70 -translate-y-px" />
+              {!isLoading && !hasError && (
+                <>
+                  <span className="text-[10px] font-medium opacity-60 ml-px">d</span>
+                  <FaFire className="text-[10px] ml-1 opacity-70 -translate-y-px" />
+                </>
+              )}
             </>
           }
           label="streak"
+          muted={isLoading || degraded}
         />
         <Divider />
-        <StatCell num={stats.stars} label="stars" />
+        <StatCell num={stats.stars} label="stars" muted={isLoading || degraded} />
         <Divider />
-        <StatCell num={String(stats.repos)} label="repos" />
+        <StatCell num={stats.repos} label="repos" muted={isLoading || degraded} />
       </div>
 
       {/* Expandable detail */}
@@ -101,6 +83,10 @@ export function GitHubStats({ isDark }: GitHubStatsProps) {
           <span className="opacity-55 tracking-wide">Contributions (12 mo)</span>
           <strong className="font-semibold tracking-tight">{stats.yearlyCommits}</strong>
         </div>
+        <div className="flex justify-between gap-4 py-0.5 text-[11.5px]">
+          <span className="opacity-55 tracking-wide">Data source</span>
+          <strong className="font-semibold tracking-tight">{statusLabel}</strong>
+        </div>
         <div
           className="mt-1.5 pt-1.5 text-[10px] uppercase tracking-[0.1em] opacity-65 flex items-center gap-1.5"
           style={{ borderTop: `1px dashed ${isDark ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'}` }}
@@ -112,9 +98,9 @@ export function GitHubStats({ isDark }: GitHubStatsProps) {
   );
 }
 
-function StatCell({ num, label }: { num: React.ReactNode; label: string }) {
+function StatCell({ num, label, muted = false }: { num: ReactNode; label: string; muted?: boolean }) {
   return (
-    <div className="flex flex-col leading-none">
+    <div className={`flex flex-col leading-none ${muted ? 'opacity-65' : ''}`}>
       <div className="text-[15px] font-bold tracking-tight inline-flex items-baseline gap-0.5">
         {num}
       </div>
@@ -127,4 +113,42 @@ function StatCell({ num, label }: { num: React.ReactNode; label: string }) {
 
 function Divider() {
   return <div className="w-px h-[22px] bg-current opacity-15" />;
+}
+
+function formatStats(activity: GitHubActivity | null) {
+  if (!activity) {
+    return {
+      totalContrib: '--',
+      currentStreak: '--',
+      longestStreak: '--',
+      repos: '--',
+      stars: '--',
+      yearlyCommits: '--',
+    };
+  }
+
+  return {
+    totalContrib: activity.totalContributions.toLocaleString(),
+    currentStreak: String(activity.currentStreak),
+    longestStreak: String(activity.longestStreak),
+    repos: String(activity.repos),
+    stars: formatCompactNumber(activity.stars),
+    yearlyCommits: formatCompactNumber(activity.yearlyCommits),
+  };
+}
+
+function formatCompactNumber(value: number): string {
+  return value >= 1000 ? `${(value / 1000).toFixed(1)}k` : String(value);
+}
+
+function getStatusLabel(activity: GitHubActivity | null, isLoading: boolean, hasError: boolean): string {
+  if (isLoading) {
+    return 'Loading';
+  }
+
+  if (hasError) {
+    return 'Unavailable';
+  }
+
+  return activity?.source === 'github' ? 'GitHub live' : 'Fallback';
 }

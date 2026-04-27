@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { FaXmark, FaArrowUpRightFromSquare, FaLink, FaFigma, FaGithub } from 'react-icons/fa6';
 import { GithubPreview } from './github-preview';
+import type { PreviewScroller } from '@/lib/site-control-utils';
 
 type ViewerKind = 'figma' | 'github' | 'web';
 
@@ -52,9 +53,16 @@ interface IframeViewerProps {
   label?: string;
   isDark: boolean;
   onClose: () => void;
+  onRegisterPreviewScroller?: (scroller: PreviewScroller | null) => void;
 }
 
-export function IframeViewer({ url, label, isDark, onClose }: IframeViewerProps) {
+export function IframeViewer({
+  url,
+  label,
+  isDark,
+  onClose,
+  onRegisterPreviewScroller,
+}: IframeViewerProps) {
   const kind = useMemo(() => detectKind(url), [url]);
   const unembeddable = useMemo(() => isUnembeddable(url) && kind !== 'figma', [url, kind]);
   const embedUrl = useMemo(() => buildEmbedUrl(url, kind), [url, kind]);
@@ -79,6 +87,13 @@ export function IframeViewer({ url, label, isDark, onClose }: IframeViewerProps)
     loadTimer.current = setTimeout(() => { setBlocked(true); }, 8000);
     return () => { if (loadTimer.current) clearTimeout(loadTimer.current); };
   }, [unembeddable]);
+
+  useEffect(() => {
+    if (!onRegisterPreviewScroller) return;
+    if (unembeddable && kind === 'github') return;
+    onRegisterPreviewScroller(null);
+    return () => onRegisterPreviewScroller(null);
+  }, [kind, onRegisterPreviewScroller, unembeddable, url]);
 
   const hostname = useMemo(() => {
     try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
@@ -138,7 +153,11 @@ export function IframeViewer({ url, label, isDark, onClose }: IframeViewerProps)
         <div className="flex-1 relative" style={{ color: isDark ? '#1a1a1a' : '#f3f2ee' }}>
           {unembeddable ? (
             kind === 'github' ? (
-              <GithubPreview url={url} isDark={isDark} />
+              <GithubPreview
+                url={url}
+                isDark={isDark}
+                onRegisterScroller={onRegisterPreviewScroller}
+              />
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
                 <IconClass className="text-5xl opacity-30" />

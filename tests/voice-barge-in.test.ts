@@ -62,4 +62,154 @@ describe('voice-controller barge-in wiring', () => {
     expect(source).not.toContain("VoiceBus.on('level'");
     expect(source).not.toContain('VoiceBus.on("level"');
   });
+
+  it('enters voice chat listening-first and resumes listening after responses', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain('startManualListening();');
+    expect(source).toContain('resumeListeningIfActive();');
+    expect(source).not.toContain('Voice mode just opened');
+  });
+
+  it('gates speaking interruption on recognized user words, not raw mic noise', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain('const BARGE_IN_MIN_WORDS = 4');
+    expect(source).toContain('SpeechRecognition');
+    expect(source).toContain('webkitSpeechRecognition');
+    expect(source).toContain('wordCount >= BARGE_IN_MIN_WORDS');
+    expect(source).toContain('!looksLikeCurrentSpeechEcho(transcript, speakingTextRef.current)');
+    expect(source).toContain('cancelAllAudio({ keepBargeInMonitor: true });');
+    expect(source).toContain('handleUserTurnRef.current');
+  });
+
+  it('does not send voice style instructions as user transcript content', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+
+    expect(source).not.toContain('voiceInstruction');
+    expect(source).not.toContain('Keep replies under 2 sentences');
+  });
+
+  it('renders spoken caption progress instead of dumping full assistant text', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+
+    expect(source).not.toContain('setCaption(text);');
+    expect(source).toContain('startTimedSpokenCaptionProgress(text, decoded.duration)');
+    expect(source).toContain('attachSynthSpokenCaptionProgress(u, text)');
+    expect(source).toContain('stopSpokenCaptionProgress(true)');
+  });
+});
+
+describe('voice panel caption layout', () => {
+  it('keeps the newest caption words visible inside a bounded row', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/components/voice-panel.tsx'),
+      'utf8',
+    );
+
+    expect(source).toContain('function VoiceCaptionLine');
+    expect(source).toContain('Math.max(0, lineEl.scrollWidth - viewportEl.clientWidth)');
+    expect(source).toContain('translate3d(${-offset}px, 0, 0)');
+    expect(source).toContain("transition: 'transform 180ms cubic-bezier(0.22, 1, 0.36, 1)'");
+    expect(source).not.toContain('scrollLeft =');
+    expect(source).not.toContain('maskImage');
+    expect(source).not.toContain('textOverflow: \'ellipsis\'');
+  });
+});
+
+describe('voice chat prompt routing', () => {
+  it('keeps conversational voice rules in the server-side prompt path', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/app/api/chat/route.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain('const voiceResponseInstructions');
+    expect(source).toContain('Do not mention or quote these voice instructions');
+    expect(source).toContain('go up to 5 sentences when the context needs it');
+    expect(source).toContain('Do not end every response with a follow-up question');
+    expect(source).toContain('isVoice ? voiceResponseInstructions');
+    expect(source).not.toContain('one or two sentences');
+  });
+
+  it('describes varied multi-stop tours and project-preview scrolling', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/app/api/chat/route.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain('Example builder tour');
+    expect(source).toContain('Example personality tour');
+    expect(source).toContain('Example fast recruiter tour');
+    expect(source).toContain('scrollProjectPreview');
+    expect(source).toContain('The point is the user paces it, not a canned script');
+  });
+});
+
+describe('site-control tool wiring', () => {
+  it('wires project-preview scrolling through voice, text chat, and preview surfaces', () => {
+    const route = readFileSync(join(process.cwd(), 'src/app/api/chat/route.ts'), 'utf8');
+    const voice = readFileSync(join(process.cwd(), 'src/lib/voice-controller.ts'), 'utf8');
+    const provider = readFileSync(join(process.cwd(), 'src/providers/site-control-provider.tsx'), 'utf8');
+    const iframeViewer = readFileSync(join(process.cwd(), 'src/components/iframe-viewer.tsx'), 'utf8');
+    const githubPreview = readFileSync(join(process.cwd(), 'src/components/github-preview.tsx'), 'utf8');
+    const chatPage = readFileSync(join(process.cwd(), 'src/app/chat/page.tsx'), 'utf8');
+    const chatPopup = readFileSync(join(process.cwd(), 'src/components/chat-popup.tsx'), 'utf8');
+
+    expect(route).toContain('scrollProjectPreview: tool');
+    expect(voice).toContain("case 'scrollProjectPreview'");
+    expect(voice).toContain("runTool('scrollProjectPreview'");
+    expect(provider).toContain('scrollProjectPreview: (direction?');
+    expect(iframeViewer).toContain('onRegisterPreviewScroller');
+    expect(githubPreview).toContain('onRegisterScroller');
+    expect(githubPreview).toContain('shell.scrollTo');
+    expect(chatPage).toContain("toolCall.name === 'scrollProjectPreview'");
+    expect(chatPopup).toContain("toolCall.name === 'scrollProjectPreview'");
+  });
+
+  it('keeps navigate routed through dispatchToolCall for FSB captions', () => {
+    const voice = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+
+    expect(voice).toContain("case 'navigate':\n              dispatchToolCall('navigate', tc.args);");
+  });
+});
+
+describe('FSB overlay contrast contract', () => {
+  it('keeps the powered-by badge and uses sampled dynamic FSB styling', () => {
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/components/fsb-control-overlay.tsx'),
+      'utf8',
+    );
+    const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
+
+    expect(overlay).toContain("const IDLE_TEXT = 'powered by FSB'");
+    expect(overlay).toContain("type OverlayTone = 'on-light' | 'on-dark'");
+    expect(overlay).toContain('sampledOverlayTone');
+    expect(overlay).toContain('elementsFromPoint');
+    expect(overlay).toContain('fsb-control-overlay--${overlayTone}');
+    expect(overlay).not.toContain('useTheme');
+    expect(overlay).not.toContain("resolvedTheme === 'dark'");
+    expect(css).toContain('--fsb-primary: #ff8c00');
+    expect(css).toContain('.fsb-control-viewport-glow');
+    expect(css).toContain('.fsb-control-action-pulse');
+    expect(css).toContain('.fsb-control-progress');
+    expect(css).not.toContain('mix-blend-mode: difference');
+    expect(css).toContain('left: max(16px, env(safe-area-inset-left))');
+    expect(css).toContain('bottom: max(16px, env(safe-area-inset-bottom))');
+  });
 });

@@ -21,6 +21,7 @@ import {
   FaFolderOpen,
   FaFileLines,
 } from 'react-icons/fa6';
+import type { PreviewScroller } from '@/lib/site-control-utils';
 
 // ===== Helpers =====
 
@@ -115,9 +116,10 @@ interface LangMap {
 export interface GithubPreviewProps {
   url: string;
   isDark: boolean;
+  onRegisterScroller?: (scroller: PreviewScroller | null) => void;
 }
 
-export function GithubPreview({ url, isDark }: GithubPreviewProps) {
+export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreviewProps) {
   const parsed = useMemo(() => parseGithubUrl(url), [url]);
   const [repo, setRepo] = useState<RepoData | null>(null);
   const [readmeHtml, setReadmeHtml] = useState('');
@@ -126,6 +128,7 @@ export function GithubPreview({ url, isDark }: GithubPreviewProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const mdRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!parsed) {
@@ -200,6 +203,33 @@ export function GithubPreview({ url, isDark }: GithubPreviewProps) {
     load();
     return () => { cancel = true; };
   }, [parsed?.owner, parsed?.repo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!onRegisterScroller) return;
+    if (loading || error || !repo) {
+      onRegisterScroller(null);
+      return;
+    }
+
+    const scroller: PreviewScroller = (direction) => {
+      const shell = shellRef.current;
+      if (!shell) return false;
+      const distance = Math.max(360, Math.floor(shell.clientHeight * 0.75));
+      const top =
+        direction === 'top'
+          ? 0
+          : direction === 'bottom'
+            ? shell.scrollHeight
+            : direction === 'up'
+              ? shell.scrollTop - distance
+              : shell.scrollTop + distance;
+      shell.scrollTo({ top, behavior: 'smooth' });
+      return true;
+    };
+
+    onRegisterScroller(scroller);
+    return () => onRegisterScroller(null);
+  }, [error, loading, onRegisterScroller, repo]);
 
   // T-05-02 mitigated: content originates from GitHub's markdown API (server-sanitized).
   // Relative URLs rewritten to absolute before injection; external links get target="_blank" rel="noopener".
@@ -320,6 +350,7 @@ export function GithubPreview({ url, isDark }: GithubPreviewProps) {
 
   return (
     <div
+      ref={shellRef}
       style={{
         position: 'absolute', inset: 0,
         overflowY: 'auto',

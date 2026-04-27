@@ -160,6 +160,11 @@ export default function ChatPage() {
         if (toolCall.name === 'scrollTo' && typeof toolCall.args.section === 'string') {
           siteControl.scrollTo(toolCall.args.section);
         }
+        if (toolCall.name === 'scrollProjectPreview') {
+          siteControl.scrollProjectPreview(
+            typeof toolCall.args.direction === 'string' ? toolCall.args.direction : undefined,
+          );
+        }
         if (toolCall.name === 'closeBrowser') siteControl.closeBrowser();
         if (toolCall.name === 'openCurrentProjectExternal') siteControl.openCurrentProjectExternal();
         if (toolCall.name === 'unsupportedIframeControl') siteControl.unsupportedIframeControl();

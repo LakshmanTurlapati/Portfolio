@@ -8,6 +8,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { isStopIntent } from './voice-commands';
 import { calculateRms, VoiceBargeInDetector } from './voice-barge-in';
+import {
+  spokenCaptionWindow,
+  tokenizeSpeechWords,
+  wordIndexFromCharIndex,
+} from './voice-caption-window';
 import { Scribe, RealtimeEvents, CommitStrategy } from '@elevenlabs/client';
 import type { RealtimeConnection } from '@elevenlabs/client';
 import type { ControlResult } from '@/providers/site-control-provider';
@@ -18,6 +23,7 @@ import type { ControlResult } from '@/providers/site-control-provider';
 export interface ToolCallbacks {
   openProject?: (args: { slug: string }) => ControlResult | void;
   scrollTo?: (args: { selector: string }) => ControlResult | void;
+  scrollProjectPreview?: (args: { direction?: string }) => ControlResult | void;
   closeBrowser?: () => ControlResult;
   openCurrentProjectExternal?: () => ControlResult;
   unsupportedIframeControl?: () => ControlResult;
@@ -57,10 +63,29 @@ interface HistoryMessage {
   content: string;
 }
 
+type UserTurnKind = 'user' | 'greet';
+type UserTurnHandler = (utterance: string, opts?: { kind?: UserTurnKind }) => Promise<void>;
+
+const BARGE_IN_MIN_WORDS = 4;
+
+function normalizeSpeechForEchoCheck(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function looksLikeCurrentSpeechEcho(candidate: string, currentSpeech: string): boolean {
+  const normalizedCandidate = normalizeSpeechForEchoCheck(candidate);
+  const normalizedSpeech = normalizeSpeechForEchoCheck(currentSpeech);
+  if (!normalizedCandidate || !normalizedSpeech) return false;
+  return normalizedSpeech.includes(normalizedCandidate);
+}
+
 export function useVoiceController({
   goPage,
   openTextChat,
-  currentPage,
   toolCallbacks,
 }: VoiceControllerOptions): VoiceControllerResult {
 
@@ -110,6 +135,10 @@ export function useVoiceController({
   const speakAbortRef = useRef<AbortController | null>(null);
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const turnGenerationRef = useRef(0);
+  const spokenCaptionRafRef = useRef<number | null>(null);
+  const spokenCaptionGenerationRef = useRef(0);
+  const speakingTextRef = useRef('');
+  const handleUserTurnRef = useRef<UserTurnHandler | null>(null);
 
   // Keep activeRef in sync with state
   useEffect(() => {
@@ -200,6 +229,14 @@ export function useVoiceController({
             if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
           }
           break;
+        case 'scrollProjectPreview':
+          if (toolCallbacks?.scrollProjectPreview) {
+            runTool('scrollProjectPreview', args, () => toolCallbacks.scrollProjectPreview!(args as { direction?: string }));
+          } else {
+            console.warn('[VoiceController] scrollProjectPreview tool called but no toolCallbacks.scrollProjectPreview provided');
+            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
+          }
+          break;
         case 'openLink':
           if (toolCallbacks?.openLink) {
             runTool('openLink', args, () => toolCallbacks.openLink!(args as { url: string }));
@@ -281,12 +318,67 @@ export function useVoiceController({
     }
   }, []);
 
+  const stopSpokenCaptionProgress = useCallback((clearCaption = false) => {
+    spokenCaptionGenerationRef.current += 1;
+    if (spokenCaptionRafRef.current !== null) {
+      cancelAnimationFrame(spokenCaptionRafRef.current);
+      spokenCaptionRafRef.current = null;
+    }
+    if (clearCaption) setCaption('');
+  }, []);
+
+  const startTimedSpokenCaptionProgress = useCallback((text: string, durationSeconds?: number) => {
+    stopSpokenCaptionProgress(false);
+
+    const words = tokenizeSpeechWords(text);
+    if (words.length === 0) {
+      setCaption('');
+      return;
+    }
+
+    const generation = spokenCaptionGenerationRef.current;
+    const durationMs = Math.max(
+      1000,
+      Math.min(30000, Math.round((durationSeconds ?? Math.max(1, words.length * 0.42)) * 1000)),
+    );
+    const startedAt = performance.now();
+    setCaption('Speaking\u2026');
+
+    const tick = () => {
+      if (generation !== spokenCaptionGenerationRef.current) return;
+      const elapsed = performance.now() - startedAt;
+      const progress = Math.min(1, elapsed / durationMs);
+      const activeWordIndex = Math.min(words.length - 1, Math.floor(progress * words.length));
+      setCaption(spokenCaptionWindow(words, activeWordIndex));
+
+      if (progress < 1) {
+        spokenCaptionRafRef.current = requestAnimationFrame(tick);
+      } else {
+        spokenCaptionRafRef.current = null;
+      }
+    };
+
+    spokenCaptionRafRef.current = requestAnimationFrame(tick);
+  }, [stopSpokenCaptionProgress]);
+
+  const attachSynthSpokenCaptionProgress = useCallback((utterance: SpeechSynthesisUtterance, text: string) => {
+    startTimedSpokenCaptionProgress(text, Math.min(30, Math.max(1, text.length * 0.05)) / 1.05);
+
+    utterance.onboundary = (event) => {
+      const words = tokenizeSpeechWords(text);
+      if (words.length === 0) return;
+      const activeWordIndex = wordIndexFromCharIndex(text, event.charIndex ?? 0);
+      setCaption(spokenCaptionWindow(words, activeWordIndex));
+    };
+  }, [startTimedSpokenCaptionProgress]);
+
   // cancelAllAudio — single source of truth for stopping in-flight TTS, including
   // BufferSource playback, queued SpeechSynthesis utterances, and any /api/tts fetch
   // that is still in flight. Also unblocks any awaiter on speak() so old handleUserTurn
   // calls don't hang. Does NOT change VoiceBus state — the caller decides the new state.
-  const cancelAllAudio = useCallback(() => {
-    stopBargeInMonitor();
+  const cancelAllAudio = useCallback((options: { keepBargeInMonitor?: boolean } = {}) => {
+    if (!options.keepBargeInMonitor) stopBargeInMonitor();
+    stopSpokenCaptionProgress(true);
 
     // VOICE-06: clear Scribe stall guard so a stop-while-connecting doesn't
     // leave a 5s timer firing into a torn-down session.
@@ -319,11 +411,13 @@ export function useVoiceController({
     }
 
     window.VoiceBus._stopLoop();
+    speakingTextRef.current = '';
     speakingRef.current = false;
-  }, [stopBargeInMonitor]);
+  }, [stopBargeInMonitor, stopSpokenCaptionProgress]);
 
   const handleBargeInDetected = useCallback(() => {
     stopBargeInMonitor();
+    turnGenerationRef.current += 1;
     cancelAllAudio();
     if (!activeRef.current) {
       window.VoiceBus.setState('idle');
@@ -338,11 +432,129 @@ export function useVoiceController({
   const startBargeInMonitor = useCallback(() => {
     if (!micPermissionGrantedRef.current) return;
     if (bargeInStopRef.current) return;
-    if (
-      typeof window === 'undefined' ||
-      typeof navigator === 'undefined' ||
-      !navigator.mediaDevices?.getUserMedia
-    ) {
+    if (typeof window === 'undefined') return;
+
+    // Prefer content-gated barge-in: keep recognition armed during TTS, but only
+    // interrupt once the user has said more than three words. This avoids noise
+    // and one-word acknowledgements cutting Parz off.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognitionCtor) {
+      let cancelled = false;
+      let triggered = false;
+      let completed = false;
+      let lastTranscript = '';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let recognizer: any = null;
+
+      const cleanup = () => {
+        cancelled = true;
+        if (recognizer) {
+          try { recognizer.onresult = null; recognizer.onerror = null; recognizer.onend = null; } catch {}
+          try { recognizer.abort(); } catch {}
+        }
+        recognizer = null;
+        if (bargeInStopRef.current === cleanup) bargeInStopRef.current = null;
+      };
+
+      const finishBargeInTurn = (candidate: string) => {
+        if (completed) return;
+        const text = candidate.trim();
+        completed = true;
+        cleanup();
+        if (!activeRef.current || tokenizeSpeechWords(text).length < BARGE_IN_MIN_WORDS) {
+          window.VoiceBus.setState('idle');
+          return;
+        }
+        const handleTurn = handleUserTurnRef.current;
+        if (handleTurn) void handleTurn(text);
+        else window.VoiceBus.setState('idle');
+      };
+
+      recognizer = new SpeechRecognitionCtor();
+      recognizer.continuous = false;
+      recognizer.interimResults = true;
+      recognizer.lang = 'en-US';
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognizer.onresult = (ev: any) => {
+        let interim = '';
+        let finalText = '';
+        for (let i = 0; i < ev.results.length; i++) {
+          const result = ev.results[i];
+          const text = result?.[0]?.transcript ?? '';
+          if (result?.isFinal) finalText += text;
+          else interim += text;
+        }
+
+        const transcript = (finalText || interim || lastTranscript).trim();
+        if (transcript) lastTranscript = transcript;
+        const wordCount = tokenizeSpeechWords(transcript).length;
+
+        if (
+          !triggered &&
+          wordCount >= BARGE_IN_MIN_WORDS &&
+          !looksLikeCurrentSpeechEcho(transcript, speakingTextRef.current)
+        ) {
+          triggered = true;
+          turnGenerationRef.current += 1;
+          cancelAllAudio({ keepBargeInMonitor: true });
+          window.VoiceBus.setState('listening');
+          setTranscript(transcript);
+          setCaption(transcript);
+        }
+
+        if (triggered) {
+          setTranscript(transcript);
+          setCaption(transcript);
+          if (finalText.trim()) finishBargeInTurn(finalText.trim());
+        }
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognizer.onerror = (e: any) => {
+        if (cancelled) return;
+        if (e?.error === 'not-allowed' || e?.error === 'service-not-allowed') {
+          micPermissionGrantedRef.current = false;
+          setMicDenied(true);
+          cleanup();
+          return;
+        }
+        if (
+          !triggered &&
+          activeRef.current &&
+          speakingRef.current &&
+          window.VoiceBus.state === 'speaking'
+        ) {
+          return;
+        }
+        if (triggered && lastTranscript) finishBargeInTurn(lastTranscript);
+        else cleanup();
+      };
+
+      recognizer.onend = () => {
+        if (cancelled) return;
+        if (triggered) {
+          finishBargeInTurn(lastTranscript);
+          return;
+        }
+        if (activeRef.current && speakingRef.current && window.VoiceBus.state === 'speaking') {
+          try { recognizer.start(); } catch { cleanup(); }
+          return;
+        }
+        cleanup();
+      };
+
+      bargeInStopRef.current = cleanup;
+      try {
+        recognizer.start();
+        return;
+      } catch {
+        cleanup();
+      }
+    }
+
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       return;
     }
 
@@ -442,11 +654,12 @@ export function useVoiceController({
         }
         cleanup();
       });
-  }, [handleBargeInDetected]);
+  }, [cancelAllAudio, handleBargeInDetected]);
 
   // stopAll — cancel all ongoing audio/speech/recognition
   const stopAll = useCallback(() => {
     listenGenerationRef.current += 1;
+    turnGenerationRef.current += 1;
     startingListenRef.current = false;
     try { connectionRef.current?.close(); } catch {}
     connectionRef.current = null;
@@ -473,9 +686,10 @@ export function useVoiceController({
         speakResolverRef.current = resolve;
         const ac = new AbortController();
         speakAbortRef.current = ac;
+        speakingTextRef.current = text;
 
         window.VoiceBus.setState('speaking');
-        setCaption(text);
+        setCaption('Speaking\u2026');
 
         fetch('/api/tts', {
           method: 'POST',
@@ -510,6 +724,7 @@ export function useVoiceController({
             analyser.connect(ctx.destination);
 
             audioSourceRef.current = source;
+            startTimedSpokenCaptionProgress(text, decoded.duration);
 
             // Start RMS loop — hooks live audio level into VoiceBus (per D-06)
             window.VoiceBus._startLoop(analyser, 1.4);
@@ -519,6 +734,7 @@ export function useVoiceController({
               // A cancelled source whose onended fires late must not touch state.
               if (audioSourceRef.current === source) {
                 stopBargeInMonitor();
+                stopSpokenCaptionProgress(true);
                 window.VoiceBus._stopLoop();
                 window.VoiceBus.setState('idle');
                 speakingRef.current = false;
@@ -551,15 +767,18 @@ export function useVoiceController({
             // Cancel any queued utterances before starting ours
             try { synth.cancel(); } catch {}
             const u = new SpeechSynthesisUtterance(text);
+            speakingTextRef.current = text;
             u.rate = 1.05;
             u.pitch = 1.0;
             u.volume = 1.0;
             speechUtteranceRef.current = u;
             window.VoiceBus.setState('speaking');
             window.VoiceBus.attachTTSFake(u);
+            attachSynthSpokenCaptionProgress(u, text);
             const finishSynth = () => {
               if (speechUtteranceRef.current === u) {
                 stopBargeInMonitor();
+                stopSpokenCaptionProgress(true);
                 window.VoiceBus.setState('idle');
                 speakingRef.current = false;
                 speechUtteranceRef.current = null;
@@ -594,7 +813,14 @@ export function useVoiceController({
           });
       });
     },
-    [cancelAllAudio, startBargeInMonitor, stopBargeInMonitor]
+    [
+      attachSynthSpokenCaptionProgress,
+      cancelAllAudio,
+      startBargeInMonitor,
+      startTimedSpokenCaptionProgress,
+      stopBargeInMonitor,
+      stopSpokenCaptionProgress,
+    ]
   );
 
   // speak — public wrapper around streamTTS
@@ -606,15 +832,23 @@ export function useVoiceController({
     [streamTTS]
   );
 
+  const resumeListeningIfActive = useCallback(() => {
+    if (!activeRef.current) return;
+    if (window.VoiceBus.state !== 'idle') return;
+    const start = startListeningRef.current;
+    if (start) void start();
+  }, []);
+
   // handleUserTurn — ALL utterances go to Grok (except local stop for instant response).
-  // Phase 23: optional `kind` arg supports an LLM-driven greet — no hardcoded speech.
+  // The optional `greet` path is retained for callers that need a synthetic
+  // LLM-driven prompt, but open() now starts with live listening instead.
   // - kind 'user' (default): existing path. Utterance is the user's transcription.
   //   It IS appended to history and the LLM sees it as a real user turn.
   // - kind 'greet': utterance is a synthetic kickoff instruction (e.g. "[Voice mode
   //   just opened on the home page. Greet briefly...]"). It is NOT appended to history
   //   because the user never said it. Only the assistant's response goes to history.
   const handleUserTurn = useCallback(
-    async (utterance: string, opts: { kind?: 'user' | 'greet' } = {}) => {
+    async (utterance: string, opts: { kind?: UserTurnKind } = {}) => {
       const kind = opts.kind ?? 'user';
 
       // Close Scribe connection immediately to prevent TTS echo feedback loop.
@@ -658,18 +892,11 @@ export function useVoiceController({
           ];
         }
 
-        const voiceInstruction =
-          'Keep replies under 2 sentences. This is a voice channel — no markdown, no lists, no emoji. ';
-
         const baseMessages = historyRef.current.slice(-20).map((m) => ({
           id: Math.random().toString(36).slice(2),
           role: m.role as 'user' | 'assistant',
-          content: m.role === 'user' && kind === 'user' && m.content === utterance
-            ? voiceInstruction + m.content
-            : m.content,
-          parts: [{ type: 'text' as const, text: m.role === 'user' && kind === 'user' && m.content === utterance
-            ? voiceInstruction + m.content
-            : m.content }],
+          content: m.content,
+          parts: [{ type: 'text' as const, text: m.content }],
         }));
 
         // For greet: append the synthetic trigger as a one-shot user message
@@ -680,8 +907,8 @@ export function useVoiceController({
               {
                 id: Math.random().toString(36).slice(2),
                 role: 'user' as const,
-                content: voiceInstruction + utterance,
-                parts: [{ type: 'text' as const, text: voiceInstruction + utterance }],
+                content: utterance,
+                parts: [{ type: 'text' as const, text: utterance }],
               },
             ]
           : baseMessages;
@@ -767,6 +994,9 @@ export function useVoiceController({
             case 'scrollTo':
               dispatchToolCall('scrollTo', { selector: (tc.args as { section: string }).section });
               break;
+            case 'scrollProjectPreview':
+              dispatchToolCall('scrollProjectPreview', { direction: (tc.args as { direction?: string }).direction ?? 'down' });
+              break;
             case 'toggleTheme':
               dispatchToolCall('toggleTheme', {});
               break;
@@ -785,11 +1015,13 @@ export function useVoiceController({
             case 'switchToText':
               stopAll();
               openTextChat();
+              activeRef.current = false;
               setActive(false);
               return; // Don't speak after switching to text
             case 'endCall':
               if (clean) await speak(clean);
               stopAll();
+              activeRef.current = false;
               setActive(false);
               return; // Don't speak again after ending
           }
@@ -803,9 +1035,12 @@ export function useVoiceController({
         // never hangs at 'thinking' for tool-only responses.
         if (clean) {
           await speak(clean);
+          if (myTurn !== turnGenerationRef.current) return;
+          resumeListeningIfActive();
         } else {
           window.VoiceBus.setState('idle');
           setCaption('');
+          resumeListeningIfActive();
         }
       } catch {
         // Phase 23: removed hardcoded server-error speak. Surface a UI caption
@@ -813,10 +1048,13 @@ export function useVoiceController({
         // by definition in this branch, so we have nothing dynamic to say.
         window.VoiceBus.setState('idle');
         setCaption('Server hiccup \u2014 try again.');
+        resumeListeningIfActive();
       }
     },
-    [openTextChat, speak, stopAll, dispatchToolCall, cancelAllAudio]
+    [openTextChat, speak, stopAll, dispatchToolCall, cancelAllAudio, resumeListeningIfActive]
   );
+
+  handleUserTurnRef.current = handleUserTurn;
 
   // startListeningFallback — existing Web Speech API STT, called when ElevenLabs fails (per D-02)
   const startListeningFallback = useCallback(() => {
@@ -884,6 +1122,7 @@ export function useVoiceController({
       } catch {}
       if (window.VoiceBus.state === 'listening') {
         window.VoiceBus.setState('idle');
+        setCaption('');
       }
     };
 
@@ -1020,12 +1259,9 @@ export function useVoiceController({
     void startListening();
   }, [cancelAllAudio, startListening]);
 
-  // open — activate voice mode and kick off an LLM-generated greeting after the
-  // navbar morph settles. Phase 22: guard the timer so a fast user doesn't hear
-  // the greet overlap their answer (mode O-2). Phase 23: the greet is no longer
-  // hardcoded — handleUserTurn(trigger, { kind: 'greet' }) sends a synthetic
-  // kickoff instruction to the LLM and speaks whatever Parz writes back.
-  //
+  // open — activate voice mode and start listening immediately. The old
+  // LLM-generated greeting made the user click the mic for the first real turn;
+  // voice chat now enters a hands-free listen/think/speak/listen loop.
   // Phase 23 hotfix: pre-warm the VoiceBus AudioContext synchronously inside
   // the click gesture frame. Without this, the first speak()'s streamTTS tries
   // to create the context inside its fetch .then chain — long after the click
@@ -1034,22 +1270,17 @@ export function useVoiceController({
   // never fires onended, so state hangs in 'speaking' and Parz appears mute.
   // Calling _getCtx() inside the gesture creates (or resumes) the context now.
   const open = useCallback(() => {
+    activeRef.current = true;
     setActive(true);
     if (typeof window !== 'undefined' && window.VoiceBus) {
       try { window.VoiceBus._getCtx(); } catch {}
     }
-    setTimeout(() => {
-      if (!activeRef.current) return;
-      if (speakingRef.current) return;
-      if (typeof window !== 'undefined' && window.VoiceBus && window.VoiceBus.state !== 'idle') return;
-      const page = currentPage ?? 'home';
-      const trigger = `[Voice mode just opened on the ${page} page. Greet briefly and offer help — under 2 sentences, voice channel: no markdown, no lists, no emoji.]`;
-      void handleUserTurn(trigger, { kind: 'greet' });
-    }, 480);
-  }, [currentPage, handleUserTurn]);
+    startManualListening();
+  }, [startManualListening]);
 
   // close — stop all audio and persist history to localStorage (per D-22)
   const close = useCallback(() => {
+    activeRef.current = false;
     stopAll();
     // Per D-22: persist last 20 messages to localStorage on close
     try {
@@ -1116,6 +1347,7 @@ export function useVoiceController({
       onFallbackChat: () => {
         stopAll();
         openTextChat();
+        activeRef.current = false;
         setActive(false);
       },
     },

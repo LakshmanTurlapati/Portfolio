@@ -1,5 +1,6 @@
 'use client';
 
+import { useLayoutEffect, useRef, useState } from 'react';
 import { FaXmark, FaStop, FaComment } from 'react-icons/fa6';
 import { VoiceWave } from '@/components/voice-wave';
 
@@ -26,6 +27,71 @@ const STATE_LABELS: Record<string, string> = {
   thinking: 'Thinking',
   speaking: 'Speaking',
 };
+
+function VoiceCaptionLine({ text }: { text: string }) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const lineRef = useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = useState(0);
+
+  useLayoutEffect(() => {
+    const viewportEl = viewportRef.current;
+    const lineEl = lineRef.current;
+    if (!viewportEl || !lineEl) return;
+
+    let raf: number | null = null;
+    const updateOffset = () => {
+      const nextOffset = Math.max(0, lineEl.scrollWidth - viewportEl.clientWidth);
+      setOffset(nextOffset);
+    };
+    const schedule = () => {
+      if (raf !== null) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(updateOffset);
+    };
+
+    schedule();
+
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(schedule);
+    observer?.observe(viewportEl);
+    observer?.observe(lineEl);
+
+    return () => {
+      if (raf !== null) cancelAnimationFrame(raf);
+      observer?.disconnect();
+    };
+  }, [text]);
+
+  return (
+    <div
+      ref={viewportRef}
+      aria-live="polite"
+      style={{
+        position: 'relative',
+        minWidth: 0,
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        ref={lineRef}
+        className="voice-caption-track"
+        style={{
+          display: 'inline-block',
+          fontSize: '14px',
+          lineHeight: '1.25',
+          whiteSpace: 'nowrap',
+          opacity: 0.85,
+          transform: `translate3d(${-offset}px, 0, 0)`,
+          transition: 'transform 180ms cubic-bezier(0.22, 1, 0.36, 1)',
+          willChange: 'transform',
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
 
 export interface VoicePanelProps {
   isDark: boolean;
@@ -140,18 +206,7 @@ export function VoicePanel({
             />
             {STATE_LABELS[state] ?? 'Ready'}
           </div>
-          <div
-            style={{
-              fontSize: '14px',
-              lineHeight: '1.25',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              opacity: 0.85,
-            }}
-          >
-            {displayCaption}
-          </div>
+          <VoiceCaptionLine text={displayCaption} />
         </div>
 
         {/* Action buttons */}

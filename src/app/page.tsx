@@ -17,15 +17,20 @@ import { ScrollingText } from '@/components/scrolling-text';
 import { GitHubStats } from '@/components/github-stats';
 import { useTheme } from 'next-themes';
 import { useVoiceSession } from '@/providers/voice-session-provider';
+import type { GitHubActivity } from '@/lib/github-activity';
 
 export default function Home() {
   const [clickCount, setClickCount] = useState(0);
   const [chatOpen, setChatOpen] = useState(false);
+  const [githubActivity, setGithubActivity] = useState<GitHubActivity | null>(null);
+  const [githubActivityError, setGithubActivityError] = useState(false);
   const isMobile = useMediaQuery('(max-width: 599px)');
   const mounted = useMounted();
   const { resolvedTheme } = useTheme();
   const isDark = mounted && resolvedTheme === 'dark';
   const { voiceActive, voiceProps, micDenied, openVoice, closeVoice } = useVoiceSession();
+  const githubActivityLoading = !githubActivity && !githubActivityError;
+  const githubActivityDegraded = githubActivityError || githubActivity?.source === 'fallback';
 
   // Per D-06 + Pattern 3 (RESEARCH.md): receive parz:open-text-chat signal from VoiceSessionProvider.openTextChat
   // when user says "switch to text" on a non-home page — navigates home first, then this listener fires.
@@ -33,6 +38,39 @@ export default function Home() {
     const handler = () => setChatOpen(true);
     window.addEventListener('parz:open-text-chat', handler);
     return () => window.removeEventListener('parz:open-text-chat', handler);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch('/api/github-stats')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`GitHub stats request failed: ${response.status}`);
+        }
+
+        return response.json() as Promise<GitHubActivity>;
+      })
+      .then((activity) => {
+        if (cancelled) {
+          return;
+        }
+
+        setGithubActivity(activity);
+        setGithubActivityError(false);
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setGithubActivity(null);
+        setGithubActivityError(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // AskParz button toggles voice mode (per D-16 integration)
@@ -89,7 +127,12 @@ export default function Home() {
           bottom: isMobile ? '140px' : '160px',
         }}
       >
-        <DotMatrix isMobile={isMobile} />
+        <DotMatrix
+          isMobile={isMobile}
+          contributionDays={githubActivity?.contributionDays}
+          isLoading={githubActivityLoading}
+          hasError={githubActivityDegraded}
+        />
       </div>
 
       {/* Layer 7: z-30/z-50 -- Navbar */}
@@ -126,7 +169,14 @@ export default function Home() {
       </div>
 
       {/* Layer 8: z-30 -- GitHub Stats */}
-      {!isMobile && <GitHubStats isDark={isDark} />}
+      {!isMobile && (
+        <GitHubStats
+          isDark={isDark}
+          activity={githubActivity}
+          isLoading={githubActivityLoading}
+          hasError={githubActivityError}
+        />
+      )}
 
       {/* Layer 9: z-35 -- Spotlight */}
       <SpotlightEffect />
