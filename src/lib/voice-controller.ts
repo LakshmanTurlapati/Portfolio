@@ -614,7 +614,7 @@ export function useVoiceController({
         for (const tc of toolCalls) {
           switch (tc.name) {
             case 'navigate':
-              goPage((tc.args as { page: string }).page);
+              dispatchToolCall('navigate', tc.args);
               break;
             case 'openProject': {
               dispatchToolCall('openProject', { slug: (tc.args as { name: string }).name });
