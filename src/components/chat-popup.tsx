@@ -109,6 +109,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const handledToolCallsRef = useRef<Set<string>>(new Set());
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [userMessageCount, setUserMessageCount] = useState(0);
   const [suggestionClicked, setSuggestionClicked] = useState(false);
@@ -183,10 +184,23 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
     }
   }, [error]);
 
-  // Focus input on open
+  // Capture opener focus on mount; focus input; restore on unmount.
   useEffect(() => {
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
     inputRef.current?.focus();
+    return () => {
+      previouslyFocusedRef.current?.focus?.();
+    };
   }, []);
+
+  // Escape key closes the popup
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
 
   const handleSend = useCallback(() => {
     const trimmed = inputValue.trim();
@@ -255,6 +269,13 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           animation: popup-shimmer 2s linear infinite;
+        }
+        [data-chat-input]:focus-visible,
+        [data-chat-send]:focus-visible,
+        [data-chat-close]:focus-visible,
+        [data-chat-chip]:focus-visible {
+          outline: 2px solid color-mix(in srgb, var(--color-text) 40%, transparent);
+          outline-offset: 2px;
         }
         @media (prefers-reduced-motion: reduce) {
           [data-chat-popup-card],
@@ -370,6 +391,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
           </div>
           <button
             onClick={onClose}
+            data-chat-close="true"
             onMouseEnter={(e) => {
               e.currentTarget.style.opacity = '1';
               e.currentTarget.style.backgroundColor = isDark
@@ -403,6 +425,9 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
 
         {/* Messages area */}
         <div
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
           style={{
             flex: 1,
             overflowY: 'auto',
@@ -480,7 +505,11 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
 
           {/* Loading indicator */}
           {isLoading && (
-            <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
+            <div
+              role="status"
+              aria-label="Parz is typing"
+              style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}
+            >
               <div
                 style={{
                   padding: '10px 14px',
@@ -491,7 +520,10 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
                 }}
               >
                 {/* Three dots wave animation */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
+                <div
+                  aria-hidden="true"
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}
+                >
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
@@ -516,7 +548,10 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
 
           {/* Error display */}
           {currentError && (
-            <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
+            <div
+              role="alert"
+              style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}
+            >
               <div
                 style={{
                   maxWidth: '85%',
@@ -543,6 +578,8 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
         {/* Suggestion chips */}
         {showSuggestions && (
           <div
+            role="group"
+            aria-label="Suggested questions"
             style={{
               display: 'flex',
               gap: '8px',
@@ -560,6 +597,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
           >
             <button
               onClick={() => handleSuggestionClick(suggestions.small)}
+              data-chat-chip="true"
               style={{
                 padding: '8px 16px',
                 borderRadius: '999px',
@@ -585,6 +623,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
             </button>
             <button
               onClick={() => handleSuggestionClick(suggestions.big)}
+              data-chat-chip="true"
               style={{
                 padding: '8px 16px',
                 borderRadius: '999px',
@@ -633,6 +672,8 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
               inputMode="text"
               enterKeyHint="send"
               autoComplete="off"
+              aria-label="Message Parz"
+              data-chat-input="true"
               value={inputValue}
               onChange={(e) => {
                 setInputValue(e.target.value);
@@ -667,6 +708,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
             <button
               onClick={handleSend}
               disabled={!inputValue.trim() || isLoading}
+              data-chat-send="true"
               onMouseEnter={() => setSendHover(true)}
               onMouseLeave={() => setSendHover(false)}
               onMouseDown={(e) => {
