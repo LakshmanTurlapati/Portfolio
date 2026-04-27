@@ -301,24 +301,30 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '16px 20px 12px',
+            height: '56px',
+            padding: '12px 16px',
             borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
             flexShrink: 0,
           }}
         >
-          <span
-            style={{
-              fontSize: '15px',
-              fontWeight: 600,
-              color: 'var(--color-text)',
-              letterSpacing: '-0.01em',
-            }}
-          >
-            Chat with Parz
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <h2
+              id="chat-popup-heading"
+              style={{
+                margin: 0,
+                color: 'var(--color-text)',
+                // Visual typography (Instrument Serif italic 22px) added in Plan 02.
+              }}
+            >
+              Parz
+            </h2>
+          </div>
           <button
             onClick={onClose}
             style={{
+              width: '32px',
+              height: '32px',
+              padding: '6px',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -326,9 +332,8 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '4px',
-              borderRadius: '6px',
-              opacity: 0.6,
+              borderRadius: '8px',
+              opacity: 0.7,
             }}
             aria-label="Close chat"
           >
@@ -341,8 +346,9 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '12px 16px',
+            padding: '16px',
             minHeight: 0,
+            scrollbarWidth: 'none',
           }}
         >
           {/* Empty state / greeting */}
