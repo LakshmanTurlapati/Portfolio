@@ -391,6 +391,11 @@ body {
   letter-spacing: 0.16em;
   line-height: 1.2;
   text-transform: uppercase;
+  /* Phase 27 / FSB-04: lock width so caption changes don't layout-shift.
+     220px accommodates the longest caption ("NAVIGATING TO PORTFOLIO…"). */
+  min-width: 220px;
+  text-align: center;
+  box-sizing: border-box;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -406,10 +411,21 @@ body {
     height: 44px;
     opacity: 0.7;
   }
+}
 
+/* Phase 27 / FSB-05: mobile badge sizing tuned for WCAG 2.5.5 (>= 44px hit area).
+   Breakpoint matches Plan 27-03 Task 1's `useMediaQuery('(min-width: 768px)')`
+   grid gate so the badge transitions in lock-step with the grid. */
+@media (max-width: 47.99rem) {
   .fsb-control-badge {
-    padding: 8px 12px;
-    font-size: 9px;
+    padding: 12px 16px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    min-width: 180px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 
