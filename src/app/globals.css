@@ -299,17 +299,17 @@ body {
     opacity: 0.72;
     transform: translate(-50%, -50%) scale(1);
     box-shadow:
-      0 0 8px rgba(255, 140, 0, 0.42),
-      0 0 28px rgba(255, 140, 0, 0.22),
-      0 0 54px rgba(255, 102, 0, 0.12);
+      0 0 8px rgba(var(--fsb-glow-rgb), 0.42),
+      0 0 28px rgba(var(--fsb-glow-rgb), 0.22),
+      0 0 54px rgba(var(--fsb-glow-rgb), 0.12);
   }
   50% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1.025);
     box-shadow:
-      0 0 12px rgba(255, 140, 0, 0.62),
-      0 0 38px rgba(255, 140, 0, 0.34),
-      0 0 72px rgba(255, 102, 0, 0.18);
+      0 0 12px rgba(var(--fsb-glow-rgb), 0.62),
+      0 0 38px rgba(var(--fsb-glow-rgb), 0.34),
+      0 0 72px rgba(var(--fsb-glow-rgb), 0.18);
   }
 }
 
@@ -320,36 +320,38 @@ body {
 
 .fsb-control-overlay {
   z-index: 120;
-  --fsb-primary: #ff8c00;
-  --fsb-primary-hot: #ff6600;
-  --fsb-state-1: var(--fsb-primary);
-  --fsb-state-2: var(--fsb-primary-hot);
+  --fsb-glow-rgb: 255, 255, 255;
   --fsb-panel-bg: rgba(255, 255, 255, 0.92);
   --fsb-panel-fg: #0b0b0c;
   --fsb-panel-muted: rgba(15, 23, 42, 0.66);
-  --fsb-panel-border: rgba(255, 140, 0, 0.46);
+  --fsb-panel-border: rgba(255, 255, 255, 0.46);
   --fsb-panel-track: rgba(15, 23, 42, 0.12);
+  --fsb-mark-bg: #0b0b0c;
+  --fsb-mark-fg: #ffffff;
+  --fsb-progress-fill: #0b0b0c;
   --fsb-glow-opacity: 0.82;
   color: var(--fsb-panel-fg);
 }
 
 .fsb-control-overlay--on-light {
+  --fsb-glow-rgb: 0, 0, 0;
   --fsb-panel-bg: rgba(0, 0, 0, 0.88);
   --fsb-panel-fg: #ffffff;
   --fsb-panel-muted: rgba(255, 255, 255, 0.68);
-  --fsb-panel-border: rgba(255, 140, 0, 0.42);
+  --fsb-panel-border: rgba(0, 0, 0, 0.42);
   --fsb-panel-track: rgba(255, 255, 255, 0.13);
+  --fsb-mark-bg: #ffffff;
+  --fsb-mark-fg: #0b0b0c;
+  --fsb-progress-fill: #ffffff;
   --fsb-glow-opacity: 0.68;
 }
 
 .fsb-control-overlay--success {
-  --fsb-state-1: #34d399;
-  --fsb-state-2: #10b981;
+  --fsb-glow-opacity: 0.9;
 }
 
 .fsb-control-overlay--error {
-  --fsb-state-1: #ef4444;
-  --fsb-state-2: #f97316;
+  --fsb-glow-opacity: 1;
 }
 
 .fsb-control-viewport-glow {
@@ -358,8 +360,8 @@ body {
   overflow: hidden;
   opacity: var(--fsb-glow-opacity);
   box-shadow:
-    inset 0 0 72px rgba(255, 140, 0, 0.16),
-    inset 0 0 150px rgba(255, 102, 0, 0.08);
+    inset 0 0 72px rgba(var(--fsb-glow-rgb), 0.16),
+    inset 0 0 150px rgba(var(--fsb-glow-rgb), 0.08);
 }
 
 .fsb-control-viewport-glow::before,
@@ -371,8 +373,8 @@ body {
 }
 
 .fsb-control-viewport-glow::before {
-  border: 1px solid rgba(255, 140, 0, 0.22);
-  box-shadow: inset 0 0 18px rgba(255, 140, 0, 0.1);
+  border: 1px solid rgba(var(--fsb-glow-rgb), 0.22);
+  box-shadow: inset 0 0 18px rgba(var(--fsb-glow-rgb), 0.1);
 }
 
 .fsb-control-viewport-glow::after {
@@ -381,8 +383,8 @@ body {
     from 0deg,
     transparent 0deg,
     transparent 286deg,
-    var(--fsb-state-1) 318deg,
-    var(--fsb-state-2) 342deg,
+    rgba(var(--fsb-glow-rgb), 0.72) 318deg,
+    rgba(var(--fsb-glow-rgb), 1) 342deg,
     transparent 360deg
   );
   filter: blur(1.5px) brightness(1.45);
@@ -405,9 +407,9 @@ body {
   min-width: 168px;
   height: min(112px, 18vh);
   min-height: 72px;
-  border: 2px solid rgba(255, 140, 0, 0.78);
+  border: 2px solid rgba(var(--fsb-glow-rgb), 0.78);
   border-radius: 12px;
-  background: rgba(255, 140, 0, 0.035);
+  background: rgba(var(--fsb-glow-rgb), 0.035);
   animation: fsbControlActionPulse 1.5s ease-in-out infinite;
   transform: translate(-50%, -50%);
 }
@@ -424,8 +426,8 @@ body {
   color: var(--fsb-panel-fg);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.28),
-    0 0 0 1px rgba(255, 140, 0, 0.12),
-    0 0 22px rgba(255, 140, 0, 0.14);
+    0 0 0 1px rgba(var(--fsb-glow-rgb), 0.12),
+    0 0 22px rgba(var(--fsb-glow-rgb), 0.14);
   box-sizing: border-box;
   backdrop-filter: blur(12px) saturate(1.12);
   -webkit-backdrop-filter: blur(12px) saturate(1.12);
@@ -448,8 +450,8 @@ body {
   height: 22px;
   padding: 0 8px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--fsb-state-1), var(--fsb-state-2));
-  color: #ffffff;
+  background: var(--fsb-mark-bg);
+  color: var(--fsb-mark-fg);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0;
@@ -482,7 +484,7 @@ body {
   inset: 0 auto 0 0;
   width: 42%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--fsb-state-1), var(--fsb-state-2));
+  background: var(--fsb-progress-fill);
   transform-origin: center;
   animation: fsbControlProgressSweep 1.2s ease-in-out infinite;
   will-change: transform;

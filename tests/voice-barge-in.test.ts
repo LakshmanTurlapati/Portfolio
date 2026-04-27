@@ -190,13 +190,16 @@ describe('site-control tool wiring', () => {
 });
 
 describe('FSB overlay contrast contract', () => {
-  it('keeps the powered-by badge and uses sampled dynamic FSB styling', () => {
+  it('keeps the powered-by badge and uses sampled monochrome FSB styling', () => {
     const overlay = readFileSync(
       join(process.cwd(), 'src/components/fsb-control-overlay.tsx'),
       'utf8',
     );
     const css = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
+    const fsbStart = css.indexOf('/* ─── Phase 19: FSB Control Overlay');
+    const fsbCss = css.slice(fsbStart);
 
+    expect(fsbStart).toBeGreaterThanOrEqual(0);
     expect(overlay).toContain("const IDLE_TEXT = 'powered by FSB'");
     expect(overlay).toContain("type OverlayTone = 'on-light' | 'on-dark'");
     expect(overlay).toContain('sampledOverlayTone');
@@ -204,12 +207,22 @@ describe('FSB overlay contrast contract', () => {
     expect(overlay).toContain('fsb-control-overlay--${overlayTone}');
     expect(overlay).not.toContain('useTheme');
     expect(overlay).not.toContain("resolvedTheme === 'dark'");
-    expect(css).toContain('--fsb-primary: #ff8c00');
-    expect(css).toContain('.fsb-control-viewport-glow');
-    expect(css).toContain('.fsb-control-action-pulse');
-    expect(css).toContain('.fsb-control-progress');
-    expect(css).not.toContain('mix-blend-mode: difference');
-    expect(css).toContain('left: max(16px, env(safe-area-inset-left))');
-    expect(css).toContain('bottom: max(16px, env(safe-area-inset-bottom))');
+    expect(fsbCss).toContain('--fsb-glow-rgb: 255, 255, 255');
+    expect(fsbCss).toContain('--fsb-glow-rgb: 0, 0, 0');
+    expect(fsbCss).toContain('.fsb-control-viewport-glow');
+    expect(fsbCss).toContain('.fsb-control-action-pulse');
+    expect(fsbCss).toContain('.fsb-control-progress');
+    expect(fsbCss).toContain('rgba(var(--fsb-glow-rgb)');
+    expect(fsbCss).not.toContain('#ff8c00');
+    expect(fsbCss).not.toContain('#ff6600');
+    expect(fsbCss).not.toContain('255, 140, 0');
+    expect(fsbCss).not.toContain('255, 102, 0');
+    expect(fsbCss).not.toContain('#34d399');
+    expect(fsbCss).not.toContain('#10b981');
+    expect(fsbCss).not.toContain('#ef4444');
+    expect(fsbCss).not.toContain('#f97316');
+    expect(fsbCss).not.toContain('mix-blend-mode: difference');
+    expect(fsbCss).toContain('left: max(16px, env(safe-area-inset-left))');
+    expect(fsbCss).toContain('bottom: max(16px, env(safe-area-inset-bottom))');
   });
 });
