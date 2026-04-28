@@ -1,18 +1,18 @@
 ---
 phase: 27-fsb-overlay-polish
 verified: 2026-04-26T00:00:00Z
-status: gaps_found
-score: 4/5 must-haves verified
+status: passed
+score: 5/5 must-haves verified after navigate gap fix
 overrides_applied: 0
+uat: deferred_post_milestone
 gaps:
   - truth: "User watching Parz call navigate sees 'NAVIGATING TO {PAGE}…' caption in the FSB overlay during the action"
-    status: failed
-    reason: "Plan 27-01 wrapped the 'navigate' case inside dispatchToolCall (voice-controller.ts:237-241) but the actual LLM-driven navigate path in handleUserTurn (voice-controller.ts:616-618) bypasses dispatchToolCall entirely and calls goPage directly. No caller invokes dispatchToolCall('navigate', ...), so the runTool wrapper for navigate is dead code in real usage. Tool-executing event with { name: 'navigate', args: { page } } never fires when a user asks Parz to navigate."
+    status: resolved
+    reason: "Initially failed because the LLM-driven navigate path bypassed dispatchToolCall and called goPage directly. Resolved inline in commit 6875df5: navigate now routes through dispatchToolCall('navigate', tc.args), so runTool emits tool-executing with the page payload."
     artifacts:
       - path: "src/lib/voice-controller.ts"
         issue: "Line 616 'case navigate' inside handleUserTurn streams Grok tool-input-available events directly to goPage((tc.args as { page: string }).page) without going through dispatchToolCall — so the runTool wrap added at line 237 is unreachable for real navigate calls."
-    missing:
-      - "Route the handleUserTurn 'navigate' case through dispatchToolCall('navigate', tc.args) like every other tool (openProject, scrollTo, toggleTheme, openLink, closeBrowser, openCurrentProjectExternal, unsupportedIframeControl already do this on lines 620-639). Then runTool will fire tool-executing with the page payload and the caption layer will render 'NAVIGATING TO PORTFOLIO…' as required by FSB-04 success criterion 1."
+    missing: []
 human_verification:
   - test: "Open dev voice mode on desktop, ask Parz to 'open FSB'. Watch the FSB overlay badge during the project-opening flow."
     expected: "Badge text changes from 'POWERED BY FSB' to 'OPENING FSB / FULL SELF BROWSING…' while the iframe mounts, then cross-fades back to 'POWERED BY FSB' ~1700ms later (1500ms hold + 200ms fade)."
@@ -44,7 +44,7 @@ human_verification:
 
 **Phase Goal:** User can see what Parz is actually doing through dynamic action captions, and the overlay feels right-sized on mobile
 **Verified:** 2026-04-26
-**Status:** gaps_found
+**Status:** passed (navigate gap resolved; manual UAT deferred post-milestone)
 **Re-verification:** No — initial verification
 
 ## Goal Achievement

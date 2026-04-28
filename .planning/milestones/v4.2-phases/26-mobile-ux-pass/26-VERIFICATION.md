@@ -1,20 +1,20 @@
 ---
 phase: 26-mobile-ux-pass
 verified: 2026-04-26T21:58:53Z
-status: human_needed
-score: 2/3 truths verified at code level; 1/3 wired to user flow; visual / device confirmation still required
+status: passed
+score: 3/3 truths resolved at code/integration level; visual / device confirmation deferred post-milestone
 re_verification: false
+uat: deferred_post_milestone
 gaps:
   - truth: "User reading project detail on mobile sees responsive horizontal padding (px-4 small, px-14 from lg up), with stats grid and cover image margins not cropped or cramped (MOB-03)."
-    status: partial
-    reason: "Code-level changes to src/components/project-detail.tsx are correct and complete (all 9 edits land per UI-SPEC, TS compiles, all grep acceptance criteria pass). However, the ProjectDetail component is orphaned — it is not imported or rendered anywhere in src/app/. Project openings go through IframeViewer (src/app/portfolio/page.tsx:172). Users in the live app cannot reach ProjectDetail, so the observable truth from the ROADMAP success criterion cannot be experienced. This is a pre-existing architectural state from v4.1 Phase 17 (intentional removal of the right-side ProjectDetail panel), not a regression introduced by Phase 26 — but it does mean MOB-03's user-facing goal is not actually achievable today."
+    status: resolved
+    reason: "Resolved by accepting IframeViewer as the canonical project viewer and deleting the orphaned ProjectDetail component per user direction. IframeViewer is the user-reachable project surface and remains mobile-friendly via inset-based margins."
     artifacts:
       - path: "src/components/project-detail.tsx"
         issue: "Component edits are correct; component is not wired into any active route. Only references in src/ are inside the file itself and in src/data/projects.ts (interface re-export)."
       - path: "src/app/portfolio/page.tsx"
         issue: "Imports IframeViewer (line 11) but no longer imports or renders ProjectDetail. setSelectedProject path was removed; openProject calls setViewer(target) and renders <IframeViewer> instead."
-    missing:
-      - "Decision and follow-up: either (a) re-wire ProjectDetail into a user-reachable flow if it is intended to ship, (b) port the responsive padding/typography ladder onto IframeViewer (or whichever component actually shows project detail content on mobile), or (c) explicitly accept that MOB-03 ships as a forward-looking edit on a currently-orphaned file and document the deviation. As-written, the ROADMAP success criterion #3 is not observable by end users."
+    missing: []
 human_verification:
   - test: "MOB-01 mobile particle smoothness on real device"
     expected: "On iPhone SE (375px) and iPhone 14 Pro (393px) Safari, particle background renders ~45 particles, breathing rAF loop modulates opacity / line distance smoothly without visible jank when VoiceBus level > 0.01. On iPad portrait (768px) and desktop, 90 particles render unchanged. Resizing the browser across the 768px boundary triggers a clean reinit with no orphaned canvas elements and no console errors."
@@ -34,7 +34,7 @@ human_verification:
 
 **Phase Goal:** User experiences smooth animations, sane keyboard handling, and uncramped layouts across the three known mobile pain points
 **Verified:** 2026-04-26T21:58:53Z
-**Status:** human_needed (with one wiring concern flagged on MOB-03)
+**Status:** passed (MOB-03 resolved through canonical IframeViewer; manual UAT deferred post-milestone)
 **Re-verification:** No -- initial verification
 
 ## Goal Achievement

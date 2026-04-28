@@ -85,6 +85,7 @@ export function DesktopNavbar({ onAskParz, voiceActive, voiceProps, micDenied }:
   return (
     <nav
       ref={navRef}
+      data-chat-morph-origin={voiceActive ? 'true' : undefined}
       className={`fixed top-[10px] left-1/2 -translate-x-1/2 rounded-[25px] z-50 flex items-center relative overflow-hidden ${voiceActive ? 'w-[760px] h-[72px]' : 'w-[630px] h-[60px]'}`}
       style={{
         backgroundColor: 'var(--color-navbar-bg)',

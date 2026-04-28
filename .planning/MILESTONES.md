@@ -1,5 +1,25 @@
 # Milestones
 
+## v4.2 Carry-forward Polish & Hardening (Shipped: 2026-04-27)
+
+**Phases completed:** 4 phases (25-28), 14 plans
+
+**Key accomplishments:**
+
+- Voice Wave 2 hardening closed the five carry-forward reliability issues from `21-AUDIT.md`: page-ready voice-to-text handoff, Scribe session-start guard, SpeechSynthesis worst-case timeout, deregister contract, and tool-callback exception wrapping.
+- Mobile UX pass reduced particle load on mobile, preserved iOS chat keyboard behavior through the redesign, and confirmed IframeViewer as the canonical mobile project viewer after deleting the orphaned ProjectDetail path.
+- FSB overlay now renders dynamic action captions from real tool payloads and hides the desktop scan grid on mobile while preserving pointer safety.
+- Chat popup redesign shipped against an explicit UI spec: refreshed surface/layout, typography, bubbles, suggestion chips, input/send controls, motion, reduced-motion behavior, and accessibility roles.
+- Live GitHub stats and the home-page matrix now pull GitHub profile contribution data through `/api/github-stats` on Fly.
+- Milestone audit passed: 11/11 requirements satisfied at code level, 0 broken integration flows.
+
+**Deferred:**
+
+- Manual browser/device/screen-reader UAT is retained as post-milestone QA in per-phase `HUMAN-UAT.md` files.
+- API-03 custom-domain / Amplify smoke testing remains future work until a reachable custom-domain production URL is available.
+
+---
+
 ## v4.1 Parz Persona, Portfolio Context, and Site Control Refresh (Shipped: 2026-04-26)
 
 **Phases completed:** 9 phases (16-24), 14 plans
@@ -18,12 +38,12 @@
 - Mobile pass + iOS safe-area: `viewport-fit=cover` on the Next.js viewport export, `env(safe-area-inset-*)` on every fixed mobile element, variant-aware AskParz button, portfolio-image clipping, compact mobile voice panel.
 - Live deploy at https://portfolio-v4-test.fly.dev/ (Fly.io). All voice + chat + STT routes verified 200.
 
-**Deferred:**
+**Deferred at v4.1 close (resolved or carried forward later):**
 
-- Wave 2 P1 audit findings still open in `21-AUDIT.md`: F-05 (openTextChat 400ms race), F-06 (STT session-started timeout), F-07 (SpeechSynthesis timeout), F-08 (registerToolCallbacks deregister), F-09 (tool callback try/catch).
-- API-03: Live Amplify / custom-domain smoke test against `audienclature.com` (script ready at `scripts/verify-amplify-apis.mjs`, blocked on a reachable production URL).
-- Particle-background mobile performance, chat input iOS keyboard handling, project-detail full-screen mobile UX.
-- FSB-04 (overlay action captions), FSB-05 (mobile-specific overlay treatment), CHAT-UI-01 (chat popup/page redesign).
+- Resolved in v4.2: Wave 2 P1 audit findings in `21-AUDIT.md`: F-05 (openTextChat race), F-06 (STT session-started timeout), F-07 (SpeechSynthesis timeout), F-08 (registerToolCallbacks deregister), F-09 (tool callback try/catch).
+- Still future work: API-03 live Amplify / custom-domain smoke test against `audienclature.com` (script ready at `scripts/verify-amplify-apis.mjs`, blocked on a reachable production URL).
+- Resolved in v4.2: particle-background mobile performance, chat input iOS keyboard handling, project viewer mobile scope.
+- Resolved in v4.2: FSB-04 (overlay action captions), FSB-05 (mobile-specific overlay treatment), CHAT-UI-01 (chat popup/page redesign).
 
 ---
 

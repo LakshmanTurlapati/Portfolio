@@ -242,6 +242,10 @@ body {
   isolation: auto;
 }
 
+html[data-portfolio-morph-active="true"] [data-portfolio-morph-source="true"],
+html[data-portfolio-morph-active="true"] [data-portfolio-morph-target="true"] {
+  opacity: 0 !important;
+}
 
 /* Respect prefers-reduced-motion (accessibility) */
 @media (prefers-reduced-motion: reduce) {
@@ -522,7 +526,7 @@ body {
   .fsb-control-badge {
     width: min(300px, calc(100vw - 24px));
     left: max(12px, env(safe-area-inset-left));
-    bottom: max(12px, env(safe-area-inset-bottom));
+    bottom: max(96px, calc(env(safe-area-inset-bottom) + 88px));
     padding: 11px 12px 10px;
     min-height: 44px;
   }

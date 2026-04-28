@@ -63,7 +63,7 @@ function BackButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center rounded-xl transition-all duration-200"
+      className="flex items-center justify-center rounded-xl transition-all duration-200 active:scale-95"
       style={{
         width: '48px',
         height: '48px',
@@ -76,21 +76,22 @@ function BackButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
       onMouseLeave={(e) => {
         e.currentTarget.style.opacity = '1';
       }}
+      aria-label="Back to home"
     >
       <FaArrowLeft size={18} />
     </button>
   );
 }
 
-function FooterText() {
+function FooterText({ compact = false }: { compact?: boolean }) {
   return (
     <p
-      className="text-sm text-center"
+      className={`text-sm ${compact ? 'text-left' : 'text-center'}`}
       style={{
         color: 'var(--color-page-inverted-text)',
         opacity: 0.7,
-        paddingTop: '180px',
-        paddingBottom: '40px',
+        paddingTop: compact ? '72px' : '180px',
+        paddingBottom: compact ? 'max(32px, env(safe-area-inset-bottom))' : '40px',
       }}
     >
       Designed in <strong>Figma</strong>, coded in <strong>Flutter</strong> (because
@@ -350,10 +351,13 @@ export default function AboutPage() {
   // Mobile layout
   return (
     <div
-      className="min-h-screen w-full"
+      className="min-h-screen w-full overflow-x-hidden"
       style={{ backgroundColor: 'var(--color-page-inverted-bg)' }}
     >
-      <div className="px-6 py-8">
+      <div
+        className="mx-auto w-full max-w-[680px] px-5 pb-8"
+        style={{ paddingTop: 'max(24px, env(safe-area-inset-top))' }}
+      >
         {/* Back button */}
         <BackButton onClick={handleBack} />
 
@@ -408,7 +412,7 @@ export default function AboutPage() {
         </section>
 
         {/* Footer */}
-        <FooterText />
+        <FooterText compact />
       </div>
     </div>
   );

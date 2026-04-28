@@ -10,23 +10,25 @@ A visually striking, interactive portfolio that showcases projects with rich det
 
 ## Current State
 
-**Shipped:** v4.1 Parz Persona, Portfolio Context, and Site Control Refresh (2026-04-26)
+**Shipped:** v4.2 Carry-forward Polish & Hardening (2026-04-27)
 
-v4.1 is complete and live at https://portfolio-v4-test.fly.dev/. Parz grounds answers in a typed `public-profile.ts` source of truth (current work, personality, flagship projects, refusal boundaries). About / Experience / project content shares the same approved facts as the system prompt, locked by Phase 20 contract tests. Project cards open approved targets directly in the inbuilt browser, and Parz can navigate, scroll, open projects, close the shell, and refuse third-party iframe control from any current page — all wrapped in a pointer-safe monochrome FSB control overlay. The voice pipeline was audited end-to-end and three additional waves of fixes (Phases 21-23) shipped: hardcoded tour scaffolding ripped out for LLM-driven walkthroughs, audio serialization rebuilt around a single `cancelAllAudio` primitive plus AbortController plus turn-generation counter, every word the user hears is now LLM-generated. Phase 24 closed out the mobile pass and iOS safe-area support (`viewport-fit=cover` + `env(safe-area-inset-*)` on all fixed mobile elements).
+v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forward hardening closed v4.1's remaining voice reliability, mobile UX, FSB overlay, and chat UI work: page-ready voice-to-text handoff, Scribe stall fallback, SpeechSynthesis timeout recovery, tool-callback exception wrapping, callback deregister contract, mobile particle reduction, iOS chat keyboard handling, mobile FSB overlay treatment, dynamic FSB action captions, and redesigned chat popup motion/accessibility. Manual cross-device UAT is retained as post-milestone QA, not an active milestone blocker.
 
-## Current Milestone: v4.2 Carry-forward Polish & Hardening
+## Current Milestone: None
 
-**Goal:** Close out v4.1's deferred items -- voice reliability hardening, mobile UX gaps, FSB overlay polish, and a chat UI redesign -- without regressing shipped behavior.
+**Status:** No active GSD milestone. v4.2 is closed.
 
-**Target features:**
+**Last completed milestone:** v4.2 Carry-forward Polish & Hardening.
 
-- Voice Wave 2 hardening: F-05 openTextChat race, F-06 STT session-started timeout, F-07 SpeechSynthesis fallback timeout, F-08 registerToolCallbacks deregister, F-09 tool-callback exception wrapping (all from `21-AUDIT.md`)
-- Mobile UX pass: particle-background mobile performance, chat input iOS keyboard handling, project-detail full-screen mobile layout
-- FSB overlay polish: FSB-04 dynamic action captions, FSB-05 mobile-specific overlay treatment
-- Chat UI redesign (CHAT-UI-01): visual / UX polish of the chat popup
-- API-03 verification: live Amplify / custom-domain smoke test (gated on a reachable production URL; may stay deferred)
+**Completed features:**
 
-**Key context:** All scope is carry-forward from v4.1. Voice items batch well together. CHAT-UI-01 is design-driven and benefits from a UI-SPEC phase. API-03 is infra-blocked, not code-blocked -- it ships only if a reachable Amplify URL exists, otherwise it stays deferred with that reason logged.
+- Voice Wave 2 hardening: F-05 openTextChat race, F-06 STT session-started timeout, F-07 SpeechSynthesis fallback timeout, F-08 registerToolCallbacks deregister, F-09 tool-callback exception wrapping.
+- Mobile UX pass: particle-background mobile performance, chat input iOS keyboard handling, canonical IframeViewer project viewing on mobile.
+- FSB overlay polish: FSB-04 dynamic action captions, FSB-05 mobile-specific overlay treatment.
+- Chat UI redesign (CHAT-UI-01): visual / UX polish of the chat popup with preserved voice/mobile behavior.
+- GitHub stats and contribution matrix now pull live GitHub activity on the Fly deployment.
+
+**Key context:** API-03 remains future work because custom-domain / Amplify verification is infra-gated. The active deployed target is Fly (`portfolio-v4-test.fly.dev`).
 
 ## Requirements
 
@@ -81,14 +83,18 @@ v4.1 is complete and live at https://portfolio-v4-test.fly.dev/. Parz grounds an
 - ✓ All hardcoded `speak()` strings removed; greet is LLM-generated via synthetic kickoff turn; R-1 barge-in regression hotfix shipped — v4.1 Phase 23
 - ✓ Mobile pass + iOS safe-area: `viewport-fit=cover`, `env(safe-area-inset-*)` on all fixed mobile elements, variant-aware AskParz button, portfolio image clipping, compact mobile voice panel — v4.1 Phase 24
 
-### Active (v4.2 milestone)
+### Validated in v4.2
 
-- [ ] Wave 2 P1 voice audit findings (`21-AUDIT.md`): F-05 openTextChat 400ms race, F-06 STT session-started timeout, F-07 SpeechSynthesis fallback timeout, F-08 registerToolCallbacks deregister, F-09 tool-callback exception wrapping
-- [ ] Particle-background mobile performance, chat input iOS keyboard handling, project-detail full-screen mobile UX
-- [ ] FSB-04 overlay action captions, FSB-05 mobile-specific overlay treatment
-- [ ] CHAT-UI-01 chat popup/page redesign (design-driven; UI-SPEC phase)
+- ✓ Wave 2 P1 voice audit findings (`21-AUDIT.md`): F-05 openTextChat race, F-06 STT session-started timeout, F-07 SpeechSynthesis fallback timeout, F-08 registerToolCallbacks deregister, F-09 tool-callback exception wrapping — v4.2 Phase 25
+- ✓ Particle-background mobile performance and chat input iOS keyboard handling — v4.2 Phase 26
+- ✓ Project viewer mobile scope resolved through canonical IframeViewer; orphaned ProjectDetail path removed — v4.2 Phase 26
+- ✓ FSB-04 overlay action captions and FSB-05 mobile-specific overlay treatment — v4.2 Phase 27
+- ✓ CHAT-UI-01 chat popup/page redesign — v4.2 Phase 28
+- ✓ GitHub Stats pill and home matrix now use live GitHub profile activity from `/api/github-stats` on Fly — post-v4.2 closure patch, 2026-04-27
+
+### Future
+
 - [ ] API-03: Live Amplify / custom-domain smoke test against `audienclature.com` (script ready at `scripts/verify-amplify-apis.mjs`; gated on reachable production URL)
-
 ### Out of Scope
 
 - New features or pages not in the v3 design prototype -- design-driven only
@@ -109,7 +115,7 @@ v4.1 is complete and live at https://portfolio-v4-test.fly.dev/. Parz grounds an
 - Several v3 components already implemented: DataGrid, ProjectDetail, IframeViewer, GitHub Stats, Ask Parz, particles.js, portfolio page redesign, updated project data
 - Circular reveal transition complete -- uses View Transitions API with clip-path on ::view-transition-new(root), matching Flutter's ClipPath behavior
 - Voice mode is the largest new feature -- requires Web Speech API integration
-- Deployment target remains AWS Amplify/audienclature.com; current live API smoke evidence is from the reachable Fly deployment, and `scripts/verify-amplify-apis.mjs` is ready for future Amplify/custom-domain verification
+- Active deployment target is Fly (`portfolio-v4-test.fly.dev`); `scripts/verify-amplify-apis.mjs` remains available for future Amplify/custom-domain verification if that URL becomes reachable
 - Current work: Lakshman is an AI Enablement Engineer at InfiniteChoice, building Voyza, an AI-first hotel booking platform; Parz and visible site content keep this brief and public-safe.
 - Current flagship projects: FSB / Full Self Browsing (public browser automation assistant at https://www.full-selfbrowsing.com) and GitFly (public platform at https://gitfly.ai; private source).
 - GitHub profile context: Lakshman frames himself as an AI builder, open-source builder, full-stack engineer turned AI engineer, and creative technologist; public GitHub profile lists InfiniteChoice, Texas, parzival.live, full-selfbrowsing.com, and cmd-k.site.
@@ -128,7 +134,7 @@ v4.1 is complete and live at https://portfolio-v4-test.fly.dev/. Parz grounds an
 - **Design fidelity**: Must match v3 design prototype pixel-for-pixel
 - **Animations**: DataGrid hover effects, circular reveal, voice wave visualization
 - **API security**: xAI Grok API key must be server-side only
-- **Deployment**: AWS Amplify
+- **Deployment**: Fly.io is the active deployment; Amplify/custom-domain verification is future work
 - **Responsive**: Same 600px mobile/desktop breakpoint behavior
 
 ## Key Decisions
@@ -169,4 +175,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26 -- v4.2 Carry-forward Polish & Hardening milestone started*
+*Last updated: 2026-04-27 -- v4.2 milestone completed and GSD auto-chain closed*

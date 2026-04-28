@@ -56,16 +56,23 @@ export function MobileNavbar({ onAskParz, voiceActive, voiceProps, micDenied }: 
 
   return (
     <nav
-      className={`fixed left-[20px] right-[20px] rounded-[25px] z-50 flex flex-col items-center relative overflow-hidden ${voiceActive ? 'h-[140px]' : 'h-[70px]'}`}
+      data-testid="mobile-navbar"
+      data-chat-morph-origin={voiceActive ? 'true' : undefined}
+      className={`fixed rounded-[25px] z-50 flex flex-col items-center overflow-hidden shadow-[0_18px_60px_rgba(0,0,0,0.22)] ${voiceActive ? 'h-[140px]' : 'h-[70px]'}`}
       style={{
         backgroundColor: 'var(--color-navbar-bg)',
+        left: 'max(14px, env(safe-area-inset-left))',
+        right: 'max(14px, env(safe-area-inset-right))',
         bottom: 'max(20px, env(safe-area-inset-bottom))',
+        border: isDark ? '1px solid rgba(0,0,0,0.08)' : '1px solid rgba(255,255,255,0.08)',
+        backdropFilter: 'blur(18px) saturate(1.1)',
+        WebkitBackdropFilter: 'blur(18px) saturate(1.1)',
         transition: 'height 0.45s cubic-bezier(.22,1,.36,1)',
       }}
     >
       {/* Default content row (h-[70px]) — fades out when voice mode is active */}
       <div
-        className="w-full h-[70px] flex items-center flex-shrink-0"
+        className="w-full h-[70px] flex items-center flex-shrink-0 px-1"
         style={{
           opacity: voiceActive ? 0 : 1,
           pointerEvents: voiceActive ? 'none' : 'auto',
@@ -79,7 +86,7 @@ export function MobileNavbar({ onAskParz, voiceActive, voiceProps, micDenied }: 
         <div className="flex-[2] flex items-center justify-center">
           <button
             onClick={handleAboutClick}
-            className="text-[16px] font-bold no-underline cursor-pointer border-none bg-transparent"
+            className="min-h-11 px-1 text-[clamp(13px,3.8vw,16px)] font-bold leading-none no-underline cursor-pointer border-none bg-transparent whitespace-nowrap"
             style={{ color: 'var(--color-navbar-text)' }}
           >
             About Me
@@ -93,7 +100,7 @@ export function MobileNavbar({ onAskParz, voiceActive, voiceProps, micDenied }: 
         </div>
 
         {/* Right (flex: 3): Social icons */}
-        <div className="flex-[3] flex items-center justify-center gap-[8px]">
+        <div className="flex-[3] flex items-center justify-center gap-[2px] min-w-0">
           {SOCIAL_LINKS.map((link) => (
             <a
               key={link.label}
@@ -101,7 +108,7 @@ export function MobileNavbar({ onAskParz, voiceActive, voiceProps, micDenied }: 
               target="_blank"
               rel="noopener noreferrer"
               aria-label={link.label}
-              className="flex items-center justify-center"
+              className="flex h-11 w-8 min-w-8 items-center justify-center"
               style={{ color: 'var(--color-social-icon)' }}
             >
               <link.icon style={{ fontSize: 'clamp(12px, 3vw, 18px)' }} />

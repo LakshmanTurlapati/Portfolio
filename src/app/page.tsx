@@ -18,10 +18,14 @@ import { GitHubStats } from '@/components/github-stats';
 import { useTheme } from 'next-themes';
 import { useVoiceSession } from '@/providers/voice-session-provider';
 import type { GitHubActivity } from '@/lib/github-activity';
+import type { ChatMorphRect, ChatVoiceSnapshot, OpenTextChatDetail } from '@/lib/chat-morph';
 
 export default function Home() {
   const [clickCount, setClickCount] = useState(0);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatOriginRect, setChatOriginRect] = useState<ChatMorphRect | undefined>();
+  const [chatVoiceSnapshot, setChatVoiceSnapshot] = useState<ChatVoiceSnapshot | undefined>();
+  const [hideNavbarForChatMorph, setHideNavbarForChatMorph] = useState(false);
   const [githubActivity, setGithubActivity] = useState<GitHubActivity | null>(null);
   const [githubActivityError, setGithubActivityError] = useState(false);
   const isMobile = useMediaQuery('(max-width: 599px)');
@@ -30,12 +34,17 @@ export default function Home() {
   const isDark = mounted && resolvedTheme === 'dark';
   const { voiceActive, voiceProps, micDenied, openVoice, closeVoice } = useVoiceSession();
   const githubActivityLoading = !githubActivity && !githubActivityError;
-  const githubActivityDegraded = githubActivityError || githubActivity?.source === 'fallback';
 
   // Per D-06 + Pattern 3 (RESEARCH.md): receive parz:open-text-chat signal from VoiceSessionProvider.openTextChat
   // when user says "switch to text" on a non-home page — navigates home first, then this listener fires.
   useEffect(() => {
-    const handler = () => setChatOpen(true);
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<OpenTextChatDetail>).detail;
+      setChatOriginRect(detail?.originRect);
+      setChatVoiceSnapshot(detail?.voiceSnapshot);
+      setHideNavbarForChatMorph(Boolean(detail?.originRect));
+      setChatOpen(true);
+    };
     window.addEventListener('parz:open-text-chat', handler);
     return () => window.removeEventListener('parz:open-text-chat', handler);
   }, []);
@@ -82,6 +91,17 @@ export default function Home() {
     }
   }, [voiceActive, openVoice, closeVoice]);
 
+  const handleChatClose = useCallback(() => {
+    setChatOpen(false);
+    setChatOriginRect(undefined);
+    setChatVoiceSnapshot(undefined);
+    setHideNavbarForChatMorph(false);
+  }, []);
+
+  const handleChatOpenAnimationComplete = useCallback(() => {
+    setHideNavbarForChatMorph(false);
+  }, []);
+
   if (!mounted) {
     // SSR placeholder - render minimal structure to prevent hydration mismatch
     return <main className="bg-gradient-main min-h-screen relative overflow-hidden" />;
@@ -127,18 +147,18 @@ export default function Home() {
           bottom: isMobile ? '140px' : '160px',
         }}
       >
-        <DotMatrix
-          isMobile={isMobile}
-          contributionDays={githubActivity?.contributionDays}
-          isLoading={githubActivityLoading}
-          hasError={githubActivityDegraded}
-        />
+        <DotMatrix isMobile={isMobile} />
       </div>
 
       {/* Layer 7: z-30/z-50 -- Navbar */}
       {/* Desktop navbar: visible >= 600px */}
       <div
         className="hidden sm:block"
+        style={{
+          opacity: hideNavbarForChatMorph ? 0 : 1,
+          pointerEvents: hideNavbarForChatMorph ? 'none' : 'auto',
+          transition: 'opacity 120ms ease',
+        }}
         onClick={(e) => {
           if ((e.target as HTMLElement).closest('[data-parz-btn]')) return;
           setClickCount((prev) => prev + 1);
@@ -155,6 +175,11 @@ export default function Home() {
       {/* Mobile navbar: visible < 600px */}
       <div
         className="sm:hidden"
+        style={{
+          opacity: hideNavbarForChatMorph ? 0 : 1,
+          pointerEvents: hideNavbarForChatMorph ? 'none' : 'auto',
+          transition: 'opacity 120ms ease',
+        }}
         onClick={(e) => {
           if ((e.target as HTMLElement).closest('[data-parz-btn]')) return;
           setClickCount((prev) => prev + 1);
@@ -210,7 +235,13 @@ export default function Home() {
 
       {/* Layer 12: z-40/z-50 -- Chat Popup (gated on mount to avoid hydration mismatch) */}
       {mounted && chatOpen && (
-        <ChatPopup isDark={isDark} onClose={() => setChatOpen(false)} />
+        <ChatPopup
+          isDark={isDark}
+          onClose={handleChatClose}
+          originRect={chatOriginRect}
+          voiceSnapshot={chatVoiceSnapshot}
+          onOpenAnimationComplete={handleChatOpenAnimationComplete}
+        />
       )}
     </main>
   );

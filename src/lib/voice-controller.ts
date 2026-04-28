@@ -13,6 +13,7 @@ import {
   tokenizeSpeechWords,
   wordIndexFromCharIndex,
 } from './voice-caption-window';
+import type { ChatMorphRect, ChatVoiceSnapshot } from '@/lib/chat-morph';
 import { Scribe, RealtimeEvents, CommitStrategy } from '@elevenlabs/client';
 import type { RealtimeConnection } from '@elevenlabs/client';
 import type { ControlResult } from '@/providers/site-control-provider';
@@ -35,7 +36,11 @@ export interface ToolCallbacks {
 
 export interface VoiceControllerOptions {
   goPage: (page: string, originX?: number, originY?: number) => void;
-  openTextChat: (initialText?: string) => void;
+  openTextChat: (
+    initialText?: string,
+    originRect?: ChatMorphRect,
+    voiceSnapshot?: ChatVoiceSnapshot,
+  ) => void;
   currentPage?: string;
   toolCallbacks?: ToolCallbacks;   // per D-19: tool calls plumbed from App level
 }
@@ -53,7 +58,7 @@ interface VoiceControllerResult {
     onMic: () => void;        // toggles listen/stop
     onStop: () => void;
     onClose: () => void;
-    onFallbackChat: () => void;
+    onFallbackChat: (originRect?: ChatMorphRect, voiceSnapshot?: ChatVoiceSnapshot) => void;
   };
 }
 
@@ -94,6 +99,19 @@ export function useVoiceController({
   const [caption, setCaption] = useState('');
   const [transcript, setTranscript] = useState('');
   const [micDenied, setMicDenied] = useState(false);
+
+  const buildVoiceSnapshot = useCallback(
+    (): ChatVoiceSnapshot => ({
+      state: voiceState,
+      caption,
+      transcript,
+      micDenied,
+      compact: typeof window !== 'undefined'
+        ? window.matchMedia('(max-width: 639px)').matches
+        : false,
+    }),
+    [caption, micDenied, transcript, voiceState],
+  );
 
   // Detect prefers-reduced-motion once at hook init (per D-24)
   const prefersReduced =
@@ -1012,12 +1030,14 @@ export function useVoiceController({
             case 'unsupportedIframeControl':
               dispatchToolCall('unsupportedIframeControl', {});
               break;
-            case 'switchToText':
+            case 'switchToText': {
+              const voiceSnapshot = buildVoiceSnapshot();
               stopAll();
-              openTextChat();
+              openTextChat(undefined, undefined, voiceSnapshot);
               activeRef.current = false;
               setActive(false);
               return; // Don't speak after switching to text
+            }
             case 'endCall':
               if (clean) await speak(clean);
               stopAll();
@@ -1051,7 +1071,7 @@ export function useVoiceController({
         resumeListeningIfActive();
       }
     },
-    [openTextChat, speak, stopAll, dispatchToolCall, cancelAllAudio, resumeListeningIfActive]
+    [openTextChat, speak, stopAll, dispatchToolCall, cancelAllAudio, resumeListeningIfActive, buildVoiceSnapshot]
   );
 
   handleUserTurnRef.current = handleUserTurn;
@@ -1344,9 +1364,10 @@ export function useVoiceController({
       onMic: voiceState === 'listening' ? stopAll : startManualListening,
       onStop: stopAll,
       onClose: close,
-      onFallbackChat: () => {
+      onFallbackChat: (originRect?: ChatMorphRect, voiceSnapshot?: ChatVoiceSnapshot) => {
+        const snapshot = voiceSnapshot ?? buildVoiceSnapshot();
         stopAll();
-        openTextChat();
+        openTextChat(undefined, originRect, snapshot);
         activeRef.current = false;
         setActive(false);
       },

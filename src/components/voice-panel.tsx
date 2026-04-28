@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { FaXmark, FaStop, FaComment } from 'react-icons/fa6';
 import { VoiceWave } from '@/components/voice-wave';
+import { rectFromElement, type ChatMorphRect, type ChatVoiceSnapshot } from '@/lib/chat-morph';
 
 // State dot colors from prototype styles.css
 // idle=#8fbcff, listening=#ff8f8f (vmDotBlink 0.9s), thinking=#ffd58f (vmDotBlink 0.6s), speaking=#8fffb6
@@ -102,9 +103,11 @@ export interface VoicePanelProps {
   onMic: () => void;
   onStop: () => void;
   onClose: () => void;
-  onFallbackChat: () => void;
+  onFallbackChat: (originRect?: ChatMorphRect, voiceSnapshot?: ChatVoiceSnapshot) => void;
   /** Tighter padding + smaller wave for mobile-sized containers. */
   compact?: boolean;
+  /** Render the panel as visual-only content inside another animation shell. */
+  presentation?: boolean;
 }
 
 export function VoicePanel({
@@ -118,6 +121,7 @@ export function VoicePanel({
   onClose,
   onFallbackChat,
   compact = false,
+  presentation = false,
 }: VoicePanelProps) {
   const dot = STATE_DOTS[state] ?? STATE_DOTS.idle;
   const textColor = isDark ? '#111' : '#fff';
@@ -142,18 +146,21 @@ export function VoicePanel({
           gap: compact ? '10px' : '16px',
           padding: compact ? '0 10px 0 14px' : '0 14px 0 22px',
           opacity: 1,
-          animation: 'vmFadeIn 0.25s ease forwards',
+          animation: presentation ? 'none' : 'vmFadeIn 0.25s ease forwards',
           color: textColor,
-          cursor: 'pointer',
+          cursor: presentation ? 'default' : 'pointer',
         }}
-        onClick={onMic}
-        role="button"
-        aria-label={state === 'listening' ? 'Stop listening' : 'Start listening'}
+        onClick={presentation ? undefined : onMic}
+        role={presentation ? undefined : 'button'}
+        aria-label={presentation ? undefined : state === 'listening' ? 'Stop listening' : 'Start listening'}
       >
         {/* Waveform or mic-denied banner */}
         {micDenied ? (
           <div
-            onClick={(e) => { e.stopPropagation(); onMic(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!presentation) onMic();
+            }}
             style={{
               padding: '6px 12px',
               background: 'rgba(239,68,68,0.1)',
@@ -162,7 +169,7 @@ export function VoicePanel({
               fontSize: '12px',
               color: '#ef4444',
               whiteSpace: 'nowrap',
-              cursor: 'pointer',
+              cursor: presentation ? 'default' : 'pointer',
               flexShrink: 0,
             }}
           >
@@ -213,21 +220,26 @@ export function VoicePanel({
         <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
           {/* Switch to text chat */}
           <button
+            tabIndex={presentation ? -1 : undefined}
             onClick={(e) => {
               e.stopPropagation();
-              onFallbackChat();
+              if (presentation) return;
+              onFallbackChat(
+                rectFromElement(e.currentTarget.closest('[data-chat-morph-origin="true"]')),
+                { state, caption, transcript, micDenied, compact },
+              );
             }}
             title="Switch to text chat"
             style={{
-              width: '36px',
-              height: '36px',
+              width: compact ? '40px' : '36px',
+              height: compact ? '40px' : '36px',
               borderRadius: '50%',
               border: `1px solid ${btnBorder}`,
               background: btnBg,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
+              cursor: presentation ? 'default' : 'pointer',
               color: textColor,
             }}
           >
@@ -235,21 +247,23 @@ export function VoicePanel({
           </button>
           {/* Stop */}
           <button
+            tabIndex={presentation ? -1 : undefined}
             onClick={(e) => {
               e.stopPropagation();
+              if (presentation) return;
               onStop();
             }}
             title="Stop"
             style={{
-              width: '36px',
-              height: '36px',
+              width: compact ? '40px' : '36px',
+              height: compact ? '40px' : '36px',
               borderRadius: '50%',
               border: `1px solid ${btnBorder}`,
               background: btnBg,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
+              cursor: presentation ? 'default' : 'pointer',
               color: textColor,
             }}
           >
@@ -257,21 +271,23 @@ export function VoicePanel({
           </button>
           {/* Close */}
           <button
+            tabIndex={presentation ? -1 : undefined}
             onClick={(e) => {
               e.stopPropagation();
+              if (presentation) return;
               onClose();
             }}
             title="Close voice mode"
             style={{
-              width: '36px',
-              height: '36px',
+              width: compact ? '40px' : '36px',
+              height: compact ? '40px' : '36px',
               borderRadius: '50%',
               border: `1px solid ${btnBorder}`,
               background: btnBg,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
+              cursor: presentation ? 'default' : 'pointer',
               color: textColor,
             }}
           >

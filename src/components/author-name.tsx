@@ -12,6 +12,7 @@ export function AuthorName({ className, variant = 'desktop' }: AuthorNameProps) 
 
   return (
     <span
+      data-testid={`author-name-${variant}`}
       className={cn(
         'text-[20px] text-[var(--color-text)] select-none',
         isDesktop

@@ -3,6 +3,11 @@
 import { useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/cn';
+import {
+  getPortfolioBackButtonRect,
+  rectFromDomRect,
+  startPortfolioButtonMorph,
+} from '@/lib/portfolio-button-morph';
 import { useTransition } from '@/providers/transition-provider';
 
 interface PortfolioButtonProps {
@@ -49,15 +54,25 @@ export function PortfolioButton({ variant, isDark, className }: PortfolioButtonP
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const originX = rect.left + rect.width / 2;
       const originY = rect.top + rect.height / 2;
+      if (isDesktop) {
+        const sourceRect = glowRef.current?.getBoundingClientRect() ?? rect;
+        startPortfolioButtonMorph({
+          from: rectFromDomRect(sourceRect),
+          to: getPortfolioBackButtonRect(),
+          direction: 'open',
+          isDark,
+        });
+      }
       navigateWithReveal('/portfolio', originX, originY);
     },
-    [navigateWithReveal]
+    [isDark, isDesktop, navigateWithReveal]
   );
 
   if (isDesktop) {
     return (
       <div
         ref={glowRef}
+        data-portfolio-morph-source="true"
         className={cn(
           'w-[200px] h-full rounded-[25px] flex items-center justify-center',
           className

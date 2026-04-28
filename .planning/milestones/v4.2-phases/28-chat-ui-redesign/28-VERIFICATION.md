@@ -1,9 +1,10 @@
 ---
 phase: 28-chat-ui-redesign
 verified: 2026-04-26T00:00:00Z
-status: human_needed
+status: passed
 score: 4/4 must-haves verified
 overrides_applied: 0
+uat: deferred_post_milestone
 human_verification:
   - test: "Open chat popup on desktop (>=768px) and verify pixel-for-pixel match against UI-SPEC §5 / §11.2"
     expected: "Popup anchored 24px from right + bottom, 420px wide, 56px header with Parz in Instrument Serif italic 22px + Lakshman's digital twin subtitle, 32x32 close button, 20px corner radius, 0 24px 64px shadow, 1px subtle border"
@@ -35,7 +36,7 @@ human_verification:
 
 **Phase Goal:** User experiences a refreshed visual / UX polish of the chat popup that reflects current portfolio aesthetic, executed against an explicit UI spec
 **Verified:** 2026-04-26
-**Status:** human_needed
+**Status:** passed (manual UAT deferred post-milestone)
 **Re-verification:** No — initial verification
 
 ## Goal Achievement

@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   // Enable React strict mode for better development experience
   reactStrictMode: true,
 
+  // Local screenshots/tests use 127.0.0.1 because another dev server may own localhost.
+  allowedDevOrigins: ['127.0.0.1'],
+
+  // The dev badge overlaps mobile bottom controls while tuning responsive UI.
+  devIndicators: false,
+
   // Standalone output for Docker/Fly.io deployment
   output: 'standalone',
 

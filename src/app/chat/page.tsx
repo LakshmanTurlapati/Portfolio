@@ -4,7 +4,6 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { FaArrowUp, FaArrowLeft } from 'react-icons/fa6';
-import { useMediaQuery } from '@/hooks/use-media-query';
 import { sanitizeText } from '@/lib/sanitize-text';
 import { linkifyText, type LinkPart } from '@/lib/linkify';
 import { useTransition } from '@/providers/transition-provider';
@@ -102,7 +101,6 @@ function getToolCall(part: ToolPart): { id: string; name: string; args: Record<s
 export default function ChatPage() {
   const { navigateWithReveal } = useTransition();
   const siteControl = useSiteControl();
-  const isDesktop = useMediaQuery('(min-width: 600px)');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const handledToolCallsRef = useRef<Set<string>>(new Set());
@@ -112,11 +110,18 @@ export default function ChatPage() {
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const [currentError, setCurrentError] = useState<string | null>(null);
 
-  // Randomly pick suggestion chips on mount (1 small + 1 big)
-  const [suggestions] = useState(() => ({
-    small: getRandomItem(smallQuestions),
-    big: getRandomItem(bigQuestions),
+  // Start deterministic for SSR, then randomize after hydration.
+  const [suggestions, setSuggestions] = useState(() => ({
+    small: smallQuestions[0],
+    big: bigQuestions[0],
   }));
+
+  useEffect(() => {
+    setSuggestions({
+      small: getRandomItem(smallQuestions),
+      big: getRandomItem(bigQuestions),
+    });
+  }, []);
 
   const { messages, sendMessage, status, error } = useChat({
     transport: siteControlChatTransport,
@@ -126,7 +131,7 @@ export default function ChatPage() {
   });
 
   const isLoading = status === 'submitted' || status === 'streaming';
-  const showSuggestions = isDesktop && !suggestionClicked && userMessageCount < 2;
+  const showSuggestions = !suggestionClicked && userMessageCount < 2;
 
   // Pick a random Parz error message when error state changes
   useEffect(() => {
@@ -213,7 +218,7 @@ export default function ChatPage() {
 
   return (
     <main
-      className="flex flex-col h-screen relative"
+      className="flex h-dvh flex-col overflow-hidden relative"
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
       {/* Back button */}
@@ -224,10 +229,12 @@ export default function ChatPage() {
           const originY = rect.top + rect.height / 2;
           navigateWithReveal('/', originX, originY);
         }}
-        className="absolute top-6 left-6 z-20 w-12 h-12 rounded-xl flex items-center justify-center transition-opacity hover:opacity-80"
+        className="absolute z-20 w-12 h-12 rounded-xl flex items-center justify-center transition-opacity hover:opacity-80 active:scale-95"
         style={{
           backgroundColor: 'var(--color-text)',
           color: 'var(--color-bg)',
+          top: 'max(20px, env(safe-area-inset-top))',
+          left: 'max(18px, env(safe-area-inset-left))',
         }}
         aria-label="Go back"
       >
@@ -235,7 +242,10 @@ export default function ChatPage() {
       </button>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-16 pt-24 pb-4">
+      <div
+        className="flex-1 overflow-y-auto px-4 sm:px-16 pb-4"
+        style={{ paddingTop: 'calc(max(20px, env(safe-area-inset-top)) + 76px)' }}
+      >
         {/* Empty state */}
         {messages.length === 0 && !isLoading && (
           <div className="flex flex-col items-center justify-center h-full opacity-50">
@@ -338,12 +348,12 @@ export default function ChatPage() {
       {/* Suggestion chips (desktop only) */}
       {showSuggestions && (
         <div
-          className="px-4 sm:px-16 pb-2 flex gap-2 justify-center transition-opacity duration-200"
+          className="px-4 sm:px-16 pb-2 flex flex-wrap gap-2 justify-center transition-opacity duration-200"
           style={{ opacity: showSuggestions ? 1 : 0 }}
         >
           <button
             onClick={() => handleSuggestionClick(suggestions.small)}
-            className="px-4 py-2 rounded-full text-sm transition-all hover:scale-105"
+            className="min-h-11 px-4 py-2 rounded-full text-sm transition-all hover:scale-105 active:scale-95"
             style={{
               border: '1px solid color-mix(in srgb, var(--color-text) 25%, transparent)',
               color: 'var(--color-text)',
@@ -355,7 +365,7 @@ export default function ChatPage() {
           </button>
           <button
             onClick={() => handleSuggestionClick(suggestions.big)}
-            className="px-4 py-2 rounded-full text-sm transition-all hover:scale-105"
+            className="min-h-11 px-4 py-2 rounded-full text-sm transition-all hover:scale-105 active:scale-95"
             style={{
               border: '1px solid color-mix(in srgb, var(--color-text) 25%, transparent)',
               color: 'var(--color-text)',
@@ -369,7 +379,10 @@ export default function ChatPage() {
       )}
 
       {/* Input area */}
-      <div className="px-4 sm:px-16 pb-6 pt-2">
+      <div
+        className="px-4 sm:px-16 pt-2"
+        style={{ paddingBottom: 'max(18px, env(safe-area-inset-bottom))' }}
+      >
         <div className="relative max-w-3xl mx-auto">
           <input
             ref={inputRef}
@@ -378,7 +391,7 @@ export default function ChatPage() {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Talk to my persona!"
-            className="w-full rounded-full px-6 py-3 pr-14 text-sm outline-none chat-input-placeholder"
+            className="min-h-[56px] w-full rounded-full px-6 py-3 pr-16 text-sm outline-none chat-input-placeholder"
             style={{
               backgroundColor: 'color-mix(in srgb, var(--color-text) 8%, transparent)',
               color: 'var(--color-text)',
@@ -390,7 +403,7 @@ export default function ChatPage() {
           <button
             onClick={handleSend}
             disabled={!inputValue.trim() || isLoading}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-opacity disabled:opacity-30"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-opacity disabled:opacity-30 active:scale-95"
             style={{
               backgroundColor: 'var(--color-text)',
               color: 'var(--color-bg)',

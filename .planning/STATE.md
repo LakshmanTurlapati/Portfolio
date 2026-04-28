@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v4.2
 milestone_name: Carry-forward Polish & Hardening
-status: executing
-stopped_at: Roadmap finalized with 4 phases (25-28), 11 requirements mapped, traceability updated
-last_updated: "2026-04-27T04:46:41.720Z"
+status: complete
+stopped_at: Milestone v4.2 completed and GSD auto-chain closed
+last_updated: "2026-04-27T07:20:00.000Z"
 last_activity: 2026-04-27
 progress:
   total_phases: 4
@@ -18,20 +18,20 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-26)
+See: .planning/PROJECT.md (updated 2026-04-27)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** Phase 25 — Voice Wave 2 Hardening
+**Current focus:** No active GSD milestone. v4.2 is complete.
 
 ## Current Position
 
-Phase: 28
-Plan: Not started
-Status: Executing Phase 25
+Phase: none
+Plan: none
+Status: Complete — v4.2 closed
 Last activity: 2026-04-27
 
 ```
-v4.2 Progress: [--------------------] 0% (0/4 phases complete)
+v4.2 Progress: [####################] 100% (4/4 phases complete, 14/14 plans complete)
 ```
 
 ## Performance Metrics
@@ -47,11 +47,11 @@ v4.2 Progress: [--------------------] 0% (0/4 phases complete)
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 16-24 (v4.1) | 14 | -- | -- |
-| 25-28 (v4.2) | 0 | TBD | -- |
-| 25 | 5 | - | - |
-| 26 | 3 | - | - |
-| 27 | 3 | - | - |
-| 28 | 3 | - | - |
+| 25-28 (v4.2) | 14 | -- | -- |
+| 25 | 5 | -- | -- |
+| 26 | 3 | -- | -- |
+| 27 | 3 | -- | -- |
+| 28 | 3 | -- | -- |
 
 ## Accumulated Context
 
@@ -81,20 +81,28 @@ v4.2 Progress: [--------------------] 0% (0/4 phases complete)
 
 ### Pending Todos
 
-- API-03 remains gated on a reachable Amplify/custom-domain production URL. Out of v4.2 scope; revisit when URL becomes available.
+- No active GSD milestone todos.
+- API-03 remains out of scope for v4.2 and gated on a reachable Amplify/custom-domain production URL.
+- Manual browser/device UAT from v4.2 is retained as post-milestone QA in per-phase `HUMAN-UAT.md` files, not as a milestone blocker.
 
 ### Blockers/Concerns
 
-- Live Amplify/custom-domain API smoke testing is gated on `audienclature.com` or the actual Amplify URL becoming publicly reachable.
+- No milestone blockers remain.
+- Live Amplify/custom-domain API smoke testing is future work until `audienclature.com` or the actual Amplify URL becomes publicly reachable.
 
 ## Session Continuity
 
-Last session: v4.2 roadmap creation
-Stopped at: Roadmap finalized with 4 phases (25-28), 11 requirements mapped, traceability updated
+Last session: v4.2 milestone completion
+Stopped at: Milestone v4.2 completed, all 4 phases / 14 plans archived, GSD auto-chain closed
 Resume file: --
 
-**Next:** Run `/gsd-plan-phase 25` to draft plans for Voice Wave 2 Hardening.
+**Next:** No active GSD next step. Start a new milestone only when new scope is defined.
 
+**Completed Milestone:** v4.2 Carry-forward Polish & Hardening -- 4 phases, 14 plans -- 2026-04-27
+**Completed Phase:** 28 (Chat UI Redesign) -- 3 plans -- 2026-04-27
+**Completed Phase:** 27 (FSB Overlay Polish) -- 3 plans -- 2026-04-27
+**Completed Phase:** 26 (Mobile UX Pass) -- 3 plans -- 2026-04-26
+**Completed Phase:** 25 (Voice Wave 2 Hardening) -- 5 plans -- 2026-04-26
 **Completed Milestone:** v4.1 Parz Persona, Portfolio Context, and Site Control Refresh -- 9 phases, 14 plans -- 2026-04-26
 **Completed Phase:** 24 (Mobile Pass + Voice Stabilization) -- 1 plan -- 2026-04-26T07:10:00.000Z
 **Completed Phase:** 23 (Dynamic Voice Output + R-1 Hotfix) -- 1 plan -- 2026-04-26T01:15:00.000Z

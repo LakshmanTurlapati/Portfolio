@@ -1,9 +1,10 @@
 ---
 phase: 25-voice-wave-2-hardening
 verified: 2026-04-26T21:03:25Z
-status: human_needed
+status: passed
 score: 5/5 must-haves verified
 overrides_applied: 0
+uat: deferred_post_milestone
 human_verification:
   - test: "Voice -> text chat from /portfolio (and /about): trigger 'switch to text chat' via voice and confirm the chat popup mounts focused with the message landing in it. Repeat after toggling between View Transitions API path (Chrome) and the GSAP fallback path (Firefox) -- both completion sites must reach `parz:open-text-chat`."
     expected: "Chat popup opens fully every time on / from both /portfolio and /about; no empty popup, no dropped message"
@@ -26,7 +27,7 @@ human_verification:
 
 **Phase Goal:** Voice mode no longer hangs, races, or aborts mid-turn under the five known P1 conditions from `21-AUDIT.md` Wave 2
 **Verified:** 2026-04-26T21:03:25Z
-**Status:** human_needed
+**Status:** passed (manual UAT deferred post-milestone)
 **Re-verification:** No -- initial verification
 
 ## Goal Achievement

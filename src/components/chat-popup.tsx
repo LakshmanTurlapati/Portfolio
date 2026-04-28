@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { FaXmark, FaArrowUp } from 'react-icons/fa6';
@@ -8,6 +8,8 @@ import { sanitizeText } from '@/lib/sanitize-text';
 import { linkifyText, type LinkPart } from '@/lib/linkify';
 import { useSiteControl, type ControlPage } from '@/providers/site-control-provider';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { VoicePanel } from '@/components/voice-panel';
+import type { ChatMorphRect, ChatVoiceSnapshot } from '@/lib/chat-morph';
 
 // Suggestion chips data
 const smallQuestions = ['Who are you?', 'Your age?', 'Where from?'];
@@ -101,21 +103,69 @@ function getToolCall(part: ToolPart): { id: string; name: string; args: Record<s
 interface ChatPopupProps {
   isDark: boolean;
   onClose: () => void;
+  originRect?: ChatMorphRect;
+  voiceSnapshot?: ChatVoiceSnapshot;
+  onOpenAnimationComplete?: () => void;
 }
 
-export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
+const MORPH_DURATION_MS = 480;
+const CONTENT_DELAY_MS = 280;
+const VOICE_PREVIEW_FADE_MS = 300;
+const CLOSE_DURATION_MS = 360;
+
+function getFinalChatRect(isDesktop: boolean): ChatMorphRect {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  if (!isDesktop) {
+    const inset = 8;
+    return {
+      left: inset,
+      top: inset,
+      width: Math.max(0, viewportWidth - inset * 2),
+      height: Math.max(0, viewportHeight - inset * 2),
+    };
+  }
+
+  const width = Math.min(400, viewportWidth - 48);
+  const height = Math.min(600, Math.max(360, viewportHeight - 48));
+
+  return {
+    left: (viewportWidth - width) / 2,
+    top: (viewportHeight - height) / 2,
+    width,
+    height,
+  };
+}
+
+export function ChatPopup({
+  isDark,
+  onClose,
+  originRect,
+  voiceSnapshot,
+  onOpenAnimationComplete,
+}: ChatPopupProps) {
   const siteControl = useSiteControl();
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const handledToolCallsRef = useRef<Set<string>>(new Set());
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const prefersReducedRef = useRef(false);
+  const closeRequestedRef = useRef(false);
   const [inputValue, setInputValue] = useState('');
   const [userMessageCount, setUserMessageCount] = useState(0);
   const [suggestionClicked, setSuggestionClicked] = useState(false);
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const [currentError, setCurrentError] = useState<string | null>(null);
   const [sendHover, setSendHover] = useState(false);
+  const [shellRect, setShellRect] = useState<ChatMorphRect | null>(null);
+  const [shellExpanded, setShellExpanded] = useState(!originRect);
+  const [contentReady, setContentReady] = useState(!originRect);
+  const [voicePreviewVisible, setVoicePreviewVisible] = useState(Boolean(originRect && voiceSnapshot));
+  const [backdropVisible, setBackdropVisible] = useState(false);
+  const [cardVisible, setCardVisible] = useState(false);
+  const [morphEnabled, setMorphEnabled] = useState(Boolean(originRect));
 
   // Randomly pick suggestion chips on mount (1 small + 1 big)
   const [suggestions] = useState(() => ({
@@ -189,23 +239,115 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
     }
   }, [error]);
 
-  // Capture opener focus on mount; focus input; restore on unmount.
+  useLayoutEffect(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const finalRect = getFinalChatRect(isDesktop);
+    const canMorphFromOrigin = Boolean(originRect) && !prefersReduced;
+    let firstFrame = 0;
+    let secondFrame = 0;
+    let voicePreviewTimer: ReturnType<typeof setTimeout> | null = null;
+    let contentTimer: ReturnType<typeof setTimeout> | null = null;
+    let completeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    prefersReducedRef.current = prefersReduced;
+    setMorphEnabled(canMorphFromOrigin);
+
+    if (canMorphFromOrigin && originRect) {
+      setShellRect(originRect);
+      setShellExpanded(false);
+      setContentReady(false);
+      setVoicePreviewVisible(Boolean(voiceSnapshot));
+      setBackdropVisible(false);
+      setCardVisible(false);
+
+      firstFrame = window.requestAnimationFrame(() => {
+        setBackdropVisible(true);
+        setCardVisible(true);
+        secondFrame = window.requestAnimationFrame(() => {
+          setShellRect(finalRect);
+          setShellExpanded(true);
+        });
+      });
+
+      voicePreviewTimer = setTimeout(() => setVoicePreviewVisible(false), VOICE_PREVIEW_FADE_MS);
+      contentTimer = setTimeout(() => setContentReady(true), CONTENT_DELAY_MS);
+      completeTimer = setTimeout(() => {
+        onOpenAnimationComplete?.();
+        inputRef.current?.focus();
+      }, MORPH_DURATION_MS + 40);
+    } else {
+      setShellRect(finalRect);
+      setShellExpanded(true);
+      setContentReady(true);
+      setVoicePreviewVisible(false);
+      setMorphEnabled(false);
+
+      firstFrame = window.requestAnimationFrame(() => {
+        setBackdropVisible(true);
+        setCardVisible(true);
+        onOpenAnimationComplete?.();
+      });
+    }
+
+    return () => {
+      if (firstFrame) window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
+      if (voicePreviewTimer) clearTimeout(voicePreviewTimer);
+      if (contentTimer) clearTimeout(contentTimer);
+      if (completeTimer) clearTimeout(completeTimer);
+    };
+  }, [isDesktop, originRect, onOpenAnimationComplete, voiceSnapshot]);
+
+  useEffect(() => {
+    const onResize = () => {
+      const nextRect = getFinalChatRect(isDesktop);
+      if (!closeRequestedRef.current) setShellRect(nextRect);
+    };
+
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [isDesktop]);
+
+  // Capture opener focus on mount; restore on unmount.
   useEffect(() => {
     previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
-    inputRef.current?.focus();
     return () => {
       previouslyFocusedRef.current?.focus?.();
     };
   }, []);
 
+  useEffect(() => {
+    if (contentReady) inputRef.current?.focus();
+  }, [contentReady]);
+
+  const requestClose = useCallback(() => {
+    if (closeRequestedRef.current) return;
+    closeRequestedRef.current = true;
+
+    const canMorphBack = Boolean(originRect) && !prefersReducedRef.current;
+    setContentReady(false);
+    setVoicePreviewVisible(false);
+    setBackdropVisible(false);
+    setCardVisible(false);
+
+    if (canMorphBack && originRect) {
+      setShellExpanded(false);
+      setShellRect(originRect);
+      window.setTimeout(onClose, CLOSE_DURATION_MS);
+      return;
+    }
+
+    window.setTimeout(onClose, 180);
+  }, [onClose, originRect]);
+
   // Escape key closes the popup
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') requestClose();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  }, [requestClose]);
 
   const handleSend = useCallback(() => {
     const trimmed = inputValue.trim();
@@ -234,18 +376,18 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
     [handleSend]
   );
 
+  const cardTransition = morphEnabled
+    ? `left ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), top ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), width ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), height ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), border-radius ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), background-color 260ms ease, opacity 160ms ease`
+    : 'opacity 180ms ease, transform 200ms cubic-bezier(0.2, 0.9, 0.2, 1)';
+  const cardTransform = morphEnabled ? 'none' : cardVisible ? 'scale(1)' : 'scale(0.96)';
+  const shellBorderRadius = shellExpanded ? 20 : 25;
+  const chatBackground = isDark ? '#1a1a1c' : '#fafaf7';
+  const shellBackground = morphEnabled && !shellExpanded ? 'var(--color-navbar-bg)' : chatBackground;
+
   return (
     <>
       {/* Keyframe animations scoped to this component */}
       <style>{`
-        @keyframes popupIn {
-          from { opacity: 0; transform: scale(0.96); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
         @keyframes dot-wave-popup {
           0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
           30% { transform: translateY(-6px); opacity: 1; }
@@ -285,8 +427,11 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
         @media (prefers-reduced-motion: reduce) {
           [data-chat-popup-card],
           [data-chat-popup-backdrop],
+          [data-chat-popup-content],
+          [data-chat-voice-preview],
           [data-chat-message-wrapper] {
             animation: none !important;
+            transition: none !important;
           }
           [data-chat-loading-dot] {
             animation: none !important;
@@ -312,9 +457,10 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
           zIndex: 40,
           background: 'rgba(42,42,42,0.3)',
           backdropFilter: 'blur(2px)',
-          animation: 'fadeIn 200ms ease-out',
+          opacity: backdropVisible ? 1 : 0,
+          transition: 'opacity 220ms ease-out',
         }}
-        onClick={onClose}
+        onClick={requestClose}
       />
 
       {/* Popup panel */}
@@ -328,32 +474,76 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
           zIndex: 50,
           display: 'flex',
           flexDirection: 'column',
-          borderRadius: '20px',
-          background: isDark ? '#1a1a1c' : '#fafaf7',
+          overflow: 'hidden',
+          visibility: shellRect ? 'visible' : 'hidden',
+          left: shellRect ? `${shellRect.left}px` : '50%',
+          top: shellRect ? `${shellRect.top}px` : '50%',
+          width: shellRect ? `${shellRect.width}px` : isDesktop ? '400px' : 'calc(100vw - 16px)',
+          height: shellRect
+            ? `${shellRect.height}px`
+            : isDesktop
+              ? 'min(600px, calc(100vh - 48px))'
+              : 'calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
+          minHeight: shellExpanded ? '360px' : undefined,
+          borderRadius: `${shellBorderRadius}px`,
+          background: shellBackground,
           backdropFilter: 'blur(14px)',
           border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
           boxShadow: '0 24px 64px rgba(0,0,0,0.30)',
-          animation: 'popupIn 200ms cubic-bezier(0.2, 0.9, 0.2, 1)',
-          ...(isDesktop
-            ? {
-                right: '24px',
-                bottom: '24px',
-                width: '420px',
-                maxWidth: '420px',
-                height: 'min(640px, calc(100vh - 48px))',
-                minHeight: '420px',
-              }
-            : {
-                inset: '8px',
-                width: 'calc(100vw - 16px)',
-                maxWidth: '100%',
-                height:
-                  'calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
-                minHeight: '360px',
-              }),
+          opacity: cardVisible ? 1 : 0,
+          transform: cardTransform,
+          transformOrigin: 'center center',
+          transition: cardTransition,
+          willChange: morphEnabled ? 'left, top, width, height, border-radius, opacity' : 'opacity, transform',
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {voiceSnapshot && (
+          <div
+            data-chat-voice-preview="true"
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 2,
+              opacity: voicePreviewVisible ? 1 : 0,
+              transform: voicePreviewVisible ? 'scale(1)' : 'scale(0.985)',
+              transformOrigin: 'center center',
+              transition: 'opacity 190ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
+              pointerEvents: 'none',
+              color: isDark ? '#111' : '#fff',
+            }}
+          >
+            <VoicePanel
+              isDark={isDark}
+              state={voiceSnapshot.state}
+              caption={voiceSnapshot.caption}
+              transcript={voiceSnapshot.transcript}
+              micDenied={voiceSnapshot.micDenied}
+              compact={voiceSnapshot.compact}
+              presentation
+              onMic={() => {}}
+              onStop={() => {}}
+              onClose={() => {}}
+              onFallbackChat={() => {}}
+            />
+          </div>
+        )}
+        <div
+          data-chat-popup-content="true"
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            minHeight: 0,
+            opacity: contentReady ? 1 : 0,
+            transform: contentReady ? 'translateY(0)' : 'translateY(8px)',
+            pointerEvents: contentReady ? 'auto' : 'none',
+            transition: 'opacity 220ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
+          }}
+        >
         {/* Header row */}
         <div
           style={{
@@ -395,7 +585,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
             </span>
           </div>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             data-chat-close="true"
             onMouseEnter={(e) => {
               e.currentTarget.style.opacity = '1';
@@ -759,6 +949,7 @@ export function ChatPopup({ isDark, onClose }: ChatPopupProps) {
               <FaArrowUp size={16} />
             </button>
           </div>
+        </div>
         </div>
       </div>
     </>

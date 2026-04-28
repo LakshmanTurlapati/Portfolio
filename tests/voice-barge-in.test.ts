@@ -189,6 +189,27 @@ describe('site-control tool wiring', () => {
     expect(voice).toContain("case 'navigate':\n              dispatchToolCall('navigate', tc.args);");
   });
 
+  it('carries the voice capsule rect and panel snapshot into the text chat morph', () => {
+    const chatMorph = readFileSync(join(process.cwd(), 'src/lib/chat-morph.ts'), 'utf8');
+    const sessionProvider = readFileSync(join(process.cwd(), 'src/providers/voice-session-provider.tsx'), 'utf8');
+    const voicePanel = readFileSync(join(process.cwd(), 'src/components/voice-panel.tsx'), 'utf8');
+    const chatPopup = readFileSync(join(process.cwd(), 'src/components/chat-popup.tsx'), 'utf8');
+    const homePage = readFileSync(join(process.cwd(), 'src/app/page.tsx'), 'utf8');
+
+    expect(chatMorph).toContain('export interface ChatMorphRect');
+    expect(chatMorph).toContain('export interface ChatVoiceSnapshot');
+    expect(sessionProvider).toContain('getCurrentChatMorphOrigin()');
+    expect(sessionProvider).toContain("new CustomEvent<OpenTextChatDetail>('parz:open-text-chat'");
+    expect(sessionProvider).toContain('voiceSnapshot');
+    expect(voicePanel).toContain('[data-chat-morph-origin="true"]');
+    expect(voicePanel).toContain('presentation?: boolean');
+    expect(chatPopup).toContain('const MORPH_DURATION_MS = 480');
+    expect(chatPopup).toContain('data-chat-voice-preview="true"');
+    expect(chatPopup).toContain('const width = Math.min(400, viewportWidth - 48)');
+    expect(homePage).toContain('setChatVoiceSnapshot(detail?.voiceSnapshot)');
+    expect(homePage).toContain('setHideNavbarForChatMorph(Boolean(detail?.originRect))');
+  });
+
   it('scopes FSB preview scrolling to the preview surface while keeping the page overlay', () => {
     const provider = readFileSync(join(process.cwd(), 'src/providers/site-control-provider.tsx'), 'utf8');
     const iframeViewer = readFileSync(join(process.cwd(), 'src/components/iframe-viewer.tsx'), 'utf8');

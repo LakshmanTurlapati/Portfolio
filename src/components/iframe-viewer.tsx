@@ -234,7 +234,7 @@ export function IframeViewer({
       }}
     >
       <div
-        className="absolute inset-4 sm:inset-8 rounded-2xl overflow-hidden flex flex-col"
+        className="absolute inset-x-2 bottom-2 top-2 sm:inset-8 rounded-xl sm:rounded-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: isDark ? '#fafaf7' : '#1a1a1c',
@@ -243,17 +243,17 @@ export function IframeViewer({
       >
         {/* Chrome bar */}
         <header
-          className="flex items-center justify-between px-4 h-12 shrink-0"
+          className="flex items-center justify-between gap-2 px-3 sm:px-4 h-14 sm:h-12 shrink-0"
           style={{ borderBottom: `1px solid ${isDark ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'}` }}
         >
-          <div className="flex items-center gap-2 text-sm opacity-70" style={{ color: isDark ? '#1a1a1a' : '#f3f2ee' }}>
-            <IconClass />
-            <span className="font-medium">{hostname}</span>
-            {label && <span className="opacity-50">&middot; {label}</span>}
+          <div className="flex min-w-0 items-center gap-2 text-sm opacity-70" style={{ color: isDark ? '#1a1a1a' : '#f3f2ee' }}>
+            <IconClass className="shrink-0" />
+            <span className="min-w-0 truncate font-medium">{hostname}</span>
+            {label && <span className="hidden min-w-0 truncate opacity-50 min-[360px]:inline">&middot; {label}</span>}
           </div>
           <div className="flex items-center gap-1">
             <button
-              className="w-8 h-8 rounded-lg grid place-items-center text-xs opacity-60 hover:opacity-100 transition-opacity"
+              className="w-11 h-11 sm:w-8 sm:h-8 rounded-lg grid place-items-center text-xs opacity-70 hover:opacity-100 transition-opacity"
               style={{ color: isDark ? '#1a1a1a' : '#f3f2ee' }}
               onClick={() => window.open(url, '_blank')}
               title="Open in new tab"
@@ -261,7 +261,7 @@ export function IframeViewer({
               <FaArrowUpRightFromSquare />
             </button>
             <button
-              className="w-8 h-8 rounded-lg grid place-items-center text-xs opacity-60 hover:opacity-100 transition-opacity"
+              className="w-11 h-11 sm:w-8 sm:h-8 rounded-lg grid place-items-center text-xs opacity-70 hover:opacity-100 transition-opacity"
               style={{ color: isDark ? '#1a1a1a' : '#f3f2ee' }}
               onClick={onClose}
               title="Close (Esc)"

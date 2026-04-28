@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { FaArrowLeft, FaSliders, FaXmark } from 'react-icons/fa6';
 import { useTheme } from 'next-themes';
 import { getProjectBrowserTarget, pinnedProjects, shuffleableProjects } from '@/data/projects';
@@ -11,6 +11,12 @@ import type { DataGridConfig } from '@/components/data-grid';
 import { IframeViewer } from '@/components/iframe-viewer';
 import { useTransition } from '@/providers/transition-provider';
 import { useMounted } from '@/hooks/use-mounted';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import {
+  getDesktopHomePortfolioButtonRect,
+  rectFromDomRect,
+  startPortfolioButtonMorph,
+} from '@/lib/portfolio-button-morph';
 
 function shuffle<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -26,6 +32,9 @@ export default function PortfolioPage() {
   const { resolvedTheme } = useTheme();
   const mounted = useMounted();
   const isDark = mounted && resolvedTheme === 'dark';
+  const isMobile = useMediaQuery('(max-width: 599px)');
+  const mobileCardRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const [mobileActiveProject, setMobileActiveProject] = useState(0);
 
   const projects = useMemo(
     () => [...pinnedProjects, ...shuffle(shuffleableProjects)],
@@ -95,69 +104,170 @@ export default function PortfolioPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [randomize]);
 
+  useEffect(() => {
+    if (!isMobile) return;
+
+    let frame = 0;
+    const updateActiveProject = () => {
+      frame = 0;
+      const center = window.innerHeight / 2;
+      let closestIndex = 0;
+      let closestDistance = Number.POSITIVE_INFINITY;
+
+      mobileCardRefs.current.forEach((node, index) => {
+        if (!node) return;
+        const rect = node.getBoundingClientRect();
+        const cardCenter = rect.top + rect.height / 2;
+        const distance = Math.abs(cardCenter - center);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestIndex = index;
+        }
+      });
+
+      setMobileActiveProject((current) => (current === closestIndex ? current : closestIndex));
+    };
+
+    const scheduleUpdate = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(updateActiveProject);
+    };
+
+    scheduleUpdate();
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+    };
+  }, [isMobile, projects.length]);
+
   const handleBack = useCallback(
     (e: React.MouseEvent) => {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const isDesktop = window.matchMedia('(min-width: 600px)').matches;
+
+      if (isDesktop) {
+        startPortfolioButtonMorph({
+          from: rectFromDomRect(rect),
+          to: getDesktopHomePortfolioButtonRect(window.innerWidth),
+          direction: 'close',
+          isDark,
+        });
+      }
+
       navigateWithReveal('/', rect.left + rect.width / 2, rect.top + rect.height / 2);
     },
-    [navigateWithReveal]
+    [isDark, navigateWithReveal]
   );
 
   return (
     <div
-      className="min-h-screen relative overflow-hidden"
+      className="min-h-screen relative overflow-x-hidden"
       style={{ backgroundColor: isDark ? '#DBDBDB' : '#2A2A2A', color: isDark ? '#000' : '#fff' }}
     >
       {/* DataGrid canvas background */}
-      <DataGrid cfg={dgCfg} isDark={isDark} />
+      {!isMobile && <DataGrid cfg={dgCfg} isDark={isDark} />}
 
-      {/* Header */}
-      <div className="relative z-[3] px-5 h-[76px] flex items-center">
-        <button
-          className="w-12 h-12 rounded-xl grid place-items-center text-lg transition-transform hover:-translate-x-0.5"
-          style={{
-            backgroundColor: isDark ? '#fff' : '#000',
-            color: isDark ? '#000' : '#fff',
-          }}
-          onClick={handleBack}
-        >
-          <FaArrowLeft />
-        </button>
-        <button
-          className="ml-2.5 w-12 h-12 rounded-xl grid place-items-center text-base transition-all hover:-translate-y-px"
-          style={{
-            background: isDark ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
-            color: 'inherit',
-          }}
-          onClick={() => setPanelOpen((v) => !v)}
-          title="Grid controls (H)"
-        >
-          <FaSliders />
-        </button>
-      </div>
+      {isMobile ? (
+        <div className="relative z-[2] px-4 pb-10" style={{ paddingTop: 'max(20px, env(safe-area-inset-top))' }}>
+          <header className="mb-8 flex items-center gap-3">
+            <button
+              data-portfolio-morph-target="true"
+              className="w-12 h-12 shrink-0 rounded-xl grid place-items-center text-lg transition-transform active:scale-95"
+              style={{
+                backgroundColor: isDark ? '#fff' : '#000',
+                color: isDark ? '#000' : '#fff',
+              }}
+              onClick={handleBack}
+              aria-label="Back to home"
+            >
+              <FaArrowLeft />
+            </button>
+            <div className="min-w-0">
+              <h1 className="text-[22px] font-black leading-none tracking-normal">Portfolio</h1>
+              <p className="mt-1 text-xs opacity-60">Selected builds, prototypes, and experiments</p>
+            </div>
+          </header>
 
-      {/* Card grid */}
-      <div className="relative z-[2] px-[58px] pb-[58px] page-vertical-fade-mask max-sm:px-5 max-sm:pb-10">
-        <div className="columns-4 gap-8 max-[1400px]:columns-3 max-[1020px]:columns-2 max-sm:columns-1">
-          {projects.map((p) => (
-            <PortfolioCard
-              key={p.name}
-              project={p}
-              isDark={isDark}
-              onOpen={openProject}
-              onOpenLink={openInViewer}
-            />
-          ))}
+          <div className="mx-auto flex w-full max-w-[360px] flex-col gap-7">
+            {projects.map((p, index) => (
+              <div
+                key={p.name}
+                ref={(node) => {
+                  mobileCardRefs.current[index] = node;
+                }}
+              >
+                <PortfolioCard
+                  project={p}
+                  isDark={isDark}
+                  onOpen={openProject}
+                  onOpenLink={openInViewer}
+                  variant="mobile"
+                  active={mobileActiveProject === index}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="mx-auto max-w-[320px] pt-10 text-center text-xs leading-relaxed opacity-80">
+            Some of my <b>finest works</b> are missing, thanks to the <b>&apos;NDA&apos;</b>!
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Header */}
+          <div className="relative z-[3] px-5 h-[76px] flex items-center">
+            <button
+              data-portfolio-morph-target="true"
+              className="w-12 h-12 rounded-xl grid place-items-center text-lg transition-transform hover:-translate-x-0.5"
+              style={{
+                backgroundColor: isDark ? '#fff' : '#000',
+                color: isDark ? '#000' : '#fff',
+              }}
+              onClick={handleBack}
+            >
+              <FaArrowLeft />
+            </button>
+            <button
+              className="ml-2.5 w-12 h-12 rounded-xl grid place-items-center text-base transition-all hover:-translate-y-px"
+              style={{
+                background: isDark ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
+                color: 'inherit',
+              }}
+              onClick={() => setPanelOpen((v) => !v)}
+              title="Grid controls (H)"
+            >
+              <FaSliders />
+            </button>
+          </div>
 
-      {/* Footer */}
-      <div className="relative z-[2] py-5 text-center text-xs" style={{ color: 'inherit' }}>
-        Some of my <b>finest works</b> are missing, thanks to the <b>&apos;NDA&apos;</b>!
-      </div>
+          {/* Card grid */}
+          <div className="relative z-[2] px-[58px] pb-[58px] page-vertical-fade-mask">
+            <div className="columns-4 gap-8 max-[1400px]:columns-3 max-[1020px]:columns-2">
+              {projects.map((p) => (
+                <PortfolioCard
+                  key={p.name}
+                  project={p}
+                  isDark={isDark}
+                  onOpen={openProject}
+                  onOpenLink={openInViewer}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="relative z-[2] py-5 text-center text-xs" style={{ color: 'inherit' }}>
+            Some of my <b>finest works</b> are missing, thanks to the <b>&apos;NDA&apos;</b>!
+          </div>
+        </>
+      )}
 
       {/* Grid controls panel */}
-      {panelOpen && (
+      {!isMobile && panelOpen && (
         <GridControlsPanel
           cfg={dgCfg}
           setCfg={setDgCfg}

@@ -26,7 +26,7 @@ export function TimelineEntry({
   return (
     <div
       onClick={handleClick}
-      className={`flex flex-row gap-4 p-4 rounded-xl transition-all duration-200 ${
+      className={`flex flex-col sm:flex-row gap-3 sm:gap-4 p-4 rounded-xl transition-all duration-200 ${
         url ? 'cursor-pointer' : ''
       } hover:backdrop-blur-[10px]`}
       style={{
@@ -45,9 +45,9 @@ export function TimelineEntry({
       }}
     >
       {/* Timeline column */}
-      <div className="flex-shrink-0" style={{ width: '120px' }}>
+      <div className="flex-shrink-0 sm:w-[120px]">
         <span
-          className="text-sm"
+          className="text-sm font-semibold sm:font-normal"
           style={{ color: 'var(--color-page-inverted-text)', opacity: 0.7 }}
         >
           {timeline}

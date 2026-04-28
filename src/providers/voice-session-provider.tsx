@@ -8,6 +8,12 @@ import type { VoicePanelProps } from '@/components/voice-panel';
 import { useTransition } from '@/providers/transition-provider';
 import { useSiteControl } from '@/providers/site-control-provider';
 import { usePathname } from 'next/navigation';
+import {
+  getCurrentChatMorphOrigin,
+  type ChatMorphRect,
+  type ChatVoiceSnapshot,
+  type OpenTextChatDetail,
+} from '@/lib/chat-morph';
 
 type VoiceNavProps = Omit<VoicePanelProps, 'isDark' | 'micDenied'>;
 
@@ -95,7 +101,8 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   // calls fire() exactly once (gated by the `fired` flag). Safety timer
   // covers View Transitions failures and missed emits (RESEARCH.md Pattern 2).
   const openTextChat = useCallback(
-    (_initialText?: string) => {
+    (_initialText?: string, originRect?: ChatMorphRect, voiceSnapshot?: ChatVoiceSnapshot) => {
+      const capturedOriginRect = originRect ?? getCurrentChatMorphOrigin();
       let fired = false;
       let safetyTimer: ReturnType<typeof setTimeout> | null = null;
       const fire = () => {
@@ -106,7 +113,12 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           clearTimeout(safetyTimer);
           safetyTimer = null;
         }
-        window.dispatchEvent(new CustomEvent('parz:open-text-chat'));
+        const detail: OpenTextChatDetail = {
+          originRect: capturedOriginRect,
+          voiceSnapshot,
+          source: capturedOriginRect ? 'voice' : 'default',
+        };
+        window.dispatchEvent(new CustomEvent<OpenTextChatDetail>('parz:open-text-chat', { detail }));
       };
       const unsub = window.VoiceBus.on('page-ready', (page) => {
         if (page === 'home') fire();
