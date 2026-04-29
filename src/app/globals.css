@@ -124,13 +124,6 @@ body {
   animation: spin-slow 6s linear infinite;
 }
 
-
-/* Vertical fade mask for portfolio/about pages */
-.page-vertical-fade-mask {
-  mask-image: linear-gradient(to bottom, transparent 2%, black 8%, black 92%, transparent 98%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 2%, black 8%, black 92%, transparent 98%);
-}
-
 /* Dot matrix horizontal fade mask */
 .dot-matrix-fade-mask {
   mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);

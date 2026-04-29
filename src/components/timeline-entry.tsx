@@ -26,7 +26,7 @@ export function TimelineEntry({
   return (
     <div
       onClick={handleClick}
-      className={`flex flex-col sm:flex-row gap-3 sm:gap-4 p-4 rounded-xl transition-all duration-200 ${
+      className={`flex flex-row gap-4 rounded-xl p-4 transition-all duration-300 sm:p-3 ${
         url ? 'cursor-pointer' : ''
       } hover:backdrop-blur-[10px]`}
       style={{
@@ -35,8 +35,8 @@ export function TimelineEntry({
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget;
-        el.style.backgroundColor = 'rgba(128, 128, 128, 0.1)';
-        el.style.border = '1px solid rgba(128, 128, 128, 0.15)';
+        el.style.backgroundColor = 'rgba(128, 128, 128, 0.05)';
+        el.style.border = '1px solid color-mix(in srgb, var(--color-page-inverted-text) 20%, transparent)';
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget;
@@ -45,10 +45,18 @@ export function TimelineEntry({
       }}
     >
       {/* Timeline column */}
-      <div className="flex-shrink-0 sm:w-[120px]">
+      <div
+        className="flex-shrink-0"
+        style={{ width: 'clamp(96px, 10vw, 160px)' }}
+      >
         <span
-          className="text-sm font-semibold sm:font-normal"
-          style={{ color: 'var(--color-page-inverted-text)', opacity: 0.7 }}
+          style={{
+            color: 'var(--color-page-inverted-text)',
+            fontSize: '16px',
+            fontWeight: 700,
+            lineHeight: 1.5,
+            opacity: 0.6,
+          }}
         >
           {timeline}
         </span>
@@ -57,27 +65,38 @@ export function TimelineEntry({
       {/* Content column */}
       <div className="flex-1">
         <h3
-          className="text-base font-bold"
-          style={{ color: 'var(--color-page-inverted-text)' }}
+          style={{
+            color: 'var(--color-page-inverted-text)',
+            fontSize: '18px',
+            fontWeight: 700,
+            lineHeight: 1.35,
+          }}
         >
           {title}
         </h3>
         <p
-          className="text-sm mt-1"
-          style={{ color: 'var(--color-page-inverted-text)', opacity: 0.7 }}
+          style={{
+            color: 'var(--color-page-inverted-text)',
+            fontSize: '16px',
+            lineHeight: 1.5,
+            marginTop: '4px',
+            opacity: 0.7,
+          }}
         >
           {subtitle}
         </p>
 
         {descriptions && descriptions.length > 0 && (
-          <div className="mt-2">
+          <div style={{ marginTop: '10px' }}>
             {descriptions.map((desc, index) => (
               <p
                 key={index}
-                className="text-sm leading-relaxed mt-1"
                 style={{
                   color: 'var(--color-page-inverted-text)',
-                  opacity: 0.87,
+                  fontSize: '14px',
+                  lineHeight: 1.5,
+                  marginBottom: '8px',
+                  opacity: 0.7,
                 }}
               >
                 {desc}
@@ -87,11 +106,16 @@ export function TimelineEntry({
         )}
 
         {skills.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
+          <div className="flex flex-wrap gap-2" style={{ marginTop: '10px' }}>
             {skills.map((skill) => (
               <span
                 key={skill}
-                className="px-3 py-1 rounded-full text-xs timeline-skill-pill"
+                className="rounded-full timeline-skill-pill"
+                style={{
+                  fontSize: '12px',
+                  lineHeight: 1.5,
+                  padding: '6px 12px',
+                }}
               >
                 {skill}
               </span>

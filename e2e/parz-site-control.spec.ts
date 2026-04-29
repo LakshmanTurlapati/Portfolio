@@ -18,11 +18,18 @@ type TestRect = {
 
 type MorphCapture = {
   originRect: TestRect;
+  originBackground: string;
   frames: Array<{
     t: number;
     state: string | null;
     source: string | null;
     rect: TestRect;
+    background: string;
+    color: string;
+    contentOpacity: string;
+    contentPointerEvents: string;
+    voicePreviewCount: number;
+    voiceControlCount: number;
   }>;
 };
 
@@ -69,6 +76,7 @@ async function captureSwitchToTextMorphStart(page: Page): Promise<MorphCapture> 
         }
 
         const originRect = toRect(origin.getBoundingClientRect());
+        const originBackground = window.getComputedStyle(origin).backgroundColor;
         const frames: MorphCapture['frames'] = [];
         const start = performance.now();
 
@@ -78,6 +86,8 @@ async function captureSwitchToTextMorphStart(page: Page): Promise<MorphCapture> 
           const card = document.querySelector('[data-chat-popup-card]');
           if (card) {
             const style = window.getComputedStyle(card);
+            const content = card.querySelector('[data-chat-popup-content]');
+            const contentStyle = content ? window.getComputedStyle(content) : null;
             const rect = card.getBoundingClientRect();
             if (
               rect.width > 0 &&
@@ -90,12 +100,20 @@ async function captureSwitchToTextMorphStart(page: Page): Promise<MorphCapture> 
                 state: card.getAttribute('data-chat-morph-state'),
                 source: card.getAttribute('data-chat-morph-source'),
                 rect: toRect(rect),
+                background: style.backgroundColor,
+                color: style.color,
+                contentOpacity: contentStyle?.opacity ?? '',
+                contentPointerEvents: contentStyle?.pointerEvents ?? '',
+                voicePreviewCount: card.querySelectorAll('[data-chat-voice-preview]').length,
+                voiceControlCount: card.querySelectorAll(
+                  'button[title="Switch to text chat"], button[title="Stop"], button[title="Close voice mode"]',
+                ).length,
               });
             }
           }
 
-          if (frames.length >= 2 || performance.now() - start > 180) {
-            resolve({ originRect, frames });
+          if (performance.now() - start > 500) {
+            resolve({ originRect, originBackground, frames });
             return;
           }
 
@@ -112,6 +130,47 @@ function expectRectNear(actual: TestRect, expected: TestRect, tolerance = 8) {
   expect(Math.abs(actual.y - expected.y)).toBeLessThanOrEqual(tolerance);
   expect(Math.abs(actual.width - expected.width)).toBeLessThanOrEqual(tolerance);
   expect(Math.abs(actual.height - expected.height)).toBeLessThanOrEqual(tolerance);
+}
+
+function expectNoVoicePreview(frame: MorphCapture['frames'][number]) {
+  expect(frame.voicePreviewCount).toBe(0);
+  expect(frame.voiceControlCount).toBe(0);
+}
+
+function expectBlankMorphFrames(morphStart: MorphCapture) {
+  const morphFrames = morphStart.frames.filter((frame) => frame.t < 500);
+  expect(morphFrames.length).toBeGreaterThan(1);
+
+  for (const frame of morphFrames) {
+    expect(frame.state).not.toBe('content');
+    expect(frame.background).toBe(morphStart.originBackground);
+    expect(frame.contentOpacity).toBe('0');
+    expect(frame.contentPointerEvents).toBe('none');
+    expectNoVoicePreview(frame);
+  }
+}
+
+async function expectLegacyChatPanelSurface(page: Page, expectedBackground: string, expectedColor: string) {
+  await expect(page.locator('[data-chat-popup-subtitle="true"]')).toHaveText(
+    'Legacy V2 Chat interface (Features may be limited)',
+  );
+
+  await expect
+    .poll(async () =>
+      page.locator('[data-chat-popup-card]').evaluate((element) => {
+        const style = window.getComputedStyle(element);
+        return {
+          background: style.backgroundColor,
+          color: style.color,
+          borderRadius: style.borderRadius,
+        };
+      }),
+    )
+    .toEqual({
+      background: expectedBackground,
+      color: expectedColor,
+      borderRadius: '15px',
+    });
 }
 
 async function mockReviewGateGithubPreview(page: Page) {
@@ -216,6 +275,7 @@ test('same-page site-control navigation does not show the FSB overlay', async ({
 });
 
 test('switching from voice mode to text chat does not show the FSB overlay', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
   await mockSpeechTokenFailure(page);
   await page.goto('/');
 
@@ -229,12 +289,14 @@ test('switching from voice mode to text chat does not show the FSB overlay', asy
   expect(morphStart.frames[0].source).toBe('voice');
   expect(morphStart.frames[0].state).toBe('origin');
   expectRectNear(morphStart.frames[0].rect, morphStart.originRect);
+  expectBlankMorphFrames(morphStart);
 
   const chatCard = page.locator('[data-chat-popup-card]');
   await expect(chatCard).toHaveAttribute('data-chat-morph-source', 'voice');
   await expect(chatCard).toHaveAttribute('data-chat-morph-state', /origin|expanding|content/);
   await expect(page.getByRole('dialog', { name: 'Parz' })).toBeVisible();
   await expect(chatCard).toHaveAttribute('data-chat-morph-state', 'content');
+  await expectLegacyChatPanelSurface(page, 'rgba(0, 0, 0, 0.6)', 'rgb(255, 255, 255)');
 
   const chatBox = await chatCard.boundingBox();
   const viewport = page.viewportSize();
@@ -247,6 +309,7 @@ test('switching from voice mode to text chat does not show the FSB overlay', asy
 });
 
 test('mobile voice-to-text morph starts from the visible dock', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
   await page.setViewportSize({ width: 390, height: 844 });
   await mockSpeechTokenFailure(page);
   await page.goto('/');
@@ -260,10 +323,36 @@ test('mobile voice-to-text morph starts from the visible dock', async ({ page })
   expect(morphStart.frames[0].source).toBe('voice');
   expect(morphStart.frames[0].state).toBe('origin');
   expectRectNear(morphStart.frames[0].rect, morphStart.originRect);
+  expectBlankMorphFrames(morphStart);
 
   const chatCard = page.locator('[data-chat-popup-card]');
   await expect(page.getByRole('dialog', { name: 'Parz' })).toBeVisible();
   await expect(chatCard).toHaveAttribute('data-chat-morph-state', 'content');
+  await expectLegacyChatPanelSurface(page, 'rgba(0, 0, 0, 0.6)', 'rgb(255, 255, 255)');
+  await expect(page.locator('.fsb-control-overlay')).toHaveCount(0);
+  await expect(page.locator('.fsb-control-viewport-glow')).toHaveCount(0);
+});
+
+test('dark theme voice-to-text morph uses the matching light panel surface', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await mockSpeechTokenFailure(page);
+  await page.goto('/');
+
+  await page.locator('button[aria-label="Activate Parz voice mode"]:visible').click();
+  await page.waitForTimeout(650);
+  await expect(page.locator('button[title="Switch to text chat"]:visible')).toBeVisible();
+
+  const morphStart = await captureSwitchToTextMorphStart(page);
+  expect(morphStart.frames.length).toBeGreaterThan(0);
+  expect(morphStart.frames[0].source).toBe('voice');
+  expect(morphStart.frames[0].state).toBe('origin');
+  expectRectNear(morphStart.frames[0].rect, morphStart.originRect);
+  expectBlankMorphFrames(morphStart);
+
+  const chatCard = page.locator('[data-chat-popup-card]');
+  await expect(page.getByRole('dialog', { name: 'Parz' })).toBeVisible();
+  await expect(chatCard).toHaveAttribute('data-chat-morph-state', 'content');
+  await expectLegacyChatPanelSurface(page, 'rgba(255, 255, 255, 0.6)', 'rgb(0, 0, 0)');
   await expect(page.locator('.fsb-control-overlay')).toHaveCount(0);
   await expect(page.locator('.fsb-control-viewport-glow')).toHaveCount(0);
 });

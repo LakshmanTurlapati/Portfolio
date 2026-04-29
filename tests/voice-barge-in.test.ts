@@ -2,6 +2,13 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { calculateRms, VoiceBargeInDetector } from '@/lib/voice-barge-in';
+import {
+  buildVoiceOpeningPrompt,
+  isIntentionalBargeInTranscript,
+  looksLikeCurrentSpeechEcho,
+  shouldPersistVoiceTurn,
+  VOICE_BARGE_IN_MIN_WORDS,
+} from '@/lib/voice-turn-policy';
 
 describe('voice barge-in detector', () => {
   it('does not trigger during warmup', () => {
@@ -52,6 +59,27 @@ describe('voice barge-in detector', () => {
   });
 });
 
+describe('voice turn policy', () => {
+  it('uses three recognized words as the barge-in threshold', () => {
+    expect(VOICE_BARGE_IN_MIN_WORDS).toBe(3);
+    expect(isIntentionalBargeInTranscript('wait please', 'Parz is speaking')).toBe(false);
+    expect(isIntentionalBargeInTranscript('wait please stop', 'Parz is speaking')).toBe(true);
+  });
+
+  it('rejects current TTS echo as a barge-in transcript', () => {
+    const currentSpeech = 'Sure, I can show you the portfolio page first.';
+
+    expect(looksLikeCurrentSpeechEcho('show you the portfolio', currentSpeech)).toBe(true);
+    expect(isIntentionalBargeInTranscript('show you the portfolio', currentSpeech)).toBe(false);
+  });
+
+  it('builds a synthetic first-turn prompt without treating it as user history', () => {
+    expect(buildVoiceOpeningPrompt('portfolio')).toContain('portfolio page');
+    expect(shouldPersistVoiceTurn('greet')).toBe(false);
+    expect(shouldPersistVoiceTurn('user')).toBe(true);
+  });
+});
+
 describe('voice-controller barge-in wiring', () => {
   it('does not subscribe barge-in to the shared VoiceBus level stream', () => {
     const source = readFileSync(
@@ -63,15 +91,45 @@ describe('voice-controller barge-in wiring', () => {
     expect(source).not.toContain('VoiceBus.on("level"');
   });
 
-  it('enters voice chat listening-first and resumes listening after responses', () => {
+  it('opens voice chat by speaking first, then resumes listening after responses', () => {
     const source = readFileSync(
       join(process.cwd(), 'src/lib/voice-controller.ts'),
       'utf8',
     );
 
-    expect(source).toContain('startManualListening();');
+    expect(source).toContain('buildVoiceOpeningPrompt(currentPage ?? \'home\')');
+    expect(source).toContain("handleUserTurn(trigger, { kind: 'greet' })");
     expect(source).toContain('resumeListeningIfActive();');
-    expect(source).not.toContain('Voice mode just opened');
+    expect(source).not.toContain('startManualListening();\n  }, [startManualListening]');
+  });
+
+  it('does not silently restart listening after empty voice responses or API failures', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+
+    const emptyResponseIndex = source.indexOf(
+      `setCaption("I couldn't get a spoken response. Tap to try again.");`,
+    );
+    const failureIndex = source.indexOf(
+      "setCaption('Voice connection hiccup. Tap to try again.');",
+    );
+
+    expect(emptyResponseIndex).toBeGreaterThan(-1);
+    expect(failureIndex).toBeGreaterThan(-1);
+
+    const emptyResponseBlock = source.slice(
+      emptyResponseIndex,
+      source.indexOf('      } catch {', emptyResponseIndex),
+    );
+    const failureBlock = source.slice(
+      failureIndex,
+      source.indexOf('    },', failureIndex),
+    );
+
+    expect(emptyResponseBlock).not.toContain('resumeListeningIfActive();');
+    expect(failureBlock).not.toContain('resumeListeningIfActive();');
   });
 
   it('gates speaking interruption on recognized user words, not raw mic noise', () => {
@@ -80,13 +138,13 @@ describe('voice-controller barge-in wiring', () => {
       'utf8',
     );
 
-    expect(source).toContain('const BARGE_IN_MIN_WORDS = 4');
     expect(source).toContain('SpeechRecognition');
     expect(source).toContain('webkitSpeechRecognition');
-    expect(source).toContain('wordCount >= BARGE_IN_MIN_WORDS');
-    expect(source).toContain('!looksLikeCurrentSpeechEcho(transcript, speakingTextRef.current)');
+    expect(source).toContain('isIntentionalBargeInTranscript(transcript, speakingTextRef.current)');
     expect(source).toContain('cancelAllAudio({ keepBargeInMonitor: true });');
     expect(source).toContain('handleUserTurnRef.current');
+    expect(source).not.toContain('new VoiceBargeInDetector');
+    expect(source).not.toContain('calculateRms(');
   });
 
   it('does not send voice style instructions as user transcript content', () => {
@@ -203,8 +261,12 @@ describe('site-control tool wiring', () => {
     expect(sessionProvider).toContain('voiceSnapshot');
     expect(voicePanel).toContain('[data-chat-morph-origin="true"]');
     expect(voicePanel).toContain('presentation?: boolean');
-    expect(chatPopup).toContain('const MORPH_DURATION_MS = 480');
-    expect(chatPopup).toContain('data-chat-voice-preview="true"');
+    expect(chatPopup).toContain('const MORPH_DURATION_MS = 560');
+    expect(chatPopup).toContain('const CONTENT_DELAY_MS = MORPH_DURATION_MS');
+    expect(chatPopup).toContain("const legacyPanelSurface = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'");
+    expect(chatPopup).toContain("const shellBackground = morphEnabled && !contentReady ? 'var(--color-navbar-bg)' : legacyPanelSurface");
+    expect(chatPopup).toContain('Legacy V2 Chat interface (Features may be limited)');
+    expect(chatPopup).not.toContain('data-chat-voice-preview="true"');
     expect(chatPopup).toContain('const width = Math.min(400, viewportWidth - 48)');
     expect(homePage).toContain('setChatVoiceSnapshot(detail?.voiceSnapshot)');
     expect(homePage).toContain('setHideNavbarForChatMorph(Boolean(detail?.originRect))');

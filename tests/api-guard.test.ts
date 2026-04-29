@@ -38,6 +38,25 @@ describe('paid API guard', () => {
       headers: { Origin: 'http://127.0.0.1:3100' },
     });
     expect(guardApiRequest(localReq, { route: 'chat', enforceOrigin: true })).toBeNull();
+
+    const flyProxyReq = new Request('http://127.0.0.1:3000/api/chat', {
+      method: 'POST',
+      headers: {
+        Origin: 'https://portfolio-v4-test.fly.dev',
+        'x-forwarded-proto': 'https',
+        'x-forwarded-host': 'portfolio-v4-test.fly.dev',
+      },
+    });
+    expect(guardApiRequest(flyProxyReq, { route: 'chat', enforceOrigin: true })).toBeNull();
+
+    const forwardedHeaderReq = new Request('http://127.0.0.1:3000/api/chat', {
+      method: 'POST',
+      headers: {
+        Origin: 'https://preview.example.com',
+        Forwarded: 'for=203.0.113.10;proto=https;host=preview.example.com',
+      },
+    });
+    expect(guardApiRequest(forwardedHeaderReq, { route: 'chat', enforceOrigin: true })).toBeNull();
   });
 
   it('blocks cross-origin and missing-origin browser requests when origin enforcement is active', () => {

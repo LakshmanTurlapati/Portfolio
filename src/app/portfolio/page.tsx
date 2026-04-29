@@ -245,7 +245,7 @@ export default function PortfolioPage() {
           </div>
 
           {/* Card grid */}
-          <div className="relative z-[2] px-[58px] pb-[58px] page-vertical-fade-mask">
+          <div data-testid="portfolio-grid" className="relative z-[2] px-[58px] pb-[58px]">
             <div className="columns-4 gap-8 max-[1400px]:columns-3 max-[1020px]:columns-2">
               {projects.map((p) => (
                 <PortfolioCard

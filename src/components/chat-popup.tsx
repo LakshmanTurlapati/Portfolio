@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
+import { useState, useEffect, useRef, useCallback, useLayoutEffect, type CSSProperties } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { FaXmark, FaArrowUp } from 'react-icons/fa6';
@@ -8,7 +8,6 @@ import { sanitizeText } from '@/lib/sanitize-text';
 import { linkifyText, type LinkPart } from '@/lib/linkify';
 import { useSiteControl, type ControlPage } from '@/providers/site-control-provider';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { VoicePanel } from '@/components/voice-panel';
 import type { ChatMorphRect, ChatVoiceSnapshot } from '@/lib/chat-morph';
 
 // Suggestion chips data
@@ -68,7 +67,8 @@ function RenderLinkedText({ text }: { text: string }) {
             href={part.content}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 break-all"
+            className="underline break-all"
+            style={{ color: 'inherit' }}
           >
             {part.content}
           </a>
@@ -109,11 +109,17 @@ interface ChatPopupProps {
 }
 
 const MORPH_DURATION_MS = 560;
-const CONTENT_DELAY_MS = 440;
-const VOICE_PREVIEW_FADE_MS = 420;
+const CONTENT_DELAY_MS = MORPH_DURATION_MS;
 const CLOSE_DURATION_MS = 360;
 
 type ChatMorphPhase = 'static' | 'origin' | 'expanding' | 'content';
+
+type ChatPanelCssVars = CSSProperties & {
+  '--chat-panel-fg': string;
+  '--chat-panel-muted': string;
+  '--chat-panel-focus': string;
+  '--chat-input-placeholder': string;
+};
 
 function canAnimateFromOrigin(originRect?: ChatMorphRect): boolean {
   if (!originRect) return false;
@@ -150,7 +156,6 @@ export function ChatPopup({
   isDark,
   onClose,
   originRect,
-  voiceSnapshot,
   onOpenAnimationComplete,
 }: ChatPopupProps) {
   const siteControl = useSiteControl();
@@ -173,9 +178,6 @@ export function ChatPopup({
   );
   const [shellExpanded, setShellExpanded] = useState(!initialCanMorphFromOrigin);
   const [contentReady, setContentReady] = useState(!initialCanMorphFromOrigin);
-  const [voicePreviewVisible, setVoicePreviewVisible] = useState(
-    Boolean(initialCanMorphFromOrigin && voiceSnapshot),
-  );
   const [backdropVisible, setBackdropVisible] = useState(false);
   const [cardVisible, setCardVisible] = useState(initialCanMorphFromOrigin);
   const [morphEnabled, setMorphEnabled] = useState(initialCanMorphFromOrigin);
@@ -261,7 +263,6 @@ export function ChatPopup({
     const canMorphFromOrigin = Boolean(originRect) && !prefersReduced;
     let firstFrame = 0;
     let secondFrame = 0;
-    let voicePreviewTimer: ReturnType<typeof setTimeout> | null = null;
     let contentTimer: ReturnType<typeof setTimeout> | null = null;
     let completeTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -272,7 +273,6 @@ export function ChatPopup({
       setShellRect(originRect);
       setShellExpanded(false);
       setContentReady(false);
-      setVoicePreviewVisible(Boolean(voiceSnapshot));
       setBackdropVisible(false);
       setCardVisible(true);
       setMorphPhase('origin');
@@ -286,7 +286,6 @@ export function ChatPopup({
         });
       });
 
-      voicePreviewTimer = setTimeout(() => setVoicePreviewVisible(false), VOICE_PREVIEW_FADE_MS);
       contentTimer = setTimeout(() => {
         setContentReady(true);
         setMorphPhase('content');
@@ -299,7 +298,6 @@ export function ChatPopup({
       setShellRect(finalRect);
       setShellExpanded(true);
       setContentReady(true);
-      setVoicePreviewVisible(false);
       setMorphEnabled(false);
       setMorphPhase('static');
 
@@ -313,11 +311,10 @@ export function ChatPopup({
     return () => {
       if (firstFrame) window.cancelAnimationFrame(firstFrame);
       if (secondFrame) window.cancelAnimationFrame(secondFrame);
-      if (voicePreviewTimer) clearTimeout(voicePreviewTimer);
       if (contentTimer) clearTimeout(contentTimer);
       if (completeTimer) clearTimeout(completeTimer);
     };
-  }, [isDesktop, originRect, onOpenAnimationComplete, voiceSnapshot]);
+  }, [isDesktop, originRect, onOpenAnimationComplete]);
 
   useEffect(() => {
     const onResize = () => {
@@ -347,7 +344,6 @@ export function ChatPopup({
 
     const canMorphBack = Boolean(originRect) && !prefersReducedRef.current;
     setContentReady(false);
-    setVoicePreviewVisible(false);
     setBackdropVisible(false);
     setCardVisible(false);
     setMorphPhase(canMorphBack ? 'origin' : 'static');
@@ -402,9 +398,55 @@ export function ChatPopup({
     ? `left ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), top ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), width ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), height ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), border-radius ${MORPH_DURATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), background-color 260ms ease, opacity 160ms ease`
     : 'opacity 180ms ease, transform 200ms cubic-bezier(0.2, 0.9, 0.2, 1)';
   const cardTransform = morphEnabled ? 'none' : cardVisible ? 'scale(1)' : 'scale(0.96)';
-  const shellBorderRadius = shellExpanded ? 20 : 25;
-  const chatBackground = isDark ? '#1a1a1c' : '#fafaf7';
-  const shellBackground = morphEnabled && !contentReady ? 'var(--color-navbar-bg)' : chatBackground;
+  const shellBorderRadius = shellExpanded ? 15 : 25;
+  const legacyPanelSurface = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)';
+  const shellBackground = morphEnabled && !contentReady ? 'var(--color-navbar-bg)' : legacyPanelSurface;
+  const panelForeground = isDark ? '#000000' : '#ffffff';
+  const panelMuted = isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)';
+  const panelBorder = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)';
+  const panelSoftBorder = isDark ? 'rgba(189,189,189,0.3)' : 'rgba(97,97,97,0.2)';
+  const panelStrongerBorder = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)';
+  const panelHoverFill = isDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+  const panelInputFill = isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.8)';
+  const panelInputText = isDark ? '#424242' : '#808080';
+  const panelInputPlaceholder = isDark ? '#757575' : '#bdbdbd';
+  const panelChipFill = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)';
+  const panelUserBubbleFill = isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)';
+  const panelUserBubbleBorder = isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)';
+  const panelAssistantBubbleFill = isDark ? 'rgba(224,224,224,0.7)' : 'rgba(66,66,66,0.6)';
+  const panelAssistantBubbleBorder = isDark ? 'rgba(189,189,189,0.3)' : 'rgba(97,97,97,0.2)';
+  const panelFocus = isDark ? 'rgba(0,0,0,0.38)' : 'rgba(255,255,255,0.46)';
+  const panelStatus = currentError ? '#ef4444' : '#00E676';
+  const cardStyle: ChatPanelCssVars = {
+    '--chat-panel-fg': panelForeground,
+    '--chat-panel-muted': panelMuted,
+    '--chat-panel-focus': panelFocus,
+    '--chat-input-placeholder': panelInputPlaceholder,
+    position: 'fixed',
+    zIndex: 50,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    visibility: shellRect ? 'visible' : 'hidden',
+    left: shellRect ? `${shellRect.left}px` : '0px',
+    top: shellRect ? `${shellRect.top}px` : '0px',
+    width: shellRect ? `${shellRect.width}px` : '0px',
+    height: shellRect
+      ? `${shellRect.height}px`
+      : '0px',
+    minHeight: shellExpanded ? '360px' : undefined,
+    borderRadius: `${shellBorderRadius}px`,
+    backgroundColor: shellBackground,
+    color: panelForeground,
+    backdropFilter: 'blur(10px)',
+    border: `1px solid ${panelBorder}`,
+    boxShadow: '0 24px 64px rgba(0,0,0,0.30)',
+    opacity: shellRect && cardVisible ? 1 : 0,
+    transform: cardTransform,
+    transformOrigin: 'center center',
+    transition: shellRect ? cardTransition : 'none',
+    willChange: morphEnabled ? 'left, top, width, height, border-radius, opacity' : 'opacity, transform',
+  };
 
   return (
     <>
@@ -429,9 +471,9 @@ export function ChatPopup({
         .popup-shimmer-text {
           background: linear-gradient(
             90deg,
-            var(--color-text) 0%,
-            color-mix(in srgb, var(--color-text) 40%, transparent) 50%,
-            var(--color-text) 100%
+            var(--chat-panel-fg) 0%,
+            color-mix(in srgb, var(--chat-panel-fg) 40%, transparent) 50%,
+            var(--chat-panel-fg) 100%
           );
           background-size: 200px 100%;
           background-clip: text;
@@ -443,14 +485,17 @@ export function ChatPopup({
         [data-chat-send]:focus-visible,
         [data-chat-close]:focus-visible,
         [data-chat-chip]:focus-visible {
-          outline: 2px solid color-mix(in srgb, var(--color-text) 40%, transparent);
+          outline: 2px solid var(--chat-panel-focus);
           outline-offset: 2px;
+        }
+        [data-chat-input]::placeholder {
+          color: var(--chat-input-placeholder);
+          opacity: 1;
         }
         @media (prefers-reduced-motion: reduce) {
           [data-chat-popup-card],
           [data-chat-popup-backdrop],
           [data-chat-popup-content],
-          [data-chat-voice-preview],
           [data-chat-message-wrapper] {
             animation: none !important;
             transition: none !important;
@@ -461,8 +506,8 @@ export function ChatPopup({
           }
           .popup-shimmer-text {
             animation: none !important;
-            background: var(--color-text) !important;
-            -webkit-text-fill-color: var(--color-text) !important;
+            background: var(--chat-panel-fg) !important;
+            -webkit-text-fill-color: var(--chat-panel-fg) !important;
           }
           [data-chat-send-pulse] {
             animation: none !important;
@@ -493,64 +538,9 @@ export function ChatPopup({
         data-chat-popup-card="true"
         data-chat-morph-source={originRect ? 'voice' : 'default'}
         data-chat-morph-state={morphEnabled ? morphPhase : 'static'}
-        style={{
-          position: 'fixed',
-          zIndex: 50,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          visibility: shellRect ? 'visible' : 'hidden',
-          left: shellRect ? `${shellRect.left}px` : '0px',
-          top: shellRect ? `${shellRect.top}px` : '0px',
-          width: shellRect ? `${shellRect.width}px` : '0px',
-          height: shellRect
-            ? `${shellRect.height}px`
-            : '0px',
-          minHeight: shellExpanded ? '360px' : undefined,
-          borderRadius: `${shellBorderRadius}px`,
-          background: shellBackground,
-          backdropFilter: 'blur(14px)',
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
-          boxShadow: '0 24px 64px rgba(0,0,0,0.30)',
-          opacity: shellRect && cardVisible ? 1 : 0,
-          transform: cardTransform,
-          transformOrigin: 'center center',
-          transition: shellRect ? cardTransition : 'none',
-          willChange: morphEnabled ? 'left, top, width, height, border-radius, opacity' : 'opacity, transform',
-        }}
+        style={cardStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        {voiceSnapshot && (
-          <div
-            data-chat-voice-preview="true"
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 2,
-              opacity: voicePreviewVisible ? 1 : 0,
-              transform: voicePreviewVisible ? 'scale(1)' : 'scale(0.985)',
-              transformOrigin: 'center center',
-              transition: 'opacity 220ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
-              pointerEvents: 'none',
-              color: isDark ? '#111' : '#fff',
-            }}
-          >
-            <VoicePanel
-              isDark={isDark}
-              state={voiceSnapshot.state}
-              caption={voiceSnapshot.caption}
-              transcript={voiceSnapshot.transcript}
-              micDenied={voiceSnapshot.micDenied}
-              compact={voiceSnapshot.compact}
-              presentation
-              onMic={() => {}}
-              onStop={() => {}}
-              onClose={() => {}}
-              onFallbackChat={() => {}}
-            />
-          </div>
-        )}
         <div
           data-chat-popup-content="true"
           style={{
@@ -570,73 +560,88 @@ export function ChatPopup({
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'space-between',
-            height: '56px',
-            padding: '12px 16px',
-            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+            gap: '12px',
+            padding: '15px 15px 8px',
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <h2
-              id="chat-popup-heading"
-              style={{
-                margin: 0,
-                fontFamily: 'var(--font-instrument-serif), serif',
-                fontStyle: 'italic',
-                fontSize: '22px',
-                fontWeight: 400,
-                lineHeight: 1.2,
-                color: 'var(--color-text)',
-              }}
-            >
-              Parz
-            </h2>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', minWidth: 0 }}>
             <span
+              data-chat-status-dot="true"
+              aria-hidden="true"
               style={{
-                fontFamily: 'var(--font-lato), sans-serif',
-                fontSize: '12px',
-                fontWeight: 400,
-                lineHeight: 1.3,
-                color: 'var(--color-text)',
-                opacity: 0.55,
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: panelStatus,
+                boxShadow: `0 0 8px ${currentError ? 'rgba(239,68,68,0.5)' : 'rgba(0,230,118,0.5)'}`,
+                flex: '0 0 auto',
+                marginTop: '5px',
               }}
-            >
-              Lakshman&apos;s digital twin
-            </span>
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+              <h2
+                id="chat-popup-heading"
+                style={{
+                  margin: 0,
+                  fontFamily: 'var(--font-lato), sans-serif',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  lineHeight: 1.15,
+                  color: panelForeground,
+                  letterSpacing: 0,
+                }}
+              >
+                Parz
+              </h2>
+              <span
+                data-chat-popup-subtitle="true"
+                style={{
+                  fontFamily: 'var(--font-lato), sans-serif',
+                  fontSize: '11px',
+                  fontStyle: 'italic',
+                  fontWeight: 400,
+                  lineHeight: 1.25,
+                  color: panelMuted,
+                  overflowWrap: 'anywhere',
+                }}
+              >
+                Legacy V2 Chat interface (Features may be limited)
+              </span>
+            </div>
           </div>
           <button
             onClick={requestClose}
             data-chat-close="true"
             onMouseEnter={(e) => {
               e.currentTarget.style.opacity = '1';
-              e.currentTarget.style.backgroundColor = isDark
-                ? 'rgba(255,255,255,0.05)'
-                : 'rgba(0,0,0,0.05)';
+              e.currentTarget.style.backgroundColor = panelHoverFill;
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '0.7';
-              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.backgroundColor = isDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
             }}
             style={{
-              width: '32px',
-              height: '32px',
-              padding: '6px',
-              background: 'none',
+              width: '30px',
+              height: '30px',
+              padding: 0,
+              backgroundColor: isDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
               border: 'none',
               cursor: 'pointer',
-              color: 'var(--color-text)',
+              color: panelForeground,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: '8px',
-              opacity: 0.7,
-              transition: 'opacity 200ms ease, background-color 200ms ease',
+              borderRadius: '50%',
+              opacity: 1,
+              flex: '0 0 auto',
+              transition: 'background-color 200ms ease',
             }}
             aria-label="Close chat"
           >
-            <FaXmark size={18} />
+            <FaXmark size={15} />
           </button>
         </div>
 
@@ -648,28 +653,11 @@ export function ChatPopup({
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '16px',
+            padding: '5px 15px 20px',
             minHeight: 0,
             scrollbarWidth: 'none',
           }}
         >
-          {/* Empty state / greeting */}
-          {messages.length === 0 && !isLoading && (
-            <div
-              style={{
-                padding: '32px 16px 16px',
-                color: 'var(--color-text)',
-                opacity: 0.7,
-                fontFamily: 'var(--font-lato), sans-serif',
-                fontSize: '14px',
-                fontWeight: 400,
-                lineHeight: 1.6,
-              }}
-            >
-              Hey! I&apos;m Parz — Lakshman&apos;s digital twin. Ask me anything about his work or projects.
-            </div>
-          )}
-
           {/* Messages */}
           {messages.map((message) => {
             const isUser = message.role === 'user';
@@ -683,31 +671,26 @@ export function ChatPopup({
                 style={{
                   display: 'flex',
                   justifyContent: isUser ? 'flex-end' : 'flex-start',
-                  marginBottom: '12px',
+                  margin: isUser ? '6px 0' : '6px 0 6px 4px',
                   animation: 'messageAppear 180ms ease-out',
                 }}
               >
                 <div
                   style={{
-                    maxWidth: '85%',
-                    padding: '10px 14px',
+                    maxWidth: '270px',
+                    padding: '8px 12px',
                     fontFamily: 'var(--font-lato), sans-serif',
-                    fontSize: '15px',
-                    fontWeight: isUser ? 500 : 400,
-                    lineHeight: 1.5,
+                    fontSize: '14px',
+                    fontWeight: 400,
+                    lineHeight: 1.45,
                     wordBreak: 'break-word',
-                    color: isUser ? 'var(--color-bg)' : 'var(--color-text)',
-                    backgroundColor: isUser
-                      ? 'var(--color-text)'
-                      : isDark
-                        ? 'rgba(255,255,255,0.06)'
-                        : 'rgba(0,0,0,0.04)',
-                    border: isUser
-                      ? 'none'
-                      : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                    color: isUser
+                      ? (isDark ? '#ffffff' : '#000000')
+                      : (isDark ? '#000000' : '#ffffff'),
+                    backgroundColor: isUser ? panelUserBubbleFill : panelAssistantBubbleFill,
+                    border: `0.5px solid ${isUser ? panelUserBubbleBorder : panelAssistantBubbleBorder}`,
+                    backdropFilter: 'blur(5px)',
                     borderRadius: '16px',
-                    borderBottomRightRadius: isUser ? '4px' : '16px',
-                    borderBottomLeftRadius: isUser ? '16px' : '4px',
                   }}
                 >
                   {isUser ? (
@@ -725,21 +708,30 @@ export function ChatPopup({
             <div
               role="status"
               aria-label="Parz is typing"
-              style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}
+              style={{ display: 'flex', justifyContent: 'flex-start', margin: '6px 0 6px 4px' }}
             >
               <div
                 style={{
-                  padding: '10px 14px',
-                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  maxWidth: '270px',
+                  padding: '8px 12px',
+                  border: `0.5px solid ${panelAssistantBubbleBorder}`,
+                  backgroundColor: panelAssistantBubbleFill,
+                  color: isDark ? '#000000' : '#ffffff',
                   borderRadius: '16px',
-                  borderBottomLeftRadius: '4px',
+                  backdropFilter: 'blur(5px)',
                 }}
               >
+                {/* Rotating status text */}
+                <p className="popup-shimmer-text" style={{ fontSize: '12px', margin: 0, lineHeight: 1.3 }}>
+                  {loadingMessages[loadingMsgIndex]}
+                </p>
                 {/* Three dots wave animation */}
                 <div
                   aria-hidden="true"
-                  style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: '0 0 auto' }}
                 >
                   {[0, 1, 2].map((i) => (
                     <div
@@ -749,16 +741,12 @@ export function ChatPopup({
                         width: '7px',
                         height: '7px',
                         borderRadius: '50%',
-                        backgroundColor: 'var(--color-text)',
+                        backgroundColor: isDark ? '#000000' : '#ffffff',
                         animation: `dot-wave-popup 1.4s ease-in-out ${i * 0.2}s infinite`,
                       }}
                     />
                   ))}
                 </div>
-                {/* Rotating status text */}
-                <p className="popup-shimmer-text" style={{ fontSize: '12px', margin: 0 }}>
-                  {loadingMessages[loadingMsgIndex]}
-                </p>
               </div>
             </div>
           )}
@@ -767,21 +755,20 @@ export function ChatPopup({
           {currentError && (
             <div
               role="alert"
-              style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}
+              style={{ display: 'flex', justifyContent: 'flex-start', margin: '6px 0 6px 4px' }}
             >
               <div
                 style={{
-                  maxWidth: '85%',
-                  padding: '10px 14px',
+                  maxWidth: '270px',
+                  padding: '8px 12px',
                   fontFamily: 'var(--font-lato), sans-serif',
                   fontSize: '14px',
                   fontWeight: 400,
-                  lineHeight: 1.5,
+                  lineHeight: 1.45,
                   backgroundColor: 'rgba(239, 68, 68, 0.10)',
                   border: '1px solid rgba(239, 68, 68, 0.30)',
-                  color: 'var(--color-text)',
+                  color: panelForeground,
                   borderRadius: '16px',
-                  borderBottomLeftRadius: '4px',
                 }}
               >
                 {currentError}
@@ -800,7 +787,7 @@ export function ChatPopup({
             style={{
               display: 'flex',
               gap: '8px',
-              padding: '8px 16px',
+              padding: '0 15px 15px',
               flexShrink: 0,
               ...(isDesktop
                 ? { flexWrap: 'wrap' as const, justifyContent: 'center' }
@@ -816,17 +803,17 @@ export function ChatPopup({
               onClick={() => handleSuggestionClick(suggestions.small)}
               data-chat-chip="true"
               style={{
-                padding: '8px 16px',
-                borderRadius: '999px',
+                padding: '8px 12px',
+                borderRadius: '16px',
                 fontFamily: 'var(--font-lato), sans-serif',
                 fontSize: '13px',
-                fontWeight: 500,
-                letterSpacing: '0.005em',
+                fontWeight: 700,
+                letterSpacing: 0,
                 lineHeight: 1.3,
                 cursor: 'pointer',
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.15)'}`,
-                color: 'var(--color-text)',
-                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: `0.5px solid ${panelStrongerBorder}`,
+                color: panelInputText,
+                backgroundColor: panelChipFill,
                 transition: 'transform 200ms ease, border-color 200ms ease',
                 whiteSpace: 'nowrap' as const,
                 flexShrink: 0,
@@ -842,17 +829,17 @@ export function ChatPopup({
               onClick={() => handleSuggestionClick(suggestions.big)}
               data-chat-chip="true"
               style={{
-                padding: '8px 16px',
-                borderRadius: '999px',
+                padding: '8px 12px',
+                borderRadius: '16px',
                 fontFamily: 'var(--font-lato), sans-serif',
                 fontSize: '13px',
-                fontWeight: 500,
-                letterSpacing: '0.005em',
+                fontWeight: 700,
+                letterSpacing: 0,
                 lineHeight: 1.3,
                 cursor: 'pointer',
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.15)'}`,
-                color: 'var(--color-text)',
-                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: `0.5px solid ${panelStrongerBorder}`,
+                color: panelInputText,
+                backgroundColor: panelChipFill,
                 transition: 'transform 200ms ease, border-color 200ms ease',
                 whiteSpace: 'nowrap' as const,
                 flexShrink: 0,
@@ -870,15 +857,17 @@ export function ChatPopup({
         {/* Input row */}
         <div
           style={{
-            padding: '8px 16px',
-            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+            display: 'flex',
+            justifyContent: 'center',
+            padding: '0 15px',
             flexShrink: 0,
           }}
         >
           <div
             style={{
               position: 'relative',
-              borderRadius: '24px',
+              width: isDesktop ? 'min(300px, calc(100vw - 100px))' : 'min(360px, calc(100vw - 32px))',
+              borderRadius: '22px',
               border: `1px solid ${currentError ? 'rgba(239, 68, 68, 0.45)' : 'transparent'}`,
               transition: 'border-color 200ms ease-in-out',
             }}
@@ -902,21 +891,22 @@ export function ChatPopup({
                   inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
                 }, 300);
               }}
-              placeholder="Talk to my persona!"
+              placeholder=""
               disabled={isLoading}
               style={{
                 width: '100%',
-                borderRadius: '24px',
-                padding: '12px 56px 12px 20px',
+                minHeight: '52px',
+                borderRadius: '22px',
+                padding: '12px 54px 12px 20px',
                 fontFamily: 'var(--font-lato), sans-serif',
                 fontSize: '14px',
-                fontWeight: 400,
-                lineHeight: 1.5,
+                fontWeight: 700,
+                lineHeight: 1.35,
                 outline: 'none',
-                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                color: 'var(--color-text)',
-                backdropFilter: 'blur(10px)',
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'}`,
+                backgroundColor: panelInputFill,
+                color: panelInputText,
+                backdropFilter: 'blur(5px)',
+                border: 'none',
                 boxSizing: 'border-box' as const,
                 opacity: isLoading ? 0.6 : 1,
                 cursor: isLoading ? 'not-allowed' : 'text',
@@ -956,13 +946,18 @@ export function ChatPopup({
                 justifyContent: 'center',
                 cursor: inputValue.trim() && !isLoading ? 'pointer' : 'not-allowed',
                 backgroundColor:
-                  inputValue.trim() && !isLoading ? 'var(--color-text)' : 'transparent',
-                color: inputValue.trim() && !isLoading ? 'var(--color-bg)' : 'var(--color-text)',
+                  inputValue.trim() && !isLoading
+                    ? (isDark ? '#000000' : '#ffffff')
+                    : 'transparent',
+                color:
+                  inputValue.trim() && !isLoading
+                    ? (isDark ? '#ffffff' : '#000000')
+                    : panelInputText,
                 opacity: inputValue.trim() && !isLoading ? 1 : 0.30,
                 border:
                   inputValue.trim() && !isLoading
                     ? 'none'
-                    : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                    : `1px solid ${panelSoftBorder}`,
                 transition:
                   'transform 150ms ease, background-color 200ms ease, opacity 200ms ease, color 200ms ease',
               }}
@@ -972,6 +967,21 @@ export function ChatPopup({
             </button>
           </div>
         </div>
+        <p
+          style={{
+            margin: 0,
+            padding: '15px 15px max(20px, env(safe-area-inset-bottom))',
+            flexShrink: 0,
+            textAlign: 'center',
+            fontFamily: 'var(--font-lato), sans-serif',
+            fontSize: '11px',
+            fontStyle: 'italic',
+            lineHeight: 1.3,
+            color: panelMuted,
+          }}
+        >
+          Still in experimental phase, will make mistakes
+        </p>
         </div>
       </div>
     </>

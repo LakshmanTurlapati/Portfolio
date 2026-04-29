@@ -157,7 +157,7 @@ export default function Home() {
         style={{
           opacity: hideNavbarForChatMorph ? 0 : 1,
           pointerEvents: hideNavbarForChatMorph ? 'none' : 'auto',
-          transition: 'opacity 120ms ease',
+          transition: hideNavbarForChatMorph ? 'none' : 'opacity 120ms ease',
         }}
         onClick={(e) => {
           if ((e.target as HTMLElement).closest('[data-parz-btn]')) return;
@@ -178,7 +178,7 @@ export default function Home() {
         style={{
           opacity: hideNavbarForChatMorph ? 0 : 1,
           pointerEvents: hideNavbarForChatMorph ? 'none' : 'auto',
-          transition: 'opacity 120ms ease',
+          transition: hideNavbarForChatMorph ? 'none' : 'opacity 120ms ease',
         }}
         onClick={(e) => {
           if ((e.target as HTMLElement).closest('[data-parz-btn]')) return;

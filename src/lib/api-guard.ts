@@ -155,14 +155,14 @@ export function jsonError(message: string, status: number, headers?: HeadersInit
 function guardOrigin(req: Request, enforceOrigin = process.env.NODE_ENV === 'production'): Response | null {
   if (!enforceOrigin) return null;
 
-  const requestOrigin = safeOrigin(req.url);
+  const requestOrigins = requestCandidateOrigins(req);
   const sourceOrigin = requestSourceOrigin(req);
 
   if (!sourceOrigin) {
     return jsonError('Request origin is required.', 403);
   }
 
-  if (requestOrigin && sourceOrigin === requestOrigin) {
+  if (requestOrigins.has(sourceOrigin)) {
     return null;
   }
 
@@ -173,6 +173,27 @@ function guardOrigin(req: Request, enforceOrigin = process.env.NODE_ENV === 'pro
   return jsonError('Request origin is not allowed.', 403);
 }
 
+function requestCandidateOrigins(req: Request): Set<string> {
+  const origins = new Set<string>();
+  const requestOrigin = safeOrigin(req.url);
+  if (requestOrigin) origins.add(requestOrigin);
+
+  const forwarded = parseForwardedHeader(req.headers.get('forwarded'));
+  const forwardedHost =
+    forwarded.host ??
+    firstHeaderValue(req.headers.get('x-forwarded-host')) ??
+    firstHeaderValue(req.headers.get('host'));
+  const forwardedProto =
+    forwarded.proto ??
+    firstHeaderValue(req.headers.get('x-forwarded-proto')) ??
+    safeProtocol(req.url);
+
+  const forwardedOrigin = originFromProtocolAndHost(forwardedProto, forwardedHost);
+  if (forwardedOrigin) origins.add(forwardedOrigin);
+
+  return origins;
+}
+
 function requestSourceOrigin(req: Request): string | null {
   const origin = req.headers.get('origin');
   if (origin) return safeOrigin(origin);
@@ -181,6 +202,42 @@ function requestSourceOrigin(req: Request): string | null {
   if (referer) return safeOrigin(referer);
 
   return null;
+}
+
+function parseForwardedHeader(header: string | null): { host?: string; proto?: string } {
+  const first = firstHeaderValue(header);
+  if (!first) return {};
+
+  const result: { host?: string; proto?: string } = {};
+  for (const part of first.split(';')) {
+    const [rawKey, rawValue] = part.split('=');
+    const key = rawKey?.trim().toLowerCase();
+    const value = rawValue?.trim().replace(/^"|"$/g, '');
+    if (key === 'host' && value) result.host = value;
+    if (key === 'proto' && value) result.proto = value;
+  }
+  return result;
+}
+
+function firstHeaderValue(value: string | null): string | null {
+  const first = value?.split(',')[0]?.trim();
+  return first || null;
+}
+
+function safeProtocol(input: string): string | null {
+  try {
+    const protocol = new URL(input).protocol.replace(':', '');
+    return protocol || null;
+  } catch {
+    return null;
+  }
+}
+
+function originFromProtocolAndHost(protocol: string | null | undefined, host: string | null | undefined): string | null {
+  if (!protocol || !host) return null;
+  const normalizedProtocol = protocol.toLowerCase();
+  if (normalizedProtocol !== 'http' && normalizedProtocol !== 'https') return null;
+  return safeOrigin(`${normalizedProtocol}://${host}`);
 }
 
 function allowedOrigins(): Set<string> {

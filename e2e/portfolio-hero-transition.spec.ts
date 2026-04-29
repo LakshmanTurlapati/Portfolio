@@ -108,3 +108,22 @@ test('mobile portfolio navigation keeps the reveal without the overlay morph', a
   await expect(page).toHaveURL(/\/portfolio$/);
   await expectRootExpandAnimation(page);
 });
+
+test('desktop portfolio grid does not fade the first row', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/portfolio');
+
+  const grid = page.getByTestId('portfolio-grid');
+  await expect(grid).toBeVisible();
+
+  const mask = await grid.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return {
+      maskImage: style.maskImage,
+      webkitMaskImage: style.getPropertyValue('-webkit-mask-image'),
+    };
+  });
+
+  expect(mask.maskImage).toBe('none');
+  expect(mask.webkitMaskImage).toBe('none');
+});
