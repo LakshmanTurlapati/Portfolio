@@ -108,10 +108,18 @@ interface ChatPopupProps {
   onOpenAnimationComplete?: () => void;
 }
 
-const MORPH_DURATION_MS = 480;
-const CONTENT_DELAY_MS = 280;
-const VOICE_PREVIEW_FADE_MS = 300;
+const MORPH_DURATION_MS = 560;
+const CONTENT_DELAY_MS = 440;
+const VOICE_PREVIEW_FADE_MS = 420;
 const CLOSE_DURATION_MS = 360;
+
+type ChatMorphPhase = 'static' | 'origin' | 'expanding' | 'content';
+
+function canAnimateFromOrigin(originRect?: ChatMorphRect): boolean {
+  if (!originRect) return false;
+  if (typeof window === 'undefined') return false;
+  return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 
 function getFinalChatRect(isDesktop: boolean): ChatMorphRect {
   const viewportWidth = window.innerWidth;
@@ -159,13 +167,21 @@ export function ChatPopup({
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
   const [currentError, setCurrentError] = useState<string | null>(null);
   const [sendHover, setSendHover] = useState(false);
-  const [shellRect, setShellRect] = useState<ChatMorphRect | null>(null);
-  const [shellExpanded, setShellExpanded] = useState(!originRect);
-  const [contentReady, setContentReady] = useState(!originRect);
-  const [voicePreviewVisible, setVoicePreviewVisible] = useState(Boolean(originRect && voiceSnapshot));
+  const initialCanMorphFromOrigin = canAnimateFromOrigin(originRect);
+  const [shellRect, setShellRect] = useState<ChatMorphRect | null>(
+    () => (initialCanMorphFromOrigin && originRect ? originRect : null),
+  );
+  const [shellExpanded, setShellExpanded] = useState(!initialCanMorphFromOrigin);
+  const [contentReady, setContentReady] = useState(!initialCanMorphFromOrigin);
+  const [voicePreviewVisible, setVoicePreviewVisible] = useState(
+    Boolean(initialCanMorphFromOrigin && voiceSnapshot),
+  );
   const [backdropVisible, setBackdropVisible] = useState(false);
-  const [cardVisible, setCardVisible] = useState(false);
-  const [morphEnabled, setMorphEnabled] = useState(Boolean(originRect));
+  const [cardVisible, setCardVisible] = useState(initialCanMorphFromOrigin);
+  const [morphEnabled, setMorphEnabled] = useState(initialCanMorphFromOrigin);
+  const [morphPhase, setMorphPhase] = useState<ChatMorphPhase>(
+    initialCanMorphFromOrigin ? 'origin' : 'static',
+  );
 
   // Randomly pick suggestion chips on mount (1 small + 1 big)
   const [suggestions] = useState(() => ({
@@ -258,19 +274,23 @@ export function ChatPopup({
       setContentReady(false);
       setVoicePreviewVisible(Boolean(voiceSnapshot));
       setBackdropVisible(false);
-      setCardVisible(false);
+      setCardVisible(true);
+      setMorphPhase('origin');
 
       firstFrame = window.requestAnimationFrame(() => {
         setBackdropVisible(true);
-        setCardVisible(true);
         secondFrame = window.requestAnimationFrame(() => {
           setShellRect(finalRect);
           setShellExpanded(true);
+          setMorphPhase('expanding');
         });
       });
 
       voicePreviewTimer = setTimeout(() => setVoicePreviewVisible(false), VOICE_PREVIEW_FADE_MS);
-      contentTimer = setTimeout(() => setContentReady(true), CONTENT_DELAY_MS);
+      contentTimer = setTimeout(() => {
+        setContentReady(true);
+        setMorphPhase('content');
+      }, CONTENT_DELAY_MS);
       completeTimer = setTimeout(() => {
         onOpenAnimationComplete?.();
         inputRef.current?.focus();
@@ -281,6 +301,7 @@ export function ChatPopup({
       setContentReady(true);
       setVoicePreviewVisible(false);
       setMorphEnabled(false);
+      setMorphPhase('static');
 
       firstFrame = window.requestAnimationFrame(() => {
         setBackdropVisible(true);
@@ -329,6 +350,7 @@ export function ChatPopup({
     setVoicePreviewVisible(false);
     setBackdropVisible(false);
     setCardVisible(false);
+    setMorphPhase(canMorphBack ? 'origin' : 'static');
 
     if (canMorphBack && originRect) {
       setShellExpanded(false);
@@ -382,7 +404,7 @@ export function ChatPopup({
   const cardTransform = morphEnabled ? 'none' : cardVisible ? 'scale(1)' : 'scale(0.96)';
   const shellBorderRadius = shellExpanded ? 20 : 25;
   const chatBackground = isDark ? '#1a1a1c' : '#fafaf7';
-  const shellBackground = morphEnabled && !shellExpanded ? 'var(--color-navbar-bg)' : chatBackground;
+  const shellBackground = morphEnabled && !contentReady ? 'var(--color-navbar-bg)' : chatBackground;
 
   return (
     <>
@@ -469,6 +491,8 @@ export function ChatPopup({
         aria-modal="true"
         aria-labelledby="chat-popup-heading"
         data-chat-popup-card="true"
+        data-chat-morph-source={originRect ? 'voice' : 'default'}
+        data-chat-morph-state={morphEnabled ? morphPhase : 'static'}
         style={{
           position: 'fixed',
           zIndex: 50,
@@ -476,24 +500,22 @@ export function ChatPopup({
           flexDirection: 'column',
           overflow: 'hidden',
           visibility: shellRect ? 'visible' : 'hidden',
-          left: shellRect ? `${shellRect.left}px` : '50%',
-          top: shellRect ? `${shellRect.top}px` : '50%',
-          width: shellRect ? `${shellRect.width}px` : isDesktop ? '400px' : 'calc(100vw - 16px)',
+          left: shellRect ? `${shellRect.left}px` : '0px',
+          top: shellRect ? `${shellRect.top}px` : '0px',
+          width: shellRect ? `${shellRect.width}px` : '0px',
           height: shellRect
             ? `${shellRect.height}px`
-            : isDesktop
-              ? 'min(600px, calc(100vh - 48px))'
-              : 'calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
+            : '0px',
           minHeight: shellExpanded ? '360px' : undefined,
           borderRadius: `${shellBorderRadius}px`,
           background: shellBackground,
           backdropFilter: 'blur(14px)',
           border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
           boxShadow: '0 24px 64px rgba(0,0,0,0.30)',
-          opacity: cardVisible ? 1 : 0,
+          opacity: shellRect && cardVisible ? 1 : 0,
           transform: cardTransform,
           transformOrigin: 'center center',
-          transition: cardTransition,
+          transition: shellRect ? cardTransition : 'none',
           willChange: morphEnabled ? 'left, top, width, height, border-radius, opacity' : 'opacity, transform',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -509,7 +531,7 @@ export function ChatPopup({
               opacity: voicePreviewVisible ? 1 : 0,
               transform: voicePreviewVisible ? 'scale(1)' : 'scale(0.985)',
               transformOrigin: 'center center',
-              transition: 'opacity 190ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
+              transition: 'opacity 220ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
               pointerEvents: 'none',
               color: isDark ? '#111' : '#fff',
             }}

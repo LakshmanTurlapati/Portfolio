@@ -113,12 +113,17 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
 
   const navigate = useCallback(
     (page: ControlPage): ControlResult => {
+      const path = PAGE_PATHS[page];
+      if (pathname === path) {
+        return { ok: true, message: `Already on ${page}.` };
+      }
+
       return runWithControlOverlay(() => {
-        navigateWithReveal(PAGE_PATHS[page], window.innerWidth / 2, window.innerHeight / 2);
+        navigateWithReveal(path, window.innerWidth / 2, window.innerHeight / 2);
         return { ok: true, message: `Heading to ${page}.` };
       });
     },
-    [navigateWithReveal, runWithControlOverlay]
+    [navigateWithReveal, pathname, runWithControlOverlay]
   );
 
   const openProject = useCallback((input: string): ControlResult => {

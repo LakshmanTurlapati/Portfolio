@@ -95,20 +95,20 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   );
 
   // VOICE-05: event-driven coordination replacing the prior hardcoded 400ms.
-  // Subscribe to VoiceBus 'page-ready' synchronously BEFORE goPage so the
-  // listener is live before the destination page mounts. Whichever fires first
-  // -- the page-ready event for slug 'home' OR the 1500ms safety timer --
-  // calls fire() exactly once (gated by the `fired` flag). Safety timer
-  // covers View Transitions failures and missed emits (RESEARCH.md Pattern 2).
+  // For text-chat fallback, route directly instead of using siteControl.navigate:
+  // opening chat is UI state, not a site-control action, so it must not show the
+  // FSB control overlay. If already home, fire immediately; otherwise wait for
+  // the home page-ready event or the safety timer.
   const openTextChat = useCallback(
     (_initialText?: string, originRect?: ChatMorphRect, voiceSnapshot?: ChatVoiceSnapshot) => {
       const capturedOriginRect = originRect ?? getCurrentChatMorphOrigin();
       let fired = false;
       let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+      let unsub: (() => void) | null = null;
       const fire = () => {
         if (fired) return;
         fired = true;
-        try { unsub(); } catch {}
+        try { unsub?.(); } catch {}
         if (safetyTimer !== null) {
           clearTimeout(safetyTimer);
           safetyTimer = null;
@@ -120,13 +120,19 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
         };
         window.dispatchEvent(new CustomEvent<OpenTextChatDetail>('parz:open-text-chat', { detail }));
       };
-      const unsub = window.VoiceBus.on('page-ready', (page) => {
+
+      if (pathname === '/') {
+        fire();
+        return;
+      }
+
+      unsub = window.VoiceBus.on('page-ready', (page) => {
         if (page === 'home') fire();
       });
       safetyTimer = setTimeout(fire, 1500);
-      goPage('home');
+      navigateWithReveal('/', window.innerWidth / 2, window.innerHeight / 2);
     },
-    [goPage]
+    [navigateWithReveal, pathname]
   );
 
   // Per Pitfall 5 (RESEARCH.md): currentPage MUST be dynamic, not 'home'.
