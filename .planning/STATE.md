@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v4.3
 milestone_name: Legacy V2 Chat-Only Boundary
-status: defining-requirements
-stopped_at: Milestone v4.3 started
+status: ready
+stopped_at: Roadmap ready for Phase 29 planning
 last_updated: "2026-04-29T00:00:00.000Z"
 last_activity: 2026-04-29
 progress:
-  total_phases: 0
+  total_phases: 1
   completed_phases: 0
-  total_plans: 0
+  total_plans: 1
   completed_plans: 0
   percent: 0
 ---
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 29 — Legacy V2 Chat-Only Boundary
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-29 — Milestone v4.3 started
+Status: Ready to plan
+Last activity: 2026-04-29 — Milestone v4.3 roadmap created
 
 ```
-v4.3 Progress: [--------------------] 0% (0/0 phases complete, 0/0 plans complete)
+v4.3 Progress: [--------------------] 0% (0/1 phases complete, 0/1 plans complete)
 ```
 
 ## Performance Metrics
@@ -85,7 +85,7 @@ v4.3 Progress: [--------------------] 0% (0/0 phases complete, 0/0 plans complet
 
 ### Pending Todos
 
-- Define v4.3 requirements and roadmap for the Legacy V2 text-chat boundary.
+- Plan and execute Phase 29: Legacy V2 Chat-Only Boundary.
 - API-03 remains future work and gated on a reachable Amplify/custom-domain production URL.
 - CHAT-ANIM-01 remains future work: refine DART chat popup transitions and animations without changing the final visual design baseline.
 - Manual browser/device UAT from v4.2 is retained as post-milestone QA in per-phase `HUMAN-UAT.md` files, not as a milestone blocker.
@@ -98,10 +98,10 @@ v4.3 Progress: [--------------------] 0% (0/0 phases complete, 0/0 plans complet
 ## Session Continuity
 
 Last session: v4.3 milestone kickoff
-Stopped at: Legacy V2 text-chat boundary scope captured
+Stopped at: v4.3 roadmap ready for Phase 29
 Resume file: --
 
-**Next:** Define requirements and roadmap for v4.3, then plan Phase 29.
+**Next:** Plan Phase 29: Legacy V2 Chat-Only Boundary.
 
 **Completed Milestone:** v4.2 Carry-forward Polish & Hardening -- 4 phases, 14 plans -- 2026-04-27
 **Completed Phase:** 28 (Chat UI Redesign) -- 3 plans -- 2026-04-27

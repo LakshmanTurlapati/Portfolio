@@ -7,6 +7,7 @@
 - [x] **v4.0 Voice Mode Production** — Phases 12-15 (shipped 2026-04-26, see `milestones/v4.0-ROADMAP.md`)
 - [x] **v4.1 Parz Persona, Portfolio Context, and Site Control Refresh** — Phases 16-24 (shipped 2026-04-26, see `milestones/v4.1-ROADMAP.md`)
 - [x] **v4.2 Carry-forward Polish & Hardening** — Phases 25-28 (shipped 2026-04-27, see `milestones/v4.2-ROADMAP.md`)
+- [ ] **v4.3 Legacy V2 Chat-Only Boundary** — Phase 29 (active)
 
 ## Phases
 
@@ -62,12 +63,34 @@ Full archive: [`milestones/v4.2-ROADMAP.md`](milestones/v4.2-ROADMAP.md)
 
 ## Phase Details
 
-_All v4.2 phases (25-28) shipped — full details in [`milestones/v4.2-ROADMAP.md`](milestones/v4.2-ROADMAP.md). Next milestone phases will populate this section once defined._
+### Phase 29: Legacy V2 Chat-Only Boundary
+
+**Status:** Pending
+
+**Goal:** Make Legacy V2 text chat answer normally while preventing navigation, project-opening, theme, browser, tour, and other site-control tool execution; preserve those advanced features in voice mode.
+
+**Requirements:** CHAT-01, CHAT-02, CHAT-03, CHAT-04, VOICE-01, TEST-01
+
+**Scope:**
+
+- Separate text chat from voice/tool-capable chat at the `/api/chat` prompt and tool-routing boundary.
+- Remove site-control enablement and client-side tool execution from the Legacy V2 chat popup and full `/chat` page.
+- Add concise text-chat guidance for navigation/site-control requests: use voice mode for advanced features.
+- Preserve existing voice-mode tools and voice-to-text handoff behavior.
+- Add regression coverage for the server and client boundary.
+
+**Success criteria:**
+
+1. Text chat still answers ordinary persona, project, portfolio, and broad-topic questions conversationally.
+2. Navigation, project opening, scrolling, theme toggling, tours, browser control, and external-open requests in text chat produce a helpful "use voice mode for advanced features" style response instead of tool execution.
+3. Legacy V2 chat popup and `/chat` no longer send `enableSiteControl` and no longer call `SiteControlProvider` from assistant tool parts.
+4. Voice mode still exposes and executes the existing site-control tools.
+5. Automated tests cover text-chat request bodies, `/api/chat` tool selection, client no-tool execution, and voice tool preservation.
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 25 → 26 → 27 → 28
+Phases execute in numeric order: 29
 
 | Phase | Milestone | Plans Complete | Status      | Completed  |
 |-------|-----------|----------------|-------------|------------|
@@ -84,3 +107,17 @@ Phases execute in numeric order: 25 → 26 → 27 → 28
 | 26. Mobile UX Pass                          | v4.2 | 3/3 | Complete    | 2026-04-26 |
 | 27. FSB Overlay Polish                      | v4.2 | 3/3 | Complete    | 2026-04-27 |
 | 28. Chat UI Redesign                        | v4.2 | 3/3 | Complete    | 2026-04-27 |
+| 29. Legacy V2 Chat-Only Boundary            | v4.3 | 0/1 | Pending     | —          |
+
+## Requirement Coverage
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CHAT-01 | Phase 29 | Pending |
+| CHAT-02 | Phase 29 | Pending |
+| CHAT-03 | Phase 29 | Pending |
+| CHAT-04 | Phase 29 | Pending |
+| VOICE-01 | Phase 29 | Pending |
+| TEST-01 | Phase 29 | Pending |
+
+**Coverage:** 6/6 requirements mapped.

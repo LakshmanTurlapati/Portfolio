@@ -52,18 +52,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CHAT-01 | TBD | Pending |
-| CHAT-02 | TBD | Pending |
-| CHAT-03 | TBD | Pending |
-| CHAT-04 | TBD | Pending |
-| VOICE-01 | TBD | Pending |
-| TEST-01 | TBD | Pending |
+| CHAT-01 | Phase 29 | Pending |
+| CHAT-02 | Phase 29 | Pending |
+| CHAT-03 | Phase 29 | Pending |
+| CHAT-04 | Phase 29 | Pending |
+| VOICE-01 | Phase 29 | Pending |
+| TEST-01 | Phase 29 | Pending |
 
 **Coverage:**
 - v4.3 requirements: 6 total
-- Mapped to phases: 0
-- Unmapped: 6
+- Mapped to phases: 6
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-29*
-*Last updated: 2026-04-29 after initial definition*
+*Last updated: 2026-04-29 after roadmap creation*
