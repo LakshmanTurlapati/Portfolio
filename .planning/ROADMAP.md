@@ -71,6 +71,11 @@ Full archive: [`milestones/v4.2-ROADMAP.md`](milestones/v4.2-ROADMAP.md)
 
 **Requirements:** CHAT-01, CHAT-02, CHAT-03, CHAT-04, VOICE-01, TEST-01
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 29-01-PLAN.md -- Voice-only site-control boundary for `/api/chat`, Legacy V2 text clients, and regression coverage
+
 **Scope:**
 
 - Separate text chat from voice/tool-capable chat at the `/api/chat` prompt and tool-routing boundary.
