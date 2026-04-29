@@ -79,6 +79,27 @@
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50%, transparent 100%);
 }
 
+.role-roller-track {
+  animation: role-roller-loop var(--role-roller-duration) linear infinite;
+  transform: translateY(var(--role-roller-start));
+  will-change: transform;
+}
+
+@keyframes role-roller-loop {
+  from {
+    transform: translateY(var(--role-roller-start));
+  }
+  to {
+    transform: translateY(calc(var(--role-roller-start) - var(--role-roller-distance)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .role-roller-track {
+    animation: none;
+  }
+}
+
 /* Arrow bounce animation for mobile */
 @keyframes arrow-bounce {
   0%, 100% {

@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { IoArrowForwardSharp } from 'react-icons/io5';
@@ -9,14 +10,17 @@ const ROLES = [
   'UI/UX Designer',
   'Product Developer',
   'Software Developer',
-  'Full-Stack Developer',
   'Cloud Developer',
-  'AI Developer',
+  'Applied AI',
+  'OpenSource',
 ];
 
 const ITEM_EXTENT = 30; // px per item
 const ROLLER_HEIGHT = 150; // px
 const ROLLER_WIDTH = 230; // px
+const ROLE_SET_HEIGHT = ROLES.length * ITEM_EXTENT;
+const ROLE_CENTER_OFFSET = ROLLER_HEIGHT / 2 - ITEM_EXTENT / 2;
+const LOOPED_ROLES = [...ROLES, ...ROLES, ...ROLES];
 
 interface ScrollingTextProps {
   isMobile: boolean;
@@ -25,58 +29,21 @@ interface ScrollingTextProps {
 
 // -- Role Roller (shared between desktop and mobile) --
 function RoleRoller({ fontSize }: { fontSize: number }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(true);
-  const totalItems = ROLES.length;
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // When we've scrolled past the first copy, instantly reset
-  useEffect(() => {
-    if (currentIndex === totalItems) {
-      // After the transition animation completes (500ms), snap back
-      const timeout = setTimeout(() => {
-        setIsTransitioning(false);
-        setCurrentIndex(0);
-        // Re-enable transition after a frame
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setIsTransitioning(true);
-          });
-        });
-      }, 500);
-      return () => clearTimeout(timeout);
-    }
-  }, [currentIndex, totalItems]);
-
-  // Display items: ROLES + first item for seamless wrap
-  const displayRoles = [...ROLES, ROLES[0]];
-
-  // Center the first item in the roller container
-  const centerOffset = ROLLER_HEIGHT / 2 - ITEM_EXTENT / 2;
-  const translateY = centerOffset - currentIndex * ITEM_EXTENT;
+  const trackStyle = {
+    '--role-roller-start': `${ROLE_CENTER_OFFSET - ROLE_SET_HEIGHT}px`,
+    '--role-roller-distance': `${ROLE_SET_HEIGHT}px`,
+    '--role-roller-duration': `${ROLES.length}s`,
+  } as CSSProperties;
 
   return (
     <div
       className="scroll-roller-mask overflow-hidden"
       style={{ height: ROLLER_HEIGHT, width: ROLLER_WIDTH }}
     >
-      <div
-        style={{
-          transform: `translateY(${translateY}px)`,
-          transition: isTransitioning
-            ? 'transform 500ms cubic-bezier(0.42, 0, 0.58, 1)'
-            : 'none',
-        }}
-      >
-        {displayRoles.map((role, i) => (
+      <div className="role-roller-track" style={trackStyle}>
+        {LOOPED_ROLES.map((role, i) => (
           <div
-            key={i}
+            key={`${role}-${i}`}
             className="text-center"
             style={{
               height: ITEM_EXTENT,
