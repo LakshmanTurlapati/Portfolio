@@ -418,6 +418,18 @@ function GridControlsPanel({
           Close (H)
         </button>
       </div>
+
+      <div className="mt-1 border-t border-current/10 pt-3 text-center text-[10px] leading-none opacity-60">
+        Inspired from{' '}
+        <a
+          href="https://21st.dev/home"
+          target="_blank"
+          rel="noreferrer"
+          className="underline decoration-current/40 underline-offset-2 transition-opacity hover:opacity-80"
+        >
+          21st.dev
+        </a>
+      </div>
     </aside>
   );
 }

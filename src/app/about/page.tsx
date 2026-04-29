@@ -96,9 +96,34 @@ function FooterText({ compact = false }: { compact?: boolean }) {
         paddingBottom: compact ? 'max(32px, env(safe-area-inset-bottom))' : '40px',
       }}
     >
-      Designed in <strong>Figma</strong>, coded in <strong>Flutter</strong> (because
-      why not?), and deployed on <strong>AWS</strong>. Inter typeface ties it all
-      together.
+      Sketched with{' '}
+      <a
+        href="https://claude.ai"
+        target="_blank"
+        rel="noreferrer"
+        className="font-semibold underline decoration-current/40 underline-offset-2 transition-opacity hover:opacity-100"
+      >
+        Claude Design
+      </a>
+      , wired up in <strong>NextJS</strong>, shipped on{' '}
+      <a
+        href="https://fly.io"
+        target="_blank"
+        rel="noreferrer"
+        className="font-semibold underline decoration-current/40 underline-offset-2 transition-opacity hover:opacity-100"
+      >
+        Fly.io
+      </a>
+      , and given a voice with{' '}
+      <a
+        href="https://elevenlabs.io"
+        target="_blank"
+        rel="noreferrer"
+        className="font-semibold underline decoration-current/40 underline-offset-2 transition-opacity hover:opacity-100"
+      >
+        ElevenLabs
+      </a>
+      .
     </p>
   );
 }
