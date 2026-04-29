@@ -47,6 +47,8 @@ Source: `components.json` is absent, `package.json` uses Tailwind CSS v4 and `re
 
 ## Visual No-Change Guardrails
 
+Primary visual anchor remains the active chat transcript/input area, with header/status secondary.
+
 | Area | Requirement |
 |------|-------------|
 | Layout | Keep popup desktop size at max 400px wide and 600px tall, mobile inset at 8px, and full `/chat` as `h-dvh` with the existing safe-area padding. |
