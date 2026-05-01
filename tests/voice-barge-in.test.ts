@@ -171,6 +171,41 @@ describe('voice-controller barge-in wiring', () => {
     expect(failureBlock).not.toContain('resumeListeningIfActive();');
   });
 
+  it('bounds chat and TTS waits so voice cannot hang after a turn', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain('const VOICE_CHAT_RESPONSE_TIMEOUT_MS = 35000');
+    expect(source).toContain('const VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS = 1750');
+    expect(source).toContain('const chatAbortRef = useRef<AbortController | null>(null)');
+    expect(source).toContain('const chatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)');
+    expect(source).toContain('const audioPlaybackGuardRef = useRef<ReturnType<typeof setTimeout> | null>(null)');
+    expect(source).toContain('const abortActiveChatRequest = () => {');
+    expect(source).toContain('signal: chatAc.signal');
+    expect(source).toContain('setTimeout(() => chatAc.abort(), VOICE_CHAT_RESPONSE_TIMEOUT_MS)');
+    expect(source).toContain('if (ctx.state === \'suspended\')');
+    expect(source).toContain("throw new Error('AudioContext still suspended')");
+    expect(source).toContain('audioPlaybackGuardRef.current = setTimeout(() => {');
+    expect(source).toContain('finishBufferPlayback();');
+    expect(source).toContain('VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS');
+  });
+
+  it('clears tour transcript before handing control back to listening', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+    const tourBlockStart = source.indexOf('const startGuidedTour = useCallback');
+    const tourBlock = source.slice(tourBlockStart, source.indexOf('// handleUserTurn', tourBlockStart));
+
+    expect(tourBlock).toContain("window.VoiceBus.setState('idle');");
+    expect(tourBlock).toContain("setCaption('');");
+    expect(tourBlock).toContain("setTranscript('');");
+    expect(tourBlock).toContain('resumeListeningIfActive();');
+  });
+
   it('gates speaking interruption on recognized user words, not raw mic noise', () => {
     const source = readFileSync(
       join(process.cwd(), 'src/lib/voice-controller.ts'),

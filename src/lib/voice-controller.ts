@@ -27,6 +27,9 @@ import { Scribe, RealtimeEvents, CommitStrategy } from '@elevenlabs/client';
 import type { RealtimeConnection } from '@elevenlabs/client';
 import type { ControlResult } from '@/providers/site-control-provider';
 
+const VOICE_CHAT_RESPONSE_TIMEOUT_MS = 35000;
+const VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS = 1750;
+
 // ToolCallbacks carries App-level handlers for tool calls in AI responses.
 // All fields are optional so callers can wire only what they support this phase.
 // Un-wired tools log a console.warn and are no-ops — they do NOT silently succeed.
@@ -157,11 +160,14 @@ export function useVoiceController({
   // outer catch / cancelAllAudio. On fire: close Scribe, fall back to Web Speech.
   const sessionGuardRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialGreetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chatAbortRef = useRef<AbortController | null>(null);
+  const chatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // VOICE-07: worst-case timeout for the SpeechSynthesis fallback path. Some
   // browsers (notably Safari with disabled synth) silently no-op synth.speak()
   // and never fire onend/onerror. Duration is text-length-aware (50ms/char,
   // 1s floor, 30s cap). Cleared in onend/onerror and from cancelAllAudio.
   const synthGuardRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const audioPlaybackGuardRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const detachMicRef = useRef<(() => void) | null>(null);
   const bargeInStopRef = useRef<(() => void) | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
@@ -360,6 +366,22 @@ export function useVoiceController({
     }
   };
 
+  const clearAudioPlaybackGuard = () => {
+    if (audioPlaybackGuardRef.current !== null) {
+      clearTimeout(audioPlaybackGuardRef.current);
+      audioPlaybackGuardRef.current = null;
+    }
+  };
+
+  const abortActiveChatRequest = () => {
+    if (chatTimeoutRef.current !== null) {
+      clearTimeout(chatTimeoutRef.current);
+      chatTimeoutRef.current = null;
+    }
+    try { chatAbortRef.current?.abort(); } catch {}
+    chatAbortRef.current = null;
+  };
+
   const clearInitialGreetTimer = useCallback(() => {
     if (initialGreetTimerRef.current !== null) {
       clearTimeout(initialGreetTimerRef.current);
@@ -444,6 +466,7 @@ export function useVoiceController({
     // VOICE-07: clear synth fallback guard so a stop-during-speak doesn't
     // leave a stale timer firing into a torn-down speak() Promise.
     clearSynthGuard();
+    clearAudioPlaybackGuard();
 
     // Abort any in-flight /api/tts fetch so a stale .then doesn't create another source
     try { speakAbortRef.current?.abort(); } catch {}
@@ -610,6 +633,7 @@ export function useVoiceController({
     listenGenerationRef.current += 1;
     turnGenerationRef.current += 1;
     startingListenRef.current = false;
+    abortActiveChatRequest();
     try { connectionRef.current?.close(); } catch {}
     connectionRef.current = null;
     cancelAllAudio();
@@ -660,6 +684,9 @@ export function useVoiceController({
             if (ctx.state === 'suspended') {
               try { await ctx.resume(); } catch {}
             }
+            if (ctx.state === 'suspended') {
+              throw new Error('AudioContext still suspended');
+            }
             const decoded = await ctx.decodeAudioData(buffer);
             if (ac.signal.aborted) return;
 
@@ -678,10 +705,11 @@ export function useVoiceController({
             // Start RMS loop — hooks live audio level into VoiceBus (per D-06)
             window.VoiceBus._startLoop(analyser, 1.4);
 
-            source.onended = () => {
+            const finishBufferPlayback = () => {
               // Identity check: only mutate state if THIS source is still current.
               // A cancelled source whose onended fires late must not touch state.
               if (audioSourceRef.current === source) {
+                clearAudioPlaybackGuard();
                 stopBargeInMonitor();
                 stopSpokenCaptionProgress(true);
                 window.VoiceBus._stopLoop();
@@ -694,7 +722,14 @@ export function useVoiceController({
               resolve();
             };
 
+            source.onended = finishBufferPlayback;
+
             speakingRef.current = true;
+            audioPlaybackGuardRef.current = setTimeout(() => {
+              if (audioSourceRef.current !== source) return;
+              try { source.stop(); } catch {}
+              finishBufferPlayback();
+            }, Math.round(decoded.duration * 1000) + VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS);
             source.start();
             startBargeInMonitor();
           })
@@ -855,6 +890,7 @@ export function useVoiceController({
 
         window.VoiceBus.setState('idle');
         setCaption('');
+        setTranscript('');
         resumeListeningIfActive();
       } finally {
         window.VoiceBus.emit('site-control-tour-end', { tourId });
@@ -943,33 +979,48 @@ export function useVoiceController({
             ]
           : baseMessages;
 
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages, isVoice: true }),
-        });
-
-        if (!res.ok) throw new Error(`/api/chat returned ${res.status}`);
-
-        const reader = res.body?.getReader();
-        const decoder = new TextDecoder();
         const streamState: VoiceStreamParseState = { responseText: '', toolCalls: [] };
+        const chatAc = new AbortController();
+        const chatTimeout = setTimeout(() => chatAc.abort(), VOICE_CHAT_RESPONSE_TIMEOUT_MS);
+        abortActiveChatRequest();
+        chatAbortRef.current = chatAc;
+        chatTimeoutRef.current = chatTimeout;
 
-        // F-01: keep a leftover buffer between reads so JSON events that span
-        // chunk boundaries are not silently dropped by JSON.parse inside the catch.
-        if (reader) {
-          let buffer = '';
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-              buffer += decoder.decode();
-              if (buffer) parseVoiceStreamLine(buffer, streamState);
-              break;
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages, isVoice: true }),
+            signal: chatAc.signal,
+          });
+
+          if (!res.ok) throw new Error(`/api/chat returned ${res.status}`);
+
+          const reader = res.body?.getReader();
+          const decoder = new TextDecoder();
+
+          // F-01: keep a leftover buffer between reads so JSON events that span
+          // chunk boundaries are not silently dropped by JSON.parse inside the catch.
+          if (reader) {
+            let buffer = '';
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) {
+                buffer += decoder.decode();
+                if (buffer) parseVoiceStreamLine(buffer, streamState);
+                break;
+              }
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() ?? '';
+              for (const line of lines) parseVoiceStreamLine(line, streamState);
             }
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() ?? '';
-            for (const line of lines) parseVoiceStreamLine(line, streamState);
+          }
+        } finally {
+          if (chatAbortRef.current === chatAc) chatAbortRef.current = null;
+          if (chatTimeoutRef.current === chatTimeout) {
+            clearTimeout(chatTimeout);
+            chatTimeoutRef.current = null;
           }
         }
 
@@ -1063,6 +1114,7 @@ export function useVoiceController({
           setCaption("I couldn't get a spoken response. Tap to try again.");
         }
       } catch {
+        if (myTurn !== turnGenerationRef.current) return;
         // Surface a UI caption and stop at idle. Auto-resuming here creates the
         // confusing listening/thinking loop when /api/chat or /api/tts is blocked.
         window.VoiceBus.setState('idle');
