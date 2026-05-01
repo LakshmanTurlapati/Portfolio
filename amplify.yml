@@ -3,7 +3,7 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm ci
+        - npm ci --legacy-peer-deps
         # Inject server-side environment variables into .env.production
         # Amplify Console env vars are available at build time but NOT at Lambda runtime
         # Writing them to .env.production bundles them with the server-side code

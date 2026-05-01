@@ -221,10 +221,44 @@ async function mockReviewGateGithubPreview(page: Page) {
   await page.route(`https://api.github.com/repos/${repoPath}/languages`, async (route) => {
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ TypeScript: 1200 }) });
   });
+  await page.route(`https://api.github.com/repos/${repoPath}/contents?ref=main`, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          name: 'src',
+          path: 'src',
+          type: 'dir',
+          html_url: `https://github.com/${repoPath}/tree/main/src`,
+        },
+        {
+          name: 'README.md',
+          path: 'README.md',
+          type: 'file',
+          size: 4096,
+          html_url: `https://github.com/${repoPath}/blob/main/README.md`,
+        },
+      ]),
+    });
+  });
   await page.route('https://api.github.com/markdown', async (route) => {
     await route.fulfill({
       contentType: 'text/html',
-      body: '<h1>Review Gate</h1><p>Mocked README content.</p>'.repeat(80),
+      body: `
+        <h1>Review Gate</h1>
+        <p>Mocked README content with a <a href="docs/setup.md">relative guide</a>.</p>
+        <p><img src="docs/diagram.png" alt="Relative diagram"></p>
+        <table><thead><tr><th>Feature</th><th>Status</th></tr></thead><tbody><tr><td>Preview</td><td>Ready</td></tr></tbody></table>
+        <ul class="contains-task-list"><li class="task-list-item"><input type="checkbox" checked disabled> Rich README</li></ul>
+        <section class="js-render-needs-enrichment render-needs-enrichment" data-type="mermaid">
+          <div class="js-render-enrichment-target" data-plain="graph TD&#10;  A--&gt;B&#10;">
+            <pre lang="mermaid">graph TD
+  A--&gt;B
+</pre>
+          </div>
+        </section>
+        ${'<p>Mocked README content.</p>'.repeat(80)}
+      `,
     });
   });
 }
@@ -252,6 +286,18 @@ test('Parz site control navigates, scrolls, opens GitFly, and shows the FSB badg
 
   await page.evaluate(() => (window as WindowWithSiteControl).__parzSiteControl?.openProject('Review Gate'));
   await expect(page.getByText('Review-Gate', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('README.md', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('src', { exact: true })).toBeVisible();
+  await expect(page.locator('.ghx-md-readme table')).toBeVisible();
+  await expect(page.locator('.ghx-mermaid-block')).toBeVisible();
+  await expect(page.locator('.ghx-md-readme img[alt="Relative diagram"]')).toHaveAttribute(
+    'src',
+    'https://raw.githubusercontent.com/LakshmanTurlapati/Review-Gate/main/docs/diagram.png',
+  );
+  await expect(page.locator('.ghx-md-readme a', { hasText: 'relative guide' })).toHaveAttribute(
+    'href',
+    'https://github.com/LakshmanTurlapati/Review-Gate/blob/main/docs/setup.md',
+  );
   await waitForControlIdle(page);
 
   await expect

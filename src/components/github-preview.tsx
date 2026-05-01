@@ -20,6 +20,8 @@ import {
   FaLink,
   FaFolderOpen,
   FaFileLines,
+  FaFolder,
+  FaFile,
 } from 'react-icons/fa6';
 import type { PreviewScroller } from '@/lib/site-control-utils';
 
@@ -51,24 +53,90 @@ function formatDate(iso: string): string {
   } catch { return ''; }
 }
 
+function isAbsoluteUrl(url: string): boolean {
+  return /^(?:[a-z][a-z\d+.-]*:|\/\/|#)/i.test(url);
+}
+
+function cleanRelativePath(path: string): string {
+  return path.replace(/^\.\//, '').replace(/^\/+/, '');
+}
+
+function buildRawUrl(path: string, rawBase: string): string {
+  return rawBase + cleanRelativePath(path);
+}
+
+function buildBlobUrl(path: string, blobBase: string): string {
+  return blobBase + cleanRelativePath(path);
+}
+
 function rewriteRelativeUrls(html: string, rawBase: string, blobBase: string): string {
   if (!html) return html;
-  // <img src="relative/path"> → raw.githubusercontent.com
-  html = html.replace(/<img([^>]*?)src="(?!https?:|data:|\/\/|#)([^"]+)"/g, (_m, attrs, src) => {
-    const clean = src.replace(/^\.\//, '').replace(/^\//, '');
-    return `<img${attrs}src="${rawBase}${clean}"`;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
+  const root = doc.body.firstElementChild;
+  if (!root) return html;
+
+  root.querySelectorAll('img[src]').forEach((img) => {
+    const src = img.getAttribute('src') || '';
+    if (!isAbsoluteUrl(src)) img.setAttribute('src', buildRawUrl(src, rawBase));
+    img.setAttribute('loading', 'lazy');
   });
-  // <a href="relative/path"> → github.com/.../blob/...
-  html = html.replace(/<a([^>]*?)href="(?!https?:|mailto:|#|\/\/)([^"]+)"/g, (_m, attrs, href) => {
-    const clean = href.replace(/^\.\//, '').replace(/^\//, '');
-    return `<a${attrs}href="${blobBase}${clean}" target="_blank" rel="noopener"`;
+
+  root.querySelectorAll('a[href]').forEach((anchor) => {
+    const href = anchor.getAttribute('href') || '';
+    if (!isAbsoluteUrl(href) && !href.startsWith('mailto:')) {
+      anchor.setAttribute('href', buildBlobUrl(href, blobBase));
+    }
+    if (!href.startsWith('#')) {
+      anchor.setAttribute('target', '_blank');
+      anchor.setAttribute('rel', 'noopener noreferrer');
+    }
   });
-  // Absolute links: open in new tab
-  html = html.replace(/<a([^>]*?)href="(https?:\/\/[^"]+)"/g, (_m, attrs, href) => {
-    if (/target="/.test(attrs)) return _m;
-    return `<a${attrs}href="${href}" target="_blank" rel="noopener"`;
-  });
-  return html;
+
+  root
+    .querySelectorAll<HTMLElement>('section[data-type="mermaid"], .js-render-needs-enrichment[data-type="mermaid"]')
+    .forEach((section, index) => {
+      const source =
+        section.querySelector<HTMLElement>('[data-plain]')?.getAttribute('data-plain') ||
+        section.querySelector('pre[lang="mermaid"]')?.textContent ||
+        '';
+      if (!source.trim()) return;
+      section.replaceWith(createMermaidBlock(doc, source, index));
+    });
+
+  root
+    .querySelectorAll<HTMLElement>('pre[lang="mermaid"], pre > code.language-mermaid')
+    .forEach((node, index) => {
+      const pre = node.tagName.toLowerCase() === 'pre' ? node : node.closest('pre');
+      if (!pre || pre.closest('.ghx-mermaid-block')) return;
+      const source = node.textContent || '';
+      if (!source.trim()) return;
+      pre.replaceWith(createMermaidBlock(doc, source, index));
+    });
+
+  return root.innerHTML;
+}
+
+function createMermaidBlock(doc: Document, source: string, index: number): HTMLElement {
+  const block = doc.createElement('div');
+  block.className = 'ghx-mermaid-block';
+
+  const diagram = doc.createElement('pre');
+  diagram.className = 'mermaid ghx-mermaid-diagram';
+  diagram.setAttribute('data-ghx-mermaid', String(index));
+  diagram.textContent = source;
+  block.appendChild(diagram);
+
+  const details = doc.createElement('details');
+  details.className = 'ghx-mermaid-source';
+  const summary = doc.createElement('summary');
+  summary.textContent = 'Mermaid source';
+  const code = doc.createElement('code');
+  code.textContent = source;
+  details.append(summary, code);
+  block.appendChild(details);
+
+  return block;
 }
 
 const LANG_SHADES = ['#e5e5e5', '#c9c9c9', '#9e9e9e', '#777777', '#505050', '#2e2e2e'];
@@ -111,6 +179,25 @@ interface LangMap {
   [name: string]: number;
 }
 
+interface RepoContentItem {
+  name: string;
+  path: string;
+  type: 'file' | 'dir' | 'symlink' | 'submodule';
+  size?: number;
+  html_url: string | null;
+}
+
+interface GithubPreviewCacheEntry {
+  repo: RepoData;
+  readmeHtml: string;
+  contributors: Contributor[];
+  langs: LangMap;
+  contents: RepoContentItem[];
+  hasMermaid: boolean;
+}
+
+const previewCache = new Map<string, GithubPreviewCacheEntry>();
+
 // ===== Component =====
 
 export interface GithubPreviewProps {
@@ -125,6 +212,8 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
   const [readmeHtml, setReadmeHtml] = useState('');
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [langs, setLangs] = useState<LangMap | null>(null);
+  const [contents, setContents] = useState<RepoContentItem[]>([]);
+  const [hasMermaid, setHasMermaid] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const mdRef = useRef<HTMLDivElement>(null);
@@ -144,6 +233,21 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
     setReadmeHtml('');
     setContributors([]);
     setLangs(null);
+    setContents([]);
+    setHasMermaid(false);
+
+    const cacheKey = `${owner}/${name}`.toLowerCase();
+    const cached = previewCache.get(cacheKey);
+    if (cached) {
+      setRepo(cached.repo);
+      setReadmeHtml(cached.readmeHtml);
+      setContributors(cached.contributors);
+      setLangs(cached.langs);
+      setContents(cached.contents);
+      setHasMermaid(cached.hasMermaid);
+      setLoading(false);
+      return;
+    }
 
     const base = `https://api.github.com/repos/${owner}/${name}`;
     const branchOfRepo = (r: RepoData) => r?.default_branch || 'main';
@@ -160,14 +264,27 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
 
         const branch = branchOfRepo(repoData);
 
-        const [readmeRaw, contribData, langsData] = await Promise.all([
+        const [readmeRaw, contribData, langsData, contentsData] = await Promise.all([
           fetch(`${base}/readme`, { headers: { Accept: 'application/vnd.github.raw' } }).then(r => r.ok ? r.text() : ''),
           fetch(`${base}/contributors?per_page=8`).then(r => r.ok ? r.json() : []),
           fetch(`${base}/languages`).then(r => r.ok ? r.json() : {}),
+          fetch(`${base}/contents?ref=${encodeURIComponent(branch)}`, { headers: { Accept: 'application/vnd.github+json' } }).then(r => r.ok ? r.json() : []),
         ]);
         if (cancel) return;
-        setContributors(Array.isArray(contribData) ? contribData : []);
-        setLangs(langsData || {});
+        const safeContributors = Array.isArray(contribData) ? contribData : [];
+        const safeLangs = langsData || {};
+        const safeContents = Array.isArray(contentsData)
+          ? contentsData
+              .filter((item): item is RepoContentItem => typeof item?.name === 'string' && typeof item?.type === 'string')
+              .sort((a, b) => {
+                if (a.type === 'dir' && b.type !== 'dir') return -1;
+                if (a.type !== 'dir' && b.type === 'dir') return 1;
+                return a.name.localeCompare(b.name);
+              })
+          : [];
+        setContributors(safeContributors);
+        setLangs(safeLangs);
+        setContents(safeContents);
 
         let html = '';
         if (readmeRaw) {
@@ -185,7 +302,17 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
           html = rewriteRelativeUrls(html, rawBase(branch), blobBase(branch));
         }
         if (cancel) return;
+        const hasMermaidBlocks = html.includes('ghx-mermaid-block');
+        previewCache.set(cacheKey, {
+          repo: repoData,
+          readmeHtml: html,
+          contributors: safeContributors,
+          langs: safeLangs,
+          contents: safeContents,
+          hasMermaid: hasMermaidBlocks,
+        });
         setReadmeHtml(html);
+        setHasMermaid(hasMermaidBlocks);
         setLoading(false);
       } catch (err) {
         if (cancel) return;
@@ -203,6 +330,32 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
     load();
     return () => { cancel = true; };
   }, [parsed?.owner, parsed?.repo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!hasMermaid || !readmeHtml || !mdRef.current) return;
+    let cancel = false;
+
+    async function renderMermaid() {
+      const nodes = Array.from(mdRef.current?.querySelectorAll<HTMLElement>('.ghx-mermaid-diagram') || []);
+      if (nodes.length === 0) return;
+      try {
+        const mermaid = (await import('mermaid')).default;
+        if (cancel) return;
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: 'strict',
+          theme: isDark ? 'dark' : 'default',
+          fontFamily: '-apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+        });
+        await mermaid.run({ nodes, suppressErrors: true });
+      } catch {
+        // Leave the readable source fallback visible if Mermaid cannot render.
+      }
+    }
+
+    renderMermaid();
+    return () => { cancel = true; };
+  }, [hasMermaid, isDark, readmeHtml]);
 
   useEffect(() => {
     if (!onRegisterScroller) return;
@@ -233,7 +386,6 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
 
   // T-05-02 mitigated: content originates from GitHub's markdown API (server-sanitized).
   // Relative URLs rewritten to absolute before injection; external links get target="_blank" rel="noopener".
-  // {/* Mermaid rendering intentionally omitted — out of scope */}
 
   // ===== Color palette =====
   const bg = isDark ? '#0d1117' : '#ffffff';
@@ -321,6 +473,7 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
         .sort((a, b) => b.bytes - a.bytes)
     : [];
   const branch = repo.default_branch || 'main';
+  const displayedContents = contents.slice(0, 12);
 
   const btnStyle: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -514,6 +667,67 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
             </a>
           </div>
 
+          {displayedContents.length > 0 && (
+            <div
+              style={{
+                border: `1px solid ${border}`,
+                borderRadius: 6,
+                background: readmeCardBg,
+                overflow: 'hidden',
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '10px 16px',
+                  background: readmeHdBg,
+                  borderBottom: `1px solid ${border}`,
+                  color: mutedFg,
+                  fontSize: 13,
+                }}
+              >
+                <FaCodeBranch />
+                <strong style={{ color: fg }}>{branch}</strong>
+                <span style={{ marginLeft: 'auto' }}>{contents.length} root items</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {displayedContents.map((item) => (
+                  <a
+                    key={item.path}
+                    href={item.html_url || `${repo.html_url}/tree/${branch}/${item.path}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '20px minmax(0, 1fr) auto',
+                      alignItems: 'center',
+                      gap: 10,
+                      minHeight: 38,
+                      padding: '8px 16px',
+                      borderBottom: `1px solid ${border}`,
+                      color: fg,
+                      textDecoration: 'none',
+                      fontSize: 14,
+                    }}
+                  >
+                    {item.type === 'dir' ? (
+                      <FaFolder style={{ color: linkColor }} />
+                    ) : (
+                      <FaFile style={{ color: mutedFg }} />
+                    )}
+                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: item.type === 'dir' ? 600 : 400 }}>
+                      {item.name}
+                    </span>
+                    <span style={{ color: mutedFg, fontSize: 12 }}>
+                      {item.type === 'file' && typeof item.size === 'number' ? formatFileSize(item.size) : item.type}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* README card */}
           <div
             style={{
@@ -538,6 +752,7 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
             {readmeHtml ? (
               <div
                 ref={mdRef}
+                className="ghx-md-readme"
                 style={{ padding: 32, fontSize: 16, lineHeight: 1.5, color: fg, wordWrap: 'break-word' }}
                 dangerouslySetInnerHTML={{ __html: readmeHtml }}
               />
@@ -700,7 +915,133 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
           }
         }
         .ghx-md-readme a:hover { text-decoration: underline; }
+        .ghx-md-readme > :first-child { margin-top: 0 !important; }
+        .ghx-md-readme > :last-child { margin-bottom: 0 !important; }
+        .ghx-md-readme h1,
+        .ghx-md-readme h2 {
+          padding-bottom: 0.3em;
+          border-bottom: 1px solid ${border};
+        }
+        .ghx-md-readme h1 { font-size: 2em; margin: 0.67em 0; font-weight: 600; line-height: 1.25; }
+        .ghx-md-readme h2 { font-size: 1.5em; margin: 1.35em 0 0.55em; font-weight: 600; line-height: 1.25; }
+        .ghx-md-readme h3 { font-size: 1.25em; margin: 1.25em 0 0.5em; font-weight: 600; line-height: 1.25; }
+        .ghx-md-readme h4 { font-size: 1em; margin: 1.15em 0 0.4em; font-weight: 600; }
+        .ghx-md-readme p,
+        .ghx-md-readme blockquote,
+        .ghx-md-readme ul,
+        .ghx-md-readme ol,
+        .ghx-md-readme table,
+        .ghx-md-readme pre,
+        .ghx-md-readme details {
+          margin-top: 0;
+          margin-bottom: 16px;
+        }
+        .ghx-md-readme ul,
+        .ghx-md-readme ol {
+          padding-left: 2em;
+        }
+        .ghx-md-readme li + li { margin-top: 0.25em; }
+        .ghx-md-readme li > p { margin-top: 16px; }
+        .ghx-md-readme input[type="checkbox"] { margin: 0 0.45em 0.2em -1.4em; vertical-align: middle; }
+        .ghx-md-readme table {
+          display: block;
+          width: max-content;
+          max-width: 100%;
+          overflow: auto;
+          border-spacing: 0;
+          border-collapse: collapse;
+        }
+        .ghx-md-readme th,
+        .ghx-md-readme td {
+          padding: 6px 13px;
+          border: 1px solid ${border};
+        }
+        .ghx-md-readme tr {
+          background: ${readmeCardBg};
+          border-top: 1px solid ${border};
+        }
+        .ghx-md-readme tr:nth-child(2n) { background: ${subtleBg}; }
+        .ghx-md-readme code {
+          padding: 0.2em 0.4em;
+          margin: 0;
+          font-size: 85%;
+          white-space: break-spaces;
+          background: ${isDark ? 'rgba(110,118,129,0.4)' : 'rgba(175,184,193,0.2)'};
+          border-radius: 6px;
+          font-family: ui-monospace, SFMono-Regular, SFMono, Consolas, "Liberation Mono", Menlo, monospace;
+        }
+        .ghx-md-readme pre {
+          padding: 16px;
+          overflow: auto;
+          font-size: 85%;
+          line-height: 1.45;
+          background: ${isDark ? '#161b22' : '#f6f8fa'};
+          border-radius: 6px;
+        }
+        .ghx-md-readme pre code {
+          padding: 0;
+          background: transparent;
+          white-space: pre;
+        }
+        .ghx-md-readme blockquote {
+          padding: 0 1em;
+          color: ${mutedFg};
+          border-left: 0.25em solid ${border};
+        }
+        .ghx-md-readme img {
+          max-width: 100%;
+          box-sizing: content-box;
+          background: ${readmeCardBg};
+        }
+        .ghx-md-readme hr {
+          height: 0.25em;
+          padding: 0;
+          margin: 24px 0;
+          background: ${border};
+          border: 0;
+        }
+        .ghx-md-readme details {
+          padding: 12px 16px;
+          border: 1px solid ${border};
+          border-radius: 6px;
+          background: ${subtleBg};
+        }
+        .ghx-md-readme summary { cursor: pointer; font-weight: 600; }
+        .ghx-mermaid-block {
+          margin: 16px 0;
+          padding: 16px;
+          overflow-x: auto;
+          border: 1px solid ${border};
+          border-radius: 6px;
+          background: ${isDark ? '#0d1117' : '#ffffff'};
+        }
+        .ghx-mermaid-diagram {
+          margin: 0 auto 12px !important;
+          padding: 0 !important;
+          background: transparent !important;
+          text-align: center;
+        }
+        .ghx-mermaid-diagram svg {
+          max-width: 100%;
+          height: auto;
+        }
+        .ghx-mermaid-source {
+          margin: 0 !important;
+          font-size: 12px;
+        }
+        .ghx-mermaid-source code {
+          display: block;
+          margin-top: 8px;
+          white-space: pre;
+          overflow-x: auto;
+        }
       `}</style>
     </div>
   );
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes >= 10 * 1024 ? 0 : 1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(bytes >= 10 * 1024 * 1024 ? 0 : 1)} MB`;
 }
