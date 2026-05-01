@@ -7,6 +7,12 @@ import { useMounted } from '@/hooks/use-mounted';
 import { PortfolioButton } from '@/components/portfolio-button';
 import { AskParzButton } from '@/components/ask-parz-button';
 import { useTransition } from '@/providers/transition-provider';
+import {
+  getAboutBackButtonRect,
+  rectFromDomRect,
+  startAboutButtonMorph,
+  storeDesktopHomeAboutButtonRect,
+} from '@/lib/portfolio-button-morph';
 import gsap from 'gsap';
 import { Flip } from 'gsap/all';
 import { useGSAP } from '@gsap/react';
@@ -43,6 +49,14 @@ export function DesktopNavbar({ onAskParz, voiceActive, voiceProps, micDenied }:
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const originX = rect.left + rect.width / 2;
       const originY = rect.top + rect.height / 2;
+      const sourceRect = rectFromDomRect(rect);
+
+      storeDesktopHomeAboutButtonRect(sourceRect);
+      startAboutButtonMorph({
+        from: sourceRect,
+        to: getAboutBackButtonRect(window.innerWidth),
+        direction: 'open',
+      });
       navigateWithReveal('/about', originX, originY);
     },
     [navigateWithReveal]
@@ -106,6 +120,7 @@ export function DesktopNavbar({ onAskParz, voiceActive, voiceProps, micDenied }:
         {/* Center: About Me link */}
         <div className="flex-1 flex items-center justify-center">
           <button
+            data-about-morph-source="true"
             onClick={handleAboutClick}
             className="text-[16px] font-bold no-underline cursor-pointer border-none bg-transparent"
             style={{ color: 'var(--color-navbar-text)' }}

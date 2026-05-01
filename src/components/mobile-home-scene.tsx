@@ -13,7 +13,6 @@ import { cn } from '@/lib/cn';
 interface MobileHomeSceneProps {
   children?: ReactNode;
   className?: string;
-  clickCount?: number;
   dataProgress?: string;
   hideNavbar?: boolean;
   inert?: boolean;
@@ -25,7 +24,6 @@ interface MobileHomeSceneProps {
 export function MobileHomeScene({
   children,
   className,
-  clickCount = 0,
   dataProgress,
   hideNavbar = false,
   inert = false,
@@ -52,7 +50,7 @@ export function MobileHomeScene({
           style={{ marginTop: '-80px' }}
           className="pointer-events-auto"
         >
-          <ScrollingText isMobile clickCount={clickCount} />
+          <ScrollingText isMobile />
         </div>
       </div>
 

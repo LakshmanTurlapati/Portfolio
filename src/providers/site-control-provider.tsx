@@ -37,8 +37,6 @@ interface BrowserState {
   projectName: string;
 }
 
-type ControlOverlayScope = 'page' | 'preview';
-
 interface SiteControlContextType {
   navigate: (page: ControlPage) => ControlResult;
   openProject: (input: string) => ControlResult;
@@ -76,7 +74,7 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
   const { navigateWithReveal } = useTransition();
   const [browser, setBrowser] = useState<BrowserState | null>(null);
   const [controlOverlayActive, setControlOverlayActive] = useState(false);
-  const [controlOverlayScope, setControlOverlayScope] = useState<ControlOverlayScope>('page');
+  const [tourControlActive, setTourControlActive] = useState(false);
   const aboutScrollerRef = useRef<((section: ControlSection) => void) | null>(null);
   const previewScrollerRef = useRef<PreviewScroller | null>(null);
   const pendingSectionRef = useRef<ControlSection | null>(null);
@@ -88,12 +86,36 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const runWithControlOverlay = useCallback((
-    action: () => ControlResult,
-    scope: ControlOverlayScope = 'page',
-  ): ControlResult => {
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.VoiceBus) return;
+
+    let activeTourId: number | null = null;
+    const readTourId = (payload: unknown): number | null => {
+      if (!payload || typeof payload !== 'object' || !('tourId' in payload)) return null;
+      const tourId = (payload as { tourId?: unknown }).tourId;
+      return typeof tourId === 'number' ? tourId : null;
+    };
+
+    const unsubStart = window.VoiceBus.on('site-control-tour-start', (payload) => {
+      activeTourId = readTourId(payload);
+      setTourControlActive(true);
+    });
+
+    const unsubEnd = window.VoiceBus.on('site-control-tour-end', (payload) => {
+      const tourId = readTourId(payload);
+      if (activeTourId !== null && tourId !== null && tourId !== activeTourId) return;
+      activeTourId = null;
+      setTourControlActive(false);
+    });
+
+    return () => {
+      (unsubStart as () => void)();
+      (unsubEnd as () => void)();
+    };
+  }, []);
+
+  const runWithControlOverlay = useCallback((action: () => ControlResult): ControlResult => {
     if (overlayHideTimerRef.current) window.clearTimeout(overlayHideTimerRef.current);
-    setControlOverlayScope(scope);
     setControlOverlayActive(true);
 
     try {
@@ -105,7 +127,6 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
       // 3500ms = 3000ms (error hold) + 200ms (fade-out) + 300ms (safety margin).
       overlayHideTimerRef.current = window.setTimeout(() => {
         setControlOverlayActive(false);
-        setControlOverlayScope('page');
         overlayHideTimerRef.current = null;
       }, 3500);
     }
@@ -184,13 +205,13 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
         if (!scroller) {
           return {
             ok: false,
-            message: "I can open and close this preview, but I can't scroll inside that external iframe.",
+            message: "I can open and close this preview, but this one doesn't support direct scrolling.",
           };
         }
         return scroller(direction)
-          ? { ok: true, message: `Scrolling the project preview ${direction}.` }
+          ? { ok: true, message: 'Showing more of this project.' }
           : { ok: false, message: "I couldn't scroll this preview right now." };
-      }, 'preview');
+      });
     },
     [browser, runWithControlOverlay],
   );
@@ -206,7 +227,7 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
   const unsupportedIframeControl = useCallback(
     (): ControlResult => runWithControlOverlay(() => ({
       ok: false,
-      message: "I can control the portfolio shell, but I can't operate arbitrary controls inside a third-party iframe.",
+      message: "I can move around the portfolio, but I can't operate that embedded site directly.",
     })),
     [runWithControlOverlay]
   );
@@ -261,13 +282,12 @@ export function SiteControlProvider({ children }: { children: ReactNode }) {
   return (
     <SiteControlContext.Provider value={value}>
       {children}
-      <FsbControlOverlay active={controlOverlayActive} />
+      <FsbControlOverlay active={controlOverlayActive || tourControlActive} />
       {browser && (
         <IframeViewer
           url={browser.url}
           label={`${browser.projectName} · ${browser.label}`}
           isDark={resolvedTheme === 'dark'}
-          controlOverlayActive={controlOverlayActive && controlOverlayScope === 'preview'}
           onClose={() => {
             previewScrollerRef.current = null;
             setBrowser(null);

@@ -30,6 +30,7 @@ const ROLLER_WIDTH = 230; // px
 const ROLE_SET_HEIGHT = ROLES.length * ITEM_EXTENT;
 const ROLE_CENTER_OFFSET = ROLLER_HEIGHT / 2 - ITEM_EXTENT / 2;
 const LOOPED_ROLES = [...ROLES, ...ROLES, ...ROLES];
+const ROLE_STEP_DURATION_MS = 1000;
 const CHAT_DRAG_DISTANCE = 180;
 const CHAT_COMMIT_PROGRESS = 0.42;
 const CHAT_COMMIT_VELOCITY = 300;
@@ -40,7 +41,6 @@ const CHAT_SLIDE_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
 interface ScrollingTextProps {
   isMobile: boolean;
-  clickCount?: number;
 }
 
 interface RoleRollerProps {
@@ -63,10 +63,16 @@ function clamp(value: number, min = 0, max = 1) {
 
 // -- Role Roller (shared between desktop and mobile) --
 function RoleRoller({ fontSize, width = ROLLER_WIDTH, testId }: RoleRollerProps) {
+  const startOffset = ROLE_CENTER_OFFSET - ROLE_SET_HEIGHT;
   const trackStyle = {
-    '--role-roller-start': `${ROLE_CENTER_OFFSET - ROLE_SET_HEIGHT}px`,
-    '--role-roller-distance': `${ROLE_SET_HEIGHT}px`,
-    '--role-roller-duration': `${ROLES.length}s`,
+    '--role-roller-start': `${startOffset}px`,
+    '--role-roller-stop-1': `${startOffset - ITEM_EXTENT}px`,
+    '--role-roller-stop-2': `${startOffset - ITEM_EXTENT * 2}px`,
+    '--role-roller-stop-3': `${startOffset - ITEM_EXTENT * 3}px`,
+    '--role-roller-stop-4': `${startOffset - ITEM_EXTENT * 4}px`,
+    '--role-roller-stop-5': `${startOffset - ITEM_EXTENT * 5}px`,
+    '--role-roller-end': `${startOffset - ROLE_SET_HEIGHT}px`,
+    '--role-roller-duration': `${ROLES.length * ROLE_STEP_DURATION_MS}ms`,
   } as CSSProperties;
 
   return (

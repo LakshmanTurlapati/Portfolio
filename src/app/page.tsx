@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, type MouseEvent } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useMounted } from '@/hooks/use-mounted';
 import { DesktopNavbar } from '@/components/desktop-navbar';
@@ -10,7 +10,6 @@ import { AuthorName } from '@/components/author-name';
 import { ParticleBackground } from '@/components/particle-background';
 
 import { DotMatrix } from '@/components/dot-matrix';
-import { RotatingCircularText } from '@/components/rotating-circular-text';
 import { SpotlightEffect } from '@/components/spotlight';
 import { ScrollingText } from '@/components/scrolling-text';
 import { GitHubStats } from '@/components/github-stats';
@@ -20,7 +19,6 @@ import type { GitHubActivity } from '@/lib/github-activity';
 import type { ChatMorphRect, ChatVoiceSnapshot, OpenTextChatDetail } from '@/lib/chat-morph';
 
 export default function Home() {
-  const [clickCount, setClickCount] = useState(0);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatOriginRect, setChatOriginRect] = useState<ChatMorphRect | undefined>();
   const [chatVoiceSnapshot, setChatVoiceSnapshot] = useState<ChatVoiceSnapshot | undefined>();
@@ -101,11 +99,6 @@ export default function Home() {
     setHideNavbarForChatMorph(false);
   }, []);
 
-  const handleHomeChromeClick = useCallback((e: MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('[data-parz-btn]')) return;
-    setClickCount((prev) => prev + 1);
-  }, []);
-
   if (!mounted) {
     // SSR placeholder - render minimal structure to prevent hydration mismatch
     return <main className="bg-gradient-main min-h-screen relative overflow-hidden" />;
@@ -150,23 +143,9 @@ export default function Home() {
           style={{ marginTop: isMobile ? '-80px' : '-40px' }}
           className="pointer-events-auto"
         >
-          <ScrollingText isMobile={isMobile} clickCount={clickCount} />
+          <ScrollingText isMobile={isMobile} />
         </div>
       </div>
-
-      {/* Layer 5: z-25 -- Rotating Circular Text (desktop only, conditional) */}
-      {!isMobile && (
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            zIndex: 25,
-            left: 'calc(50% - 270px - 1vw)',
-            top: 'calc(10px - 5vh)',
-          }}
-        >
-          <RotatingCircularText visible={clickCount === 1} />
-        </div>
-      )}
 
       {/* Layer 6: z-30 -- Dot Matrix */}
       <div
@@ -188,7 +167,6 @@ export default function Home() {
           pointerEvents: hideNavbarForChatMorph ? 'none' : 'auto',
           transition: hideNavbarForChatMorph ? 'none' : 'opacity 120ms ease',
         }}
-        onClick={handleHomeChromeClick}
       >
         <DesktopNavbar
           onAskParz={handleAskParz}

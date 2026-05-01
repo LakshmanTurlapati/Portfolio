@@ -41,7 +41,7 @@ function MoonButton({ onClick }: { onClick: () => void }) {
           width: size,
           height: size,
           color: 'var(--color-moon)',
-          transform: 'rotate(-30deg)',
+          transform: 'rotate(25deg)',
           transition: 'all 300ms ease-in-out',
         }}
       />

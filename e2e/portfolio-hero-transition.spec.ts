@@ -1,8 +1,10 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 type RecordedAnimation = {
-  keyframes: Record<string, unknown>;
-  options: { fill?: string; pseudoElement?: string };
+  keyframes: Record<string, unknown> | Record<string, unknown>[];
+  options: { delay?: number; duration?: number; fill?: string; pseudoElement?: string };
+  targetDataset?: Record<string, string>;
+  targetText?: string;
 };
 
 declare global {
@@ -18,12 +20,17 @@ async function installAnimationRecorder(page: Page) {
     Element.prototype.animate = function patchedAnimate(keyframes, options) {
       const animationOptions = options as KeyframeAnimationOptions | undefined;
       window.__portfolioTransitionAnimations ??= [];
+      const target = this as HTMLElement;
       window.__portfolioTransitionAnimations.push({
         keyframes: JSON.parse(JSON.stringify(keyframes)),
         options: {
+          delay: typeof animationOptions?.delay === 'number' ? animationOptions.delay : undefined,
+          duration: typeof animationOptions?.duration === 'number' ? animationOptions.duration : undefined,
           fill: typeof animationOptions?.fill === 'string' ? animationOptions.fill : undefined,
           pseudoElement: animationOptions?.pseudoElement,
         },
+        targetDataset: { ...target.dataset },
+        targetText: target.textContent ?? undefined,
       });
 
       return originalAnimate.call(this, keyframes, options);
@@ -70,6 +77,46 @@ async function expectRootExpandAnimation(page: Page) {
     .toBe(true);
 }
 
+async function expectRootCollapseAnimation(
+  page: Page,
+  expectedOrigin?: { x: number; y: number },
+) {
+  await expect
+    .poll(async () =>
+      page.evaluate((origin) => {
+        const extractOrigin = (value: unknown) => {
+          if (typeof value !== 'string') return null;
+          const match = value.match(/at ([\d.]+)px ([\d.]+)px/);
+          if (!match) return null;
+          return { x: Number(match[1]), y: Number(match[2]) };
+        };
+
+        return (window.__portfolioTransitionAnimations ?? []).some((animation) => {
+          const clipPath = animation.keyframes.clipPath;
+          if (animation.options.pseudoElement !== '::view-transition-old(root)' || !Array.isArray(clipPath)) {
+            return false;
+          }
+
+          const [start, end] = clipPath;
+          const collapseOrigin = extractOrigin(end);
+          const originMatches =
+            !origin ||
+            (collapseOrigin &&
+              Math.abs(collapseOrigin.x - origin.x) <= 1 &&
+              Math.abs(collapseOrigin.y - origin.y) <= 1);
+
+          return (
+            animation.options.fill === 'both' &&
+            !String(start).includes('circle(0px') &&
+            String(end).includes('circle(0px') &&
+            originMatches
+          );
+        });
+      }, expectedOrigin),
+    )
+    .toBe(true);
+}
+
 async function expectNoOldRootCollapse(page: Page) {
   expect(
     await page.evaluate(() =>
@@ -97,12 +144,149 @@ async function expectNoRootScaleAnimation(page: Page) {
   ).toBe(false);
 }
 
-test('portfolio overlay morph preserves the original circular reveal', async ({ page }) => {
+async function expectResolvedTheme(page: Page, colorScheme: 'light' | 'dark') {
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.classList.contains('dark')))
+    .toBe(colorScheme === 'dark');
+}
+
+async function readButtonColors(locator: Locator) {
+  return locator.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+    return {
+      backgroundColor: style.backgroundColor,
+      color: style.color,
+    };
+  });
+}
+
+async function readLocatorCenter(locator: Locator) {
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+  return {
+    x: box!.x + box!.width / 2,
+    y: box!.y + box!.height / 2,
+  };
+}
+
+async function readLocatorRect(locator: Locator) {
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+  return {
+    left: box!.x,
+    top: box!.y,
+    width: box!.width,
+    height: box!.height,
+  };
+}
+
+async function expectCloseControlMorph(
+  page: Page,
+  control: 'portfolio' | 'about',
+  fromRect: { left: number; top: number; width: number; height: number },
+  toRect: { left: number; top: number; width: number; height: number },
+) {
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        ({ controlName, from, to }) => {
+          const px = (value: unknown) => Number.parseFloat(String(value));
+          const near = (a: unknown, b: number) => Math.abs(px(a) - b) <= 1;
+          const hasReverseRect = (window.__portfolioTransitionAnimations ?? []).some((animation) => {
+            if (
+              animation.targetDataset?.navControlMorphOverlay !== 'true' ||
+              animation.targetDataset.navControlMorphControl !== controlName ||
+              animation.targetDataset.navControlMorphDirection !== 'close' ||
+              !Array.isArray(animation.keyframes)
+            ) {
+              return false;
+            }
+
+            const [start, end] = animation.keyframes;
+            const geometryMatches =
+              near(start.left, from.left) &&
+              near(start.top, from.top) &&
+              near(start.width, from.width) &&
+              near(start.height, from.height) &&
+              near(end.left, to.left) &&
+              near(end.top, to.top) &&
+              near(end.width, to.width) &&
+              near(end.height, to.height);
+            const shadowMatches =
+              controlName === 'portfolio'
+                ? String(start.boxShadow).includes('rgba(0,43,255') &&
+                  String(end.boxShadow).includes('rgba(0,43,255')
+                : String(start.boxShadow).includes('rgba(0,0,0,0.18');
+
+            return geometryMatches && shadowMatches;
+          });
+
+          const hasReverseLabel = (window.__portfolioTransitionAnimations ?? []).some((animation) => {
+            const opacity = !Array.isArray(animation.keyframes) ? animation.keyframes.opacity : undefined;
+            return (
+              animation.targetDataset?.navControlMorphPart === 'label' &&
+              animation.targetDataset.navControlMorphControl === controlName &&
+              animation.targetDataset.navControlMorphDirection === 'close' &&
+              Array.isArray(opacity) &&
+              opacity[0] === 0 &&
+              opacity[1] === 1 &&
+              animation.options.delay === 110
+            );
+          });
+
+          const hasReverseArrow = (window.__portfolioTransitionAnimations ?? []).some((animation) => {
+            const opacity = !Array.isArray(animation.keyframes) ? animation.keyframes.opacity : undefined;
+            return (
+              animation.targetDataset?.navControlMorphPart === 'arrow' &&
+              animation.targetDataset.navControlMorphControl === controlName &&
+              animation.targetDataset.navControlMorphDirection === 'close' &&
+              Array.isArray(opacity) &&
+              opacity[0] === 1 &&
+              opacity[1] === 0 &&
+              (animation.options.delay ?? 0) === 0
+            );
+          });
+
+          return hasReverseRect && hasReverseLabel && hasReverseArrow;
+        },
+        { controlName: control, from: fromRect, to: toRect },
+      ),
+    )
+    .toBe(true);
+}
+
+test('desktop portfolio back button matches the home portfolio button theme colors', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/');
+    await expectResolvedTheme(page, colorScheme);
+
+    const portfolioButton = page.getByRole('button', { name: 'Portfolio' });
+    await expect(portfolioButton).toBeVisible();
+    const portfolioColors = await readButtonColors(portfolioButton);
+
+    await page.goto('/portfolio');
+    await expectResolvedTheme(page, colorScheme);
+
+    const backButton = page.locator('[data-portfolio-morph-target="true"]');
+    await expect(backButton).toBeVisible();
+    await expect.poll(() => readButtonColors(backButton)).toEqual(portfolioColors);
+  }
+});
+
+test('portfolio overlay morph pairs expand reveal with reverse collapse', async ({ page }) => {
   await installAnimationRecorder(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');
 
   const hasViewTransition = await page.evaluate(() => 'startViewTransition' in document);
   test.skip(!hasViewTransition, 'View Transitions API is required for the root reveal assertion.');
+
+  const portfolioSource = page.locator('[data-portfolio-morph-source="true"]');
+  const portfolioOrigin = await readLocatorCenter(page.getByRole('button', { name: 'Portfolio' }));
+  const portfolioSourceRect = await readLocatorRect(portfolioSource);
 
   await clearAnimationRecorder(page);
   await page.getByRole('button', { name: 'Portfolio' }).click();
@@ -114,11 +298,12 @@ test('portfolio overlay morph preserves the original circular reveal', async ({ 
   await expect(page.locator('[data-portfolio-morph-overlay="true"]')).toHaveCount(0);
 
   await clearAnimationRecorder(page);
+  const portfolioBackRect = await readLocatorRect(page.locator('[data-portfolio-morph-target="true"]'));
   await page.locator('[data-portfolio-morph-target="true"]').click();
   await expect(page.locator('[data-portfolio-morph-overlay="true"]')).toBeAttached();
   await expect(page).toHaveURL(/\/$/);
-  await expectRootExpandAnimation(page);
-  await expectNoOldRootCollapse(page);
+  await expectCloseControlMorph(page, 'portfolio', portfolioBackRect, portfolioSourceRect);
+  await expectRootCollapseAnimation(page, portfolioOrigin);
   await expectNoRootScaleAnimation(page);
   await expect(page.locator('[data-portfolio-morph-overlay="true"]')).toHaveCount(0);
 });
@@ -140,18 +325,40 @@ test('about and home navigation use the circular reveal without root scale', asy
     if (viewport.width < 600) await expectMobileHomeRouteShell(page);
 
     await clearAnimationRecorder(page);
-    await page.getByRole('button', { name: 'About Me' }).click();
+    const aboutButton = page.getByRole('button', { name: 'About Me' });
+    const aboutOrigin = await readLocatorCenter(aboutButton);
+    const aboutSourceRect = await readLocatorRect(aboutButton);
+    await aboutButton.click();
+    if (viewport.width >= 600) {
+      await expect(page.locator('[data-about-morph-overlay="true"]')).toBeAttached();
+    } else {
+      await expect(page.locator('[data-about-morph-overlay="true"]')).toHaveCount(0);
+    }
     await expect(page).toHaveURL(/\/about$/);
     await expectRootExpandAnimation(page);
     await expectNoOldRootCollapse(page);
     await expectNoRootScaleAnimation(page);
+    if (viewport.width >= 600) {
+      await expect(page.locator('[data-about-morph-overlay="true"]')).toHaveCount(0);
+    }
 
     await clearAnimationRecorder(page);
-    await page.getByRole('button', { name: 'Back to home' }).first().click();
+    const aboutBackButton = page.getByRole('button', { name: 'Back to home' }).first();
+    const aboutBackRect = await readLocatorRect(aboutBackButton);
+    await aboutBackButton.click();
+    if (viewport.width >= 600) {
+      await expect(page.locator('[data-about-morph-overlay="true"]')).toBeAttached();
+    }
     await expect(page).toHaveURL(/\/$/);
-    await expectRootExpandAnimation(page);
-    await expectNoOldRootCollapse(page);
+    if (viewport.width >= 600) {
+      await expectCloseControlMorph(page, 'about', aboutBackRect, aboutSourceRect);
+      await expectRootCollapseAnimation(page, aboutOrigin);
+    } else {
+      await expectRootExpandAnimation(page);
+      await expectNoOldRootCollapse(page);
+    }
     await expectNoRootScaleAnimation(page);
+    await expect(page.locator('[data-about-morph-overlay="true"]')).toHaveCount(0);
 
     if (viewport.width < 600) await expectMobileHomeRouteShell(page);
   }

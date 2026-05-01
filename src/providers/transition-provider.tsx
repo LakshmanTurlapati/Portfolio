@@ -14,10 +14,19 @@ import { useTheme } from 'next-themes';
 import gsap from 'gsap';
 
 interface TransitionContextType {
-  navigateWithReveal: (path: string, originX: number, originY: number) => void;
+  navigateWithReveal: (
+    path: string,
+    originX: number,
+    originY: number,
+    options?: NavigateWithRevealOptions
+  ) => void;
   navigatePlain: (path: string) => void;
   navigateWithSlide: (path: string, direction: 'forward' | 'back') => void;
   isTransitioning: boolean;
+}
+
+interface NavigateWithRevealOptions {
+  mode?: 'expand' | 'collapse';
 }
 
 const TransitionContext = createContext<TransitionContextType>({
@@ -64,7 +73,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   const navigateWithReveal = useCallback(
-    (path: string, originX: number, originY: number) => {
+    (path: string, originX: number, originY: number, options?: NavigateWithRevealOptions) => {
       if (isTransitioningRef.current) return;
       isTransitioningRef.current = true;
       setIsTransitioningState(true);
@@ -84,6 +93,13 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
       const maxX = Math.max(originX, vw - originX);
       const maxY = Math.max(originY, vh - originY);
       const maxRadius = Math.sqrt(maxX * maxX + maxY * maxY);
+      const mode = options?.mode ?? 'expand';
+      const root = document.documentElement;
+      root.dataset.routeRevealMode = mode;
+
+      const clearRouteRevealMode = () => {
+        delete root.dataset.routeRevealMode;
+      };
 
       if (document.startViewTransition) {
         // PRIMARY PATH — View Transitions API
@@ -95,20 +111,28 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
           const safetyTimer = setTimeout(() => {
             isTransitioningRef.current = false;
             setIsTransitioningState(false);
+            clearRouteRevealMode();
           }, 600);
 
+          const clipPath =
+            mode === 'collapse'
+              ? [
+                  `circle(${maxRadius}px at ${originX}px ${originY}px)`,
+                  `circle(0px at ${originX}px ${originY}px)`,
+                ]
+              : [
+                  `circle(0px at ${originX}px ${originY}px)`,
+                  `circle(${maxRadius}px at ${originX}px ${originY}px)`,
+                ];
+
           document.documentElement.animate(
-            {
-              clipPath: [
-                `circle(0px at ${originX}px ${originY}px)`,
-                `circle(${maxRadius}px at ${originX}px ${originY}px)`,
-              ],
-            },
+            { clipPath },
             {
               duration: 500,
               easing: 'cubic-bezier(0.455, 0.03, 0.515, 0.955)',
               fill: 'both',
-              pseudoElement: '::view-transition-new(root)',
+              pseudoElement:
+                mode === 'collapse' ? '::view-transition-old(root)' : '::view-transition-new(root)',
             }
           );
 
@@ -116,6 +140,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
             clearTimeout(safetyTimer);
             isTransitioningRef.current = false;
             setIsTransitioningState(false);
+            clearRouteRevealMode();
             signalPageReady();
           }).catch(() => {
             // Already handled by safety timer
@@ -124,6 +149,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
           // Transition aborted — reset guard so nav isn't permanently locked
           isTransitioningRef.current = false;
           setIsTransitioningState(false);
+          clearRouteRevealMode();
         });
       } else {
         // FALLBACK PATH — GSAP solid-color overlay
@@ -132,6 +158,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
           router.push(path);
           isTransitioningRef.current = false;
           setIsTransitioningState(false);
+          clearRouteRevealMode();
           signalPageReady();
           return;
         }
@@ -156,6 +183,7 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
               overlay.style.clipPath = 'circle(0px at 0px 0px)';
               isTransitioningRef.current = false;
               setIsTransitioningState(false);
+              clearRouteRevealMode();
               signalPageReady();
             }, 100);
           },

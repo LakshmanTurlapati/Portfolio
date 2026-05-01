@@ -270,7 +270,6 @@ export function FsbControlOverlay({ active }: FsbControlOverlayProps) {
         aria-hidden="true"
         className={`fsb-control-overlay fsb-control-overlay--${overlayTone} fsb-control-overlay--${status} pointer-events-none fixed inset-0`}
       >
-        <div className="fsb-control-viewport-glow" />
         <div className="fsb-control-badge" style={fadeStyle}>
           <div className="fsb-control-badge-row">
             <span className="fsb-control-mark">FSB</span>

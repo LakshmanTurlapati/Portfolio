@@ -229,7 +229,7 @@ async function mockReviewGateGithubPreview(page: Page) {
   });
 }
 
-test('Parz site control navigates, scrolls, opens GitFly, and shows FSB overlay', async ({ page }) => {
+test('Parz site control navigates, scrolls, opens GitFly, and shows the FSB badge', async ({ page }) => {
   await mockReviewGateGithubPreview(page);
   await page.goto('/');
   await waitForSiteControl(page);
@@ -262,8 +262,9 @@ test('Parz site control navigates, scrolls, opens GitFly, and shows FSB overlay'
       { timeout: 5000 },
     )
     .toMatchObject({ ok: true });
-  await expect(page.locator('.fsb-control-viewport-glow')).toBeVisible();
-  await expect(page.getByTestId('fsb-preview-control-overlay')).toBeVisible();
+  await expect(page.getByText('powered by FSB')).toBeVisible();
+  await expect(page.locator('.fsb-control-viewport-glow')).toHaveCount(0);
+  await expect(page.getByTestId('fsb-preview-control-overlay')).toHaveCount(0);
   await expect(page.locator('.fsb-control-action-pulse')).toHaveCount(0);
 });
 

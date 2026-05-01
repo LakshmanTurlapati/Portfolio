@@ -80,17 +80,33 @@
 }
 
 .role-roller-track {
-  animation: role-roller-loop var(--role-roller-duration) linear infinite;
+  animation: role-roller-loop var(--role-roller-duration) cubic-bezier(0.45, 0, 0.2, 1) infinite;
   transform: translateY(var(--role-roller-start));
   will-change: transform;
 }
 
 @keyframes role-roller-loop {
-  from {
+  /* Each 5% hold is 300ms of the 6000ms role loop. */
+  0%, 5% {
     transform: translateY(var(--role-roller-start));
   }
-  to {
-    transform: translateY(calc(var(--role-roller-start) - var(--role-roller-distance)));
+  16.6667%, 21.6667% {
+    transform: translateY(var(--role-roller-stop-1));
+  }
+  33.3333%, 38.3333% {
+    transform: translateY(var(--role-roller-stop-2));
+  }
+  50%, 55% {
+    transform: translateY(var(--role-roller-stop-3));
+  }
+  66.6667%, 71.6667% {
+    transform: translateY(var(--role-roller-stop-4));
+  }
+  83.3333%, 88.3333% {
+    transform: translateY(var(--role-roller-stop-5));
+  }
+  100% {
+    transform: translateY(var(--role-roller-end));
   }
 }
 
@@ -140,15 +156,6 @@ body {
   font-family: var(--font-lato), sans-serif;
   background-color: var(--color-bg);
   color: var(--color-text);
-}
-
-/* Slow spin animation for rotating circular text */
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-.animate-spin-slow {
-  animation: spin-slow 6s linear infinite;
 }
 
 /* Dot matrix horizontal fade mask */
@@ -268,9 +275,28 @@ body {
   isolation: auto;
 }
 
+html[data-route-reveal-mode="expand"]::view-transition-old(root),
+html[data-route-reveal-mode="collapse"]::view-transition-new(root) {
+  z-index: 0;
+}
+
+html[data-route-reveal-mode="expand"]::view-transition-new(root),
+html[data-route-reveal-mode="collapse"]::view-transition-old(root) {
+  z-index: 1;
+}
+
 html[data-portfolio-morph-active="true"] [data-portfolio-morph-source="true"],
 html[data-portfolio-morph-active="true"] [data-portfolio-morph-target="true"] {
   opacity: 0 !important;
+}
+
+html[data-about-morph-active="true"] [data-about-morph-source="true"],
+html[data-about-morph-active="true"] [data-about-morph-target="true"] {
+  opacity: 0 !important;
+}
+
+dialog[data-nav-control-morph-overlay="true"]::backdrop {
+  background: transparent;
 }
 
 /* Respect prefers-reduced-motion (accessibility) */
@@ -320,10 +346,6 @@ html[data-portfolio-morph-active="true"] [data-portfolio-morph-target="true"] {
 }
 
 /* ─── Phase 19: FSB Control Overlay ───────────────────────────────────────── */
-@keyframes fsbControlViewportSweep {
-  to { transform: rotate(1turn); }
-}
-
 @keyframes fsbControlProgressSweep {
   0% { transform: translateX(-125%) scaleX(0.42); }
   100% { transform: translateX(260%) scaleX(0.42); }
@@ -340,7 +362,6 @@ html[data-portfolio-morph-active="true"] [data-portfolio-morph-target="true"] {
   --fsb-mark-bg: #0b0b0c;
   --fsb-mark-fg: #ffffff;
   --fsb-progress-fill: #0b0b0c;
-  --fsb-glow-opacity: 0.82;
   color: var(--fsb-panel-fg);
 }
 
@@ -354,60 +375,6 @@ html[data-portfolio-morph-active="true"] [data-portfolio-morph-target="true"] {
   --fsb-mark-bg: #ffffff;
   --fsb-mark-fg: #0b0b0c;
   --fsb-progress-fill: #ffffff;
-  --fsb-glow-opacity: 0.68;
-}
-
-.fsb-control-overlay--success {
-  --fsb-glow-opacity: 0.9;
-}
-
-.fsb-control-overlay--error {
-  --fsb-glow-opacity: 1;
-}
-
-.fsb-control-viewport-glow {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-  opacity: var(--fsb-glow-opacity);
-  box-shadow:
-    inset 0 0 72px rgba(var(--fsb-glow-rgb), 0.16),
-    inset 0 0 150px rgba(var(--fsb-glow-rgb), 0.08);
-}
-
-.fsb-control-viewport-glow::before,
-.fsb-control-viewport-glow::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.fsb-control-viewport-glow::before {
-  border: 1px solid rgba(var(--fsb-glow-rgb), 0.22);
-  box-shadow: inset 0 0 18px rgba(var(--fsb-glow-rgb), 0.1);
-}
-
-.fsb-control-viewport-glow::after {
-  padding: 3px;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    transparent 286deg,
-    rgba(var(--fsb-glow-rgb), 0.72) 318deg,
-    rgba(var(--fsb-glow-rgb), 1) 342deg,
-    transparent 360deg
-  );
-  filter: blur(1.5px) brightness(1.45);
-  animation: fsbControlViewportSweep 4.8s linear infinite;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
 }
 
 .fsb-control-badge {
@@ -493,60 +460,6 @@ html[data-portfolio-morph-active="true"] [data-portfolio-morph-target="true"] {
   animation: none;
 }
 
-.fsb-preview-control-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 30;
-  overflow: hidden;
-  pointer-events: none;
-  --fsb-preview-glow-rgb: 255, 255, 255;
-  --fsb-preview-glow-opacity: 0.82;
-  opacity: var(--fsb-preview-glow-opacity);
-  box-shadow:
-    inset 0 0 48px rgba(var(--fsb-preview-glow-rgb), 0.16),
-    inset 0 0 108px rgba(var(--fsb-preview-glow-rgb), 0.08);
-}
-
-.fsb-preview-control-overlay--on-light {
-  --fsb-preview-glow-rgb: 0, 0, 0;
-  --fsb-preview-glow-opacity: 0.72;
-}
-
-.fsb-preview-control-overlay::before,
-.fsb-preview-control-overlay::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.fsb-preview-control-overlay::before {
-  border: 1px solid rgba(var(--fsb-preview-glow-rgb), 0.28);
-  box-shadow: inset 0 0 18px rgba(var(--fsb-preview-glow-rgb), 0.12);
-}
-
-.fsb-preview-control-overlay::after {
-  padding: 3px;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    transparent 286deg,
-    rgba(var(--fsb-preview-glow-rgb), 0.72) 318deg,
-    rgba(var(--fsb-preview-glow-rgb), 1) 342deg,
-    transparent 360deg
-  );
-  filter: blur(1.5px) brightness(1.45);
-  animation: fsbControlViewportSweep 4.8s linear infinite;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-}
-
 /* Phase 27 / FSB-05: mobile badge sizing tuned for WCAG 2.5.5 (>= 44px hit area). */
 @media (max-width: 47.99rem) {
   .fsb-control-badge {
@@ -564,8 +477,6 @@ html[data-portfolio-morph-active="true"] [data-portfolio-morph-target="true"] {
     box-shadow: 0 0 30px 10px rgba(var(--glow-color), 0.25);
   }
 
-  .fsb-control-viewport-glow::after,
-  .fsb-preview-control-overlay::after,
   .fsb-control-progress span {
     animation: none !important;
   }

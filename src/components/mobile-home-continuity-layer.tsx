@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback, useState, type MouseEvent } from 'react';
 import { usePathname } from 'next/navigation';
 import { MobileHomeScene } from '@/components/mobile-home-scene';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -12,15 +11,9 @@ export function MobileHomeContinuityLayer() {
   const mounted = useMounted();
   const isMobile = useMediaQuery('(max-width: 599px)');
   const pathname = usePathname();
-  const [clickCount, setClickCount] = useState(0);
 
   const isVisible = mounted && isMobile && MOBILE_HOME_ROUTES.has(pathname);
   const isInteractive = pathname === '/';
-
-  const handleChromeClick = useCallback((e: MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('[data-parz-btn]')) return;
-    setClickCount((prev) => prev + 1);
-  }, []);
 
   if (!isVisible) return null;
 
@@ -33,8 +26,6 @@ export function MobileHomeContinuityLayer() {
     >
       <MobileHomeScene
         inert={!isInteractive}
-        clickCount={clickCount}
-        onChromeClick={isInteractive ? handleChromeClick : undefined}
         className="h-dvh min-h-0"
         style={{ pointerEvents: isInteractive ? 'auto' : 'none' }}
       />

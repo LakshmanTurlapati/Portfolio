@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  getAboutBackButtonRect,
+  getDesktopHomeAboutButtonRect,
   getDesktopHomePortfolioButtonRect,
   getPortfolioBackButtonRect,
 } from '@/lib/portfolio-button-morph';
@@ -16,10 +18,11 @@ describe('portfolio overlay morph contract', () => {
     const css = source('src/app/globals.css');
 
     expect(transitionProvider).toContain("pseudoElement: '::view-transition-new(root)'");
+    expect(transitionProvider).toContain("pseudoElement: '::view-transition-old(root)'");
     expect(transitionProvider).toContain('`circle(0px at ${originX}px ${originY}px)`');
+    expect(transitionProvider).toContain("mode === 'collapse'");
     expect(transitionProvider).toContain("fill: 'both'");
     expect(transitionProvider).toContain('navigatePlain');
-    expect(transitionProvider).not.toContain('NavigateWithRevealOptions');
     expect(transitionProvider).not.toContain('sharedElement');
     expect(transitionProvider).not.toContain('revealDirection');
     expect(transitionProvider).not.toContain('portfolioButtonHero');
@@ -79,8 +82,13 @@ describe('portfolio overlay morph contract', () => {
     expect(portfolioPage).toContain('data-portfolio-morph-target="true"');
     expect(portfolioPage).toContain('getDesktopHomePortfolioButtonRect(window.innerWidth)');
     expect(portfolioPage).toContain("direction: 'close'");
+    expect(portfolioPage).toContain("{ mode: 'collapse' }");
     expect(portfolioPage).not.toContain('portfolio-button-hero');
 
+    expect(aboutPage).toContain('startAboutButtonMorph');
+    expect(aboutPage).toContain('data-about-morph-target');
+    expect(aboutPage).toContain('getStoredDesktopHomeAboutButtonRect(window.innerWidth)');
+    expect(aboutPage).toContain("{ mode: 'collapse' }");
     expect(aboutPage).not.toContain('data-portfolio-morph-target');
   });
 
@@ -102,6 +110,18 @@ describe('portfolio overlay morph contract', () => {
     expect(getPortfolioBackButtonRect()).toEqual({
       left: 20,
       top: 14,
+      width: 48,
+      height: 48,
+    });
+    expect(getDesktopHomeAboutButtonRect(1280)).toEqual({
+      left: 663.5,
+      top: 28,
+      width: 74,
+      height: 24,
+    });
+    expect(getAboutBackButtonRect(1280)).toEqual({
+      left: 106.6624,
+      top: 16,
       width: 48,
       height: 48,
     });

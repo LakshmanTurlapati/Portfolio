@@ -10,6 +10,14 @@ import { experienceData } from '@/data/experience';
 import { educationData } from '@/data/education';
 import { useTransition } from '@/providers/transition-provider';
 import { useSiteControl } from '@/providers/site-control-provider';
+import {
+  getStoredDesktopHomeAboutButtonRect,
+  PORTFOLIO_MORPH_DURATION_MS,
+  rectFromDomRect,
+  startAboutButtonMorph,
+} from '@/lib/portfolio-button-morph';
+
+const EXIT_MORPH_DELAY_MS = 60;
 
 type SectionId = 'about' | 'experience' | 'academics';
 
@@ -61,9 +69,16 @@ function BioText() {
   );
 }
 
-function BackButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
+function BackButton({
+  onClick,
+  morphTarget = false,
+}: {
+  onClick: (e: React.MouseEvent) => void;
+  morphTarget?: boolean;
+}) {
   return (
     <button
+      data-about-morph-target={morphTarget ? 'true' : undefined}
       onClick={onClick}
       className="flex items-center justify-center rounded-xl transition-opacity duration-200"
       style={{
@@ -261,9 +276,30 @@ export default function AboutPage() {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const originX = rect.left + rect.width / 2;
       const originY = rect.top + rect.height / 2;
+      if (isDesktop) {
+        const homeRect = getStoredDesktopHomeAboutButtonRect(window.innerWidth);
+        const from = rectFromDomRect(rect);
+        navigateWithReveal(
+          '/',
+          homeRect.left + homeRect.width / 2,
+          homeRect.top + homeRect.height / 2,
+          { mode: 'collapse' }
+        );
+        window.setTimeout(() => {
+          void startAboutButtonMorph({
+            from,
+            to: homeRect,
+            direction: 'close',
+            duration: PORTFOLIO_MORPH_DURATION_MS - EXIT_MORPH_DELAY_MS,
+            topLayer: true,
+          });
+        }, EXIT_MORPH_DELAY_MS);
+        return;
+      }
+
       navigateWithReveal('/', originX, originY);
     },
-    [navigateWithReveal]
+    [isDesktop, navigateWithReveal]
   );
 
   // Desktop layout
@@ -297,7 +333,7 @@ export default function AboutPage() {
             }}
           >
             {/* Back button */}
-            <BackButton onClick={handleBack} />
+            <BackButton onClick={handleBack} morphTarget />
 
             <h1
               style={{

@@ -14,9 +14,12 @@ import { useMounted } from '@/hooks/use-mounted';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import {
   getDesktopHomePortfolioButtonRect,
+  PORTFOLIO_MORPH_DURATION_MS,
   rectFromDomRect,
   startPortfolioButtonMorph,
 } from '@/lib/portfolio-button-morph';
+
+const EXIT_MORPH_DELAY_MS = 60;
 
 function shuffle<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -150,12 +153,25 @@ export default function PortfolioPage() {
       const isDesktop = window.matchMedia('(min-width: 600px)').matches;
 
       if (isDesktop) {
-        startPortfolioButtonMorph({
-          from: rectFromDomRect(rect),
-          to: getDesktopHomePortfolioButtonRect(window.innerWidth),
-          direction: 'close',
-          isDark,
-        });
+        const homeRect = getDesktopHomePortfolioButtonRect(window.innerWidth);
+        const from = rectFromDomRect(rect);
+        navigateWithReveal(
+          '/',
+          homeRect.left + homeRect.width / 2,
+          homeRect.top + homeRect.height / 2,
+          { mode: 'collapse' }
+        );
+        window.setTimeout(() => {
+          void startPortfolioButtonMorph({
+            from,
+            to: homeRect,
+            direction: 'close',
+            isDark,
+            duration: PORTFOLIO_MORPH_DURATION_MS - EXIT_MORPH_DELAY_MS,
+            topLayer: true,
+          });
+        }, EXIT_MORPH_DELAY_MS);
+        return;
       }
 
       navigateWithReveal('/', rect.left + rect.width / 2, rect.top + rect.height / 2);
@@ -224,8 +240,8 @@ export default function PortfolioPage() {
               data-portfolio-morph-target="true"
               className="w-12 h-12 rounded-xl grid place-items-center text-lg transition-transform hover:-translate-x-0.5"
               style={{
-                backgroundColor: isDark ? '#fff' : '#000',
-                color: isDark ? '#000' : '#fff',
+                backgroundColor: 'var(--color-portfolio-btn-bg)',
+                color: 'var(--color-portfolio-btn-text)',
               }}
               onClick={handleBack}
             >
