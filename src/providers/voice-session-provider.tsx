@@ -8,6 +8,7 @@ import type { VoicePanelProps } from '@/components/voice-panel';
 import { useTransition } from '@/providers/transition-provider';
 import { useSiteControl } from '@/providers/site-control-provider';
 import { usePathname } from 'next/navigation';
+import { isApprovedExternalLink } from '@/lib/approved-links';
 import {
   getCurrentChatMorphOrigin,
   type ChatMorphRect,
@@ -51,7 +52,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   // Pitfall 4: survives React 19 strict-mode double-mount).
   const registerToolCallbacks = useCallback((callbacks: ToolCallbacks): (() => void) => {
     const ownedKeys = Object.keys(callbacks) as (keyof ToolCallbacks)[];
-    toolCallbacksRef.current = { ...toolCallbacksRef.current, ...callbacks };
+    Object.assign(toolCallbacksRef.current, callbacks);
     return () => {
       for (const k of ownedKeys) {
         delete toolCallbacksRef.current[k];
@@ -67,7 +68,11 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
     };
     toolCallbacksRef.current.openLink = ({ url }: { url: string }) => {
+      if (!isApprovedExternalLink(url)) {
+        return { ok: false, message: "I can't open that link from voice mode." };
+      }
       window.open(url, '_blank', 'noopener,noreferrer');
+      return { ok: true, message: 'Opening the approved link.' };
     };
     toolCallbacksRef.current.openProject = ({ slug }: { slug: string }) => {
       return siteControl.openProject(slug);

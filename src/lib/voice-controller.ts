@@ -14,7 +14,9 @@ import {
 } from './voice-caption-window';
 import {
   buildVoiceOpeningPrompt,
+  isExplicitTourIntent,
   isIntentionalBargeInTranscript,
+  isMobileIntentionalBargeInTranscript,
   shouldPersistVoiceTurn,
   VOICE_BARGE_IN_MIN_WORDS,
   VOICE_OPEN_GREETING_DELAY_MS,
@@ -35,7 +37,7 @@ export interface ToolCallbacks {
   closeBrowser?: () => ControlResult;
   openCurrentProjectExternal?: () => ControlResult;
   unsupportedIframeControl?: () => ControlResult;
-  openLink?: (args: { url: string }) => void;
+  openLink?: (args: { url: string }) => ControlResult | void;
   toggleTheme?: () => void;
   // navigate is handled internally by goPage; not in ToolCallbacks.
   // endCall is handled internally by close(); not in ToolCallbacks.
@@ -75,7 +77,45 @@ interface HistoryMessage {
   content: string;
 }
 
+export interface VoiceStreamToolCall {
+  name: string;
+  args: Record<string, unknown>;
+}
+
+export interface VoiceStreamParseState {
+  responseText: string;
+  toolCalls: VoiceStreamToolCall[];
+}
+
+export function parseVoiceStreamLine(line: string, state: VoiceStreamParseState): void {
+  if (line.startsWith('data: ')) {
+    const payload = line.slice(6);
+    if (payload === '[DONE]') return;
+    try {
+      const evt = JSON.parse(payload);
+      if (evt.type === 'text-delta' && typeof evt.delta === 'string') {
+        state.responseText += evt.delta;
+      }
+      if (evt.type === 'tool-input-available' && evt.toolName) {
+        state.toolCalls.push({ name: evt.toolName, args: evt.input || {} });
+      }
+    } catch {}
+    return;
+  }
+  if (line.startsWith('0:')) {
+    try {
+      const parsed = JSON.parse(line.slice(2));
+      if (typeof parsed === 'string') state.responseText += parsed;
+    } catch {}
+  }
+}
+
 type UserTurnHandler = (utterance: string, opts?: { kind?: VoiceTurnKind }) => Promise<void>;
+
+function isMobileBargeInContext(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia('(max-width: 639px), (pointer: coarse)').matches;
+}
 
 export function useVoiceController({
   goPage,
@@ -127,6 +167,7 @@ export function useVoiceController({
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const historyRef = useRef<HistoryMessage[]>([]);
   const activeRef = useRef(false);  // shadow ref to read active in callbacks
+  const tourGenerationRef = useRef(0);
   const micPermissionGrantedRef = useRef(false);
   const startingListenRef = useRef(false);
   const listenGenerationRef = useRef(0);
@@ -490,10 +531,14 @@ export function useVoiceController({
         }
 
         const transcript = (finalText || interim || lastTranscript).trim();
+        const hasFinalText = finalText.trim().length > 0;
         if (transcript) lastTranscript = transcript;
+        const isIntentionalBargeIn = isMobileBargeInContext()
+          ? isMobileIntentionalBargeInTranscript(transcript, speakingTextRef.current, hasFinalText)
+          : isIntentionalBargeInTranscript(transcript, speakingTextRef.current);
         if (
           !triggered &&
-          isIntentionalBargeInTranscript(transcript, speakingTextRef.current)
+          isIntentionalBargeIn
         ) {
           triggered = true;
           turnGenerationRef.current += 1;
@@ -557,6 +602,11 @@ export function useVoiceController({
   // stopAll — cancel all ongoing audio/speech/recognition
   const stopAll = useCallback(() => {
     clearInitialGreetTimer();
+    const stoppedTourId = tourGenerationRef.current;
+    tourGenerationRef.current += 1;
+    if (stoppedTourId > 0) {
+      window.VoiceBus.emit('site-control-tour-end', { tourId: stoppedTourId });
+    }
     listenGenerationRef.current += 1;
     turnGenerationRef.current += 1;
     startingListenRef.current = false;
@@ -738,6 +788,81 @@ export function useVoiceController({
     if (start) void start();
   }, []);
 
+  const waitForTourStep = useCallback((ms: number, tourId: number, turnId: number): Promise<boolean> => {
+    return new Promise((resolve) => {
+      window.setTimeout(() => {
+        resolve(
+          activeRef.current &&
+          tourGenerationRef.current === tourId &&
+          turnGenerationRef.current === turnId,
+        );
+      }, ms);
+    });
+  }, []);
+
+  const startGuidedTour = useCallback(
+    async (turnId: number) => {
+      const tourId = ++tourGenerationRef.current;
+      window.VoiceBus.emit('site-control-tour-start', { tourId });
+      const shouldContinue = () =>
+        activeRef.current &&
+        tourGenerationRef.current === tourId &&
+        turnGenerationRef.current === turnId;
+
+      const pause = (ms: number) => waitForTourStep(ms, tourId, turnId);
+      const act = async (name: string, args: Record<string, unknown> = {}, delayMs = 850) => {
+        if (!shouldContinue()) return false;
+        dispatchToolCall(name, args);
+        return pause(delayMs);
+      };
+      const say = async (line: string) => {
+        if (!shouldContinue()) return false;
+        await speak(line);
+        return shouldContinue();
+      };
+
+      try {
+        if (!(await act('navigate', { page: 'portfolio' }, 900))) return;
+        if (!(await say("Alright, here's the long version. This is not a static resume wall; it's the workbench version of the portfolio."))) return;
+
+        if (!(await act('openProject', { slug: 'Review Gate' }, 1200))) return;
+        if (!(await say("First stop: Review Gate. This one's very me: take a workflow that wastes requests, make the agent pause, and squeeze way more useful iteration out of the same session."))) return;
+        if (!(await act('scrollProjectPreview', { direction: 'down' }, 900))) return;
+        if (!(await say("The fun part is how practical it is: fewer dead-end AI sessions, more room to keep pushing inside the same request."))) return;
+        if (!(await act('scrollProjectPreview', { direction: 'bottom' }, 900))) return;
+        if (!(await say("The headline is simple: it turns the end of an AI coding request into a checkpoint instead of a dead stop. Less ceremony, more shipping."))) return;
+
+        if (!(await act('closeBrowser', {}, 500))) return;
+        if (!(await act('openProject', { slug: 'FSB' }, 1100))) return;
+        if (!(await say("This is FSB, Full Self Browsing. It is the cleanest expression of the idea that AI control should feel tangible, bounded, and useful."))) return;
+
+        if (!(await act('closeBrowser', {}, 500))) return;
+        if (!(await act('openProject', { slug: 'GitFly' }, 1100))) return;
+        if (!(await say("GitFly is the product-flavored side of the same obsession: AI-native dev workflows that feel current, fast, and practical. Public story only; the private source stays private."))) return;
+
+        if (!(await act('closeBrowser', {}, 500))) return;
+        if (!(await act('openProject', { slug: 'Parz-AI' }, 1100))) return;
+        if (!(await say("And here's the bot-thread: Parz-AI. This is the older assistant work that fed into the portfolio voice layer you're using right now."))) return;
+        if (!(await act('scrollProjectPreview', { direction: 'down' }, 800))) return;
+
+        if (!(await act('closeBrowser', {}, 500))) return;
+        if (!(await act('scrollTo', { selector: 'about' }, 1000))) return;
+        if (!(await say("Now the human page. The short version: full-stack roots, then the AI rabbit hole, then a lot of stubborn systems work until the demos became actual tools."))) return;
+        if (!(await act('scrollTo', { selector: 'experience' }, 900))) return;
+        if (!(await say("Current chapter: AI Enablement Engineer at InfiniteChoice, building Voyza as an AI-first hotel booking platform. That's the public-safe version; the deeper product details stay where they belong."))) return;
+        if (!(await act('scrollTo', { selector: 'academics' }, 900))) return;
+        if (!(await say("That's the tour. If you want, interrupt me with any project name and I'll zoom into that instead."))) return;
+
+        window.VoiceBus.setState('idle');
+        setCaption('');
+        resumeListeningIfActive();
+      } finally {
+        window.VoiceBus.emit('site-control-tour-end', { tourId });
+      }
+    },
+    [dispatchToolCall, resumeListeningIfActive, speak, waitForTourStep],
+  );
+
   // handleUserTurn — ALL utterances go to Grok (except local stop for instant response).
   // The optional `greet` path drives the first speak-then-listen turn when
   // voice mode opens.
@@ -761,6 +886,11 @@ export function useVoiceController({
       // Phase 22: cancel any in-flight TTS/fetch from a prior turn so a slow previous
       // response doesn't keep talking over this one. Closes overlap mode O-4.
       cancelAllAudio();
+      const stoppedTourId = tourGenerationRef.current;
+      tourGenerationRef.current += 1;
+      if (stoppedTourId > 0) {
+        window.VoiceBus.emit('site-control-tour-end', { tourId: stoppedTourId });
+      }
 
       // Phase 22: bump the turn generation. Older parallel turns (e.g. Web Speech
       // multi-final firing handleUserTurn twice — overlap mode O-3) check this and
@@ -823,51 +953,29 @@ export function useVoiceController({
 
         const reader = res.body?.getReader();
         const decoder = new TextDecoder();
-        let responseText = '';
-        const toolCalls: { name: string; args: Record<string, unknown> }[] = [];
+        const streamState: VoiceStreamParseState = { responseText: '', toolCalls: [] };
 
         // F-01: keep a leftover buffer between reads so JSON events that span
         // chunk boundaries are not silently dropped by JSON.parse inside the catch.
-        const handleLine = (line: string) => {
-          if (line.startsWith('data: ')) {
-            const payload = line.slice(6);
-            if (payload === '[DONE]') return;
-            try {
-              const evt = JSON.parse(payload);
-              if (evt.type === 'text-delta' && typeof evt.delta === 'string') {
-                responseText += evt.delta;
-              }
-              if (evt.type === 'tool-input-available' && evt.toolName) {
-                toolCalls.push({ name: evt.toolName, args: evt.input || {} });
-              }
-            } catch {}
-            return;
-          }
-          if (line.startsWith('0:')) {
-            try {
-              const parsed = JSON.parse(line.slice(2));
-              if (typeof parsed === 'string') responseText += parsed;
-            } catch {}
-          }
-        };
-
         if (reader) {
           let buffer = '';
           while (true) {
             const { done, value } = await reader.read();
             if (done) {
               buffer += decoder.decode();
-              if (buffer) handleLine(buffer);
+              if (buffer) parseVoiceStreamLine(buffer, streamState);
               break;
             }
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
             buffer = lines.pop() ?? '';
-            for (const line of lines) handleLine(line);
+            for (const line of lines) parseVoiceStreamLine(line, streamState);
           }
         }
 
-        const clean = responseText.trim();
+        const { toolCalls } = streamState;
+        const clean = streamState.responseText.trim();
+        let shouldStartTour = false;
 
         // Phase 22: bail if a newer turn started while we were fetching — closes O-3.
         // Don't dispatch tools or speak; the user moved on to a different utterance.
@@ -912,6 +1020,9 @@ export function useVoiceController({
             case 'unsupportedIframeControl':
               dispatchToolCall('unsupportedIframeControl', {});
               break;
+            case 'startTour':
+              shouldStartTour = kind === 'user' && isExplicitTourIntent(utterance);
+              break;
             case 'switchToText': {
               const voiceSnapshot = buildVoiceSnapshot();
               stopAll();
@@ -936,7 +1047,13 @@ export function useVoiceController({
         if (clean) {
           await speak(clean);
           if (myTurn !== turnGenerationRef.current) return;
+          if (shouldStartTour) {
+            await startGuidedTour(myTurn);
+            return;
+          }
           resumeListeningIfActive();
+        } else if (shouldStartTour) {
+          await startGuidedTour(myTurn);
         } else if (toolCalls.length > 0) {
           window.VoiceBus.setState('idle');
           setCaption('');
@@ -961,6 +1078,7 @@ export function useVoiceController({
       clearInitialGreetTimer,
       resumeListeningIfActive,
       buildVoiceSnapshot,
+      startGuidedTour,
     ]
   );
 

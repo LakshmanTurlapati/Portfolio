@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   getProjectBrowserTarget,
+  isApprovedExternalLink,
   isApprovedProjectUrl,
   normalizePreviewScrollDirection,
   normalizeSection,
@@ -26,6 +27,14 @@ describe('project resolution safety', () => {
     expect(resolveProject('made up secret gitfly repo')).toBeNull();
     expect(isApprovedProjectUrl('https://github.com/LakshmanTurlapati/private-gitfly')).toBe(false);
     expect(isApprovedProjectUrl('https://evil.example/phish')).toBe(false);
+  });
+
+  it('allows only approved public external links for voice openLink', () => {
+    expect(isApprovedExternalLink('https://gitfly.ai')).toBe(true);
+    expect(isApprovedExternalLink('https://www.full-selfbrowsing.com')).toBe(true);
+    expect(isApprovedExternalLink('https://github.com/LakshmanTurlapati/Review-Gate')).toBe(true);
+    expect(isApprovedExternalLink('https://github.com/LakshmanTurlapati/private-gitfly')).toBe(false);
+    expect(isApprovedExternalLink('https://evil.example/phish')).toBe(false);
   });
 
   it('normalizes supported about-page section aliases only', () => {

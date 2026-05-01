@@ -7,6 +7,7 @@ import { hasEnvVar } from '@/lib/env';
 import { jsonError, parseGuardedJson } from '@/lib/api-guard';
 
 const ALLOWED_VOICE_ID = 'dMWVPH9DSxWOMrrrUso3'; // per D-02, locked
+const DEFAULT_TTS_MODEL_ID = 'eleven_turbo_v2_5';
 
 export async function POST(req: Request) {
   if (!hasEnvVar('ELEVENLABS_API_KEY')) {
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
     // stream() returns ReadableStream<Uint8Array> — pass directly to Response for streaming
     const audioStream = await client.textToSpeech.stream(voiceId, {
       text,
-      modelId: 'eleven_turbo_v2_5', // per D-04
+      modelId: DEFAULT_TTS_MODEL_ID,
       outputFormat: 'mp3_44100_128',
     });
 

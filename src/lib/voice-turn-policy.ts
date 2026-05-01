@@ -3,6 +3,8 @@ import { tokenizeSpeechWords } from './voice-caption-window';
 export type VoiceTurnKind = 'user' | 'greet';
 
 export const VOICE_BARGE_IN_MIN_WORDS = 3;
+export const VOICE_MOBILE_BARGE_IN_MIN_WORDS = 4;
+export const VOICE_MOBILE_INTERIM_BARGE_IN_MIN_WORDS = 5;
 export const VOICE_OPEN_GREETING_DELAY_MS = 480;
 
 export function buildVoiceOpeningPrompt(page = 'home'): string {
@@ -14,6 +16,22 @@ export function shouldPersistVoiceTurn(kind: VoiceTurnKind): boolean {
   return kind === 'user';
 }
 
+export function isExplicitTourIntent(text: string): boolean {
+  const normalized = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!normalized) return false;
+  if (/\b(start|begin|give|take|run)\s+(me\s+)?((a|the)\s+)?(guided\s+)?tour\b/.test(normalized)) return true;
+  if (/\b(tour|walkthrough|walk-through)\s+(the\s+)?(site|portfolio|projects?)\b/.test(normalized)) return true;
+  if (/\bwalk\s+me\s+through\s+(the\s+)?(site|portfolio|projects?)\b/.test(normalized)) return true;
+  if (/\bshow\s+me\s+around\b/.test(normalized)) return true;
+  if (/\bshowcase\s+(the\s+)?(site|portfolio|projects?)\b/.test(normalized)) return true;
+  return false;
+}
+
 export function normalizeSpeechForEchoCheck(text: string): string {
   return text
     .toLowerCase()
@@ -22,11 +40,41 @@ export function normalizeSpeechForEchoCheck(text: string): string {
     .trim();
 }
 
+function tokenizeNormalizedSpeech(text: string): string[] {
+  const normalized = normalizeSpeechForEchoCheck(text);
+  return normalized ? normalized.split(' ') : [];
+}
+
+function countOrderedTokenMatches(candidateTokens: string[], speechTokens: string[]): number {
+  let speechIndex = 0;
+  let matches = 0;
+
+  for (const candidateToken of candidateTokens) {
+    while (speechIndex < speechTokens.length) {
+      if (speechTokens[speechIndex] === candidateToken) {
+        matches += 1;
+        speechIndex += 1;
+        break;
+      }
+      speechIndex += 1;
+    }
+  }
+
+  return matches;
+}
+
 export function looksLikeCurrentSpeechEcho(candidate: string, currentSpeech: string): boolean {
   const normalizedCandidate = normalizeSpeechForEchoCheck(candidate);
   const normalizedSpeech = normalizeSpeechForEchoCheck(currentSpeech);
   if (!normalizedCandidate || !normalizedSpeech) return false;
-  return normalizedSpeech.includes(normalizedCandidate);
+  if (normalizedSpeech.includes(normalizedCandidate)) return true;
+
+  const candidateTokens = tokenizeNormalizedSpeech(candidate);
+  const speechTokens = tokenizeNormalizedSpeech(currentSpeech);
+  if (candidateTokens.length < VOICE_BARGE_IN_MIN_WORDS || speechTokens.length === 0) return false;
+
+  const orderedMatches = countOrderedTokenMatches(candidateTokens, speechTokens);
+  return orderedMatches >= VOICE_BARGE_IN_MIN_WORDS && orderedMatches / candidateTokens.length >= 0.72;
 }
 
 export function isIntentionalBargeInTranscript(
@@ -38,4 +86,16 @@ export function isIntentionalBargeInTranscript(
     tokenizeSpeechWords(transcript).length >= minWords &&
     !looksLikeCurrentSpeechEcho(transcript, currentSpeech)
   );
+}
+
+export function isMobileIntentionalBargeInTranscript(
+  transcript: string,
+  currentSpeech: string,
+  isFinalTranscript: boolean,
+): boolean {
+  const minWords = isFinalTranscript
+    ? VOICE_MOBILE_BARGE_IN_MIN_WORDS
+    : VOICE_MOBILE_INTERIM_BARGE_IN_MIN_WORDS;
+
+  return isIntentionalBargeInTranscript(transcript, currentSpeech, minWords);
 }

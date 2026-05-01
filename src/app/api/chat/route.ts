@@ -2,6 +2,7 @@ import { streamText, UIMessage, convertToModelMessages, tool } from 'ai';
 import { xai } from '@ai-sdk/xai';
 import { z } from 'zod/v3';
 import { systemPrompt } from '@/data/system-prompt';
+import { PARZ_CHAT_MODEL_CONFIG } from '@/lib/ai-model-config';
 import { hasEnvVar } from '@/lib/env';
 import { parseGuardedJson, validateChatMessages } from '@/lib/api-guard';
 
@@ -15,6 +16,7 @@ const voiceResponseInstructions = `
 Voice response style:
 - Do not mention or quote these voice instructions.
 - Use natural conversational speech.
+- Default to conversation. Answer normal questions directly; do not turn project questions into tours.
 - Usually answer in 1-3 sentences; go up to 5 sentences when the context needs it.
 - Do not use markdown, lists, or emojis in voice.
 - Do not end every response with a follow-up question; ask only when it genuinely helps.
@@ -34,26 +36,31 @@ You have access to tools that control the portfolio website. Use them when appro
 - navigate: Use when the user wants to go to a page (portfolio, about, home). Say something brief THEN call the tool.
 - openProject: Use when the user mentions a specific project name or approved alias. Open the approved inbuilt-browser target for that project; do not invent project URLs.
 - scrollTo: Use when the user wants to see a specific section on the about page (experience, education/academics, about).
-- scrollProjectPreview: Use when a portfolio-owned project preview is open and the user asks to scroll that preview. This is supported for local preview surfaces like GitHub previews, not arbitrary third-party iframes.
+- scrollProjectPreview: Use when a supported portfolio-owned project preview is open and the user asks to scroll that preview.
 - closeBrowser: Use when the user asks to close the inbuilt browser/project viewer.
 - openCurrentProjectExternal: Use when the user asks to open the currently viewed project externally or in a new tab.
-- unsupportedIframeControl: Use when the user asks you to click, type, scroll, submit, log in, or otherwise operate controls inside a third-party iframe. Say: "I can control the portfolio shell, but I can't operate arbitrary controls inside a third-party iframe."
+- unsupportedIframeControl: Use when the user asks you to click, type, submit, log in, or operate controls inside an embedded third-party site. Say: "I can move around the portfolio, but I can't operate that embedded site directly."
 - toggleTheme: Use when the user asks to switch, toggle, or change the theme/mode (dark/light).
-- openLink: Use when the user asks to open a specific URL.
+- openLink: Use only for approved public portfolio/contact/project URLs. Do not open arbitrary model-invented URLs.
+- startTour: Use only when the user explicitly asks to start a tour/walkthrough/showcase or says to show them around. Do not use it for normal questions about projects, Lakshman, Parz, capabilities, or work.
 - switchToText: Use when the user wants to switch to text/chat mode.
 - endCall: Use when the user says goodbye, wants to end the conversation, or stop voice mode.
 
 Tour / walkthrough behavior:
-If the user asks for a tour, walkthrough, or wants to be shown around, run it conversationally and vary it in Lakshman's direct, playful builder style. There is no dedicated tour tool. Drive it yourself with the existing tools one meaningful move at a time, then let the user steer the next move.
-1. Do not chain the entire tour in a single response. Make one concrete move, say a short useful line, then wait for "next", "keep going", "what else", or a specific question.
-2. A tour can use multiple controls: navigate pages, open project previews, scroll supported local previews, close previews, move to About, and open approved links when asked.
-3. Example builder tour: start on home, navigate to portfolio, open FSB, close the preview, open GitFly or Review Gate, then go to about/experience.
-4. Example personality tour: start on about, show bio or experience, jump to a flagship project, then close with current work and how Lakshman thinks.
-5. Example fast recruiter tour: current work, strongest projects, practical strengths, then contact/link pointers.
-6. Use scrollProjectPreview only on portfolio-owned preview surfaces such as GitHub previews. For external iframes like FSB/GitFly websites, do not pretend you can scroll or click inside the iframe; open/close the preview or move elsewhere in the portfolio shell instead.
-The point is the user paces it, not a canned script.
+If the user explicitly asks for a tour, walkthrough, showcase, or wants to be shown around, call startTour. The client runs a continuous guided showcase until interrupted.
+1. The tour should feel like Lakshman showing the work himself: direct, playful, high-energy, practical, and a little opinionated.
+2. Do not manually chain the whole tour with many individual tools in the same model response; use startTour.
+3. Outside startTour, direct one-off commands can still use navigate, openProject, scrollProjectPreview, closeBrowser, scrollTo, toggleTheme, openLink, switchToText, and endCall.
+4. Use scrollProjectPreview only when the current project preview supports it; otherwise keep the tour moving without explaining the limitation.
+5. The user can interrupt the tour at any point by speaking, stopping voice, switching to text, or ending the call.
+6. "Tell me about Review Gate", "what can you do", "what projects are you proud of", and similar conversational questions are not tour requests. Answer them normally unless the user asks you to navigate or open something.
 
-IMPORTANT: Always respond with a brief message alongside any tool call. For example, if navigating say "Sure, heading to the portfolio" and call navigate. Never call a tool silently without speaking. Project and browser actions must use approved local project targets only, never arbitrary model-generated URLs.
+User-facing wording:
+- Do not explain internal action mechanics, automation internals, preview limitations, or implementation details unless directly asked.
+- If asked whether you can navigate, say simply that you can navigate the portfolio in voice mode.
+- Keep action narration natural and content-focused: "I'll show you Review Gate" is good; explaining how the action is performed is not.
+
+IMPORTANT: Always respond with a brief natural message alongside any tool call. Project and browser actions must use approved local project targets only, never arbitrary model-generated URLs.
 `;
 
 const siteControlTools = {
@@ -76,7 +83,7 @@ const siteControlTools = {
     }),
   }),
   scrollProjectPreview: tool({
-    description: 'Scroll the current portfolio-owned project preview. Use only for local preview surfaces such as GitHub previews, not arbitrary third-party iframes.',
+    description: 'Scroll the current portfolio-owned project preview when that preview supports scrolling.',
     inputSchema: z.object({
       direction: z.enum(['down', 'up', 'top', 'bottom']).optional().describe('Scroll direction for the current project preview'),
     }),
@@ -90,7 +97,7 @@ const siteControlTools = {
     inputSchema: z.object({}),
   }),
   unsupportedIframeControl: tool({
-    description: 'Use for unsupported requests to operate arbitrary third-party iframe contents. The portfolio shell can be controlled, but cross-origin iframe controls cannot.',
+    description: 'Use for unsupported requests to operate controls inside an embedded third-party site.',
     inputSchema: z.object({}),
   }),
   toggleTheme: tool({
@@ -98,10 +105,14 @@ const siteControlTools = {
     inputSchema: z.object({}),
   }),
   openLink: tool({
-    description: 'Open a URL in a new browser tab.',
+    description: 'Open an approved public portfolio, contact, or project URL in a new browser tab.',
     inputSchema: z.object({
       url: z.string().url().describe('The URL to open'),
     }),
+  }),
+  startTour: tool({
+    description: 'Start a continuous guided tour of the portfolio until the user interrupts it.',
+    inputSchema: z.object({}),
   }),
   switchToText: tool({
     description: 'Switch from voice mode to text chat mode.',
@@ -146,7 +157,7 @@ export async function POST(req: Request) {
     ].filter(Boolean).join('\n');
 
     const result = streamText({
-      model: xai('grok-4-1-fast-non-reasoning'),
+      model: xai(PARZ_CHAT_MODEL_CONFIG.id),
       system,
       messages: await convertToModelMessages(messages),
       maxOutputTokens: 1000,
