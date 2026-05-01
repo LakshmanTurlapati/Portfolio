@@ -21,6 +21,7 @@ import {
   VOICE_OPEN_GREETING_DELAY_MS,
   type VoiceTurnKind,
 } from './voice-turn-policy';
+import { calculateRms, VoiceBargeInDetector } from './voice-barge-in';
 import type { ChatMorphRect, ChatVoiceSnapshot } from '@/lib/chat-morph';
 import { Scribe, RealtimeEvents, CommitStrategy } from '@elevenlabs/client';
 import type { RealtimeConnection } from '@elevenlabs/client';
@@ -28,6 +29,9 @@ import type { ControlResult } from '@/providers/site-control-provider';
 
 const VOICE_CHAT_RESPONSE_TIMEOUT_MS = 35000;
 const VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS = 1750;
+const VOICE_BARGE_IN_ANALYSER_FFT_SIZE = 1024;
+const VOICE_BARGE_IN_NEAR_END_WINDOW_MS = 1200;
+const VOICE_BARGE_IN_ANALYSER_SETUP_TIMEOUT_MS = 1200;
 
 // ToolCallbacks carries App-level handlers for tool calls in AI responses.
 // All fields are optional so callers can wire only what they support this phase.
@@ -117,6 +121,17 @@ type UserTurnHandler = (utterance: string, opts?: { kind?: VoiceTurnKind }) => P
 function isMobileViewport(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
   return window.matchMedia('(max-width: 639px)').matches;
+}
+
+function buildBargeInAudioConstraints(): MediaTrackConstraints {
+  const constraints: MediaTrackConstraints & { echoCancellation?: boolean | string } = {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  };
+  const supported = navigator.mediaDevices?.getSupportedConstraints?.();
+  if (supported?.echoCancellation) constraints.echoCancellation = 'all';
+  return constraints as MediaTrackConstraints;
 }
 
 export function useVoiceController({
@@ -513,17 +528,63 @@ export function useVoiceController({
       let triggered = false;
       let completed = false;
       let lastTranscript = '';
+      let pendingIntentionalTranscript = '';
+      let nearEndSpeechUntilMs = 0;
+      let gateMode: 'pending' | 'hybrid' | 'transcript-only' = 'pending';
+      let analyserRaf: number | null = null;
+      let analyserCleanup: (() => void) | null = null;
+      let analyserSetupTimer: ReturnType<typeof setTimeout> | null = null;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let recognizer: any = null;
 
       const cleanup = () => {
         cancelled = true;
+        if (analyserSetupTimer !== null) {
+          clearTimeout(analyserSetupTimer);
+          analyserSetupTimer = null;
+        }
+        if (analyserRaf !== null) {
+          cancelAnimationFrame(analyserRaf);
+          analyserRaf = null;
+        }
+        if (analyserCleanup) {
+          try { analyserCleanup(); } catch {}
+          analyserCleanup = null;
+        }
         if (recognizer) {
           try { recognizer.onresult = null; recognizer.onerror = null; recognizer.onend = null; } catch {}
           try { recognizer.abort(); } catch {}
         }
         recognizer = null;
         if (bargeInStopRef.current === cleanup) bargeInStopRef.current = null;
+      };
+
+      const beginBargeIn = (candidate: string) => {
+        if (triggered || completed) return;
+        triggered = true;
+        turnGenerationRef.current += 1;
+        cancelAllAudio({ keepBargeInMonitor: true });
+        window.VoiceBus.setState('listening');
+        setTranscript(candidate);
+        setCaption(candidate);
+      };
+
+      const enableTranscriptOnlyFallback = () => {
+        if (cancelled || triggered) return;
+        if (analyserSetupTimer !== null) {
+          clearTimeout(analyserSetupTimer);
+          analyserSetupTimer = null;
+        }
+        gateMode = 'transcript-only';
+        if (pendingIntentionalTranscript) beginBargeIn(pendingIntentionalTranscript);
+      };
+
+      const maybeStartBargeIn = (candidate: string) => {
+        if (triggered || completed) return;
+        pendingIntentionalTranscript = candidate;
+        if (gateMode === 'transcript-only' || performance.now() <= nearEndSpeechUntilMs) {
+          beginBargeIn(candidate);
+        }
       };
 
       const finishBargeInTurn = (candidate: string) => {
@@ -545,6 +606,80 @@ export function useVoiceController({
       recognizer.interimResults = true;
       recognizer.lang = 'en-US';
 
+      analyserSetupTimer = setTimeout(
+        enableTranscriptOnlyFallback,
+        VOICE_BARGE_IN_ANALYSER_SETUP_TIMEOUT_MS,
+      );
+
+      void (async () => {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          enableTranscriptOnlyFallback();
+          return;
+        }
+
+        let stream: MediaStream | null = null;
+        let source: MediaStreamAudioSourceNode | null = null;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: buildBargeInAudioConstraints(),
+          });
+          if (cancelled || (gateMode as string) === 'transcript-only') {
+            stream.getTracks().forEach((track) => track.stop());
+            return;
+          }
+
+          const ctx = window.VoiceBus._getCtx();
+          if (!ctx) throw new Error('AudioContext unavailable');
+          if (ctx.state === 'suspended') {
+            try { await ctx.resume(); } catch {}
+          }
+          if (ctx.state === 'suspended') throw new Error('AudioContext still suspended');
+
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = VOICE_BARGE_IN_ANALYSER_FFT_SIZE;
+          source = ctx.createMediaStreamSource(stream);
+          source.connect(analyser);
+
+          const detector = new VoiceBargeInDetector();
+          const buffer = new Uint8Array(analyser.fftSize);
+          detector.reset(performance.now());
+          gateMode = 'hybrid';
+          if (analyserSetupTimer !== null) {
+            clearTimeout(analyserSetupTimer);
+            analyserSetupTimer = null;
+          }
+
+          analyserCleanup = () => {
+            if (source) {
+              try { source.disconnect(); } catch {}
+              source = null;
+            }
+            if (stream) {
+              stream.getTracks().forEach((track) => track.stop());
+              stream = null;
+            }
+          };
+
+          const sample = () => {
+            if (cancelled) return;
+            const now = performance.now();
+            analyser.getByteTimeDomainData(buffer);
+            if (detector.sample({ rms: calculateRms(buffer), nowMs: now })) {
+              nearEndSpeechUntilMs = now + VOICE_BARGE_IN_NEAR_END_WINDOW_MS;
+              if (pendingIntentionalTranscript) beginBargeIn(pendingIntentionalTranscript);
+            }
+            analyserRaf = requestAnimationFrame(sample);
+          };
+          analyserRaf = requestAnimationFrame(sample);
+        } catch {
+          if (source) {
+            try { source.disconnect(); } catch {}
+          }
+          if (stream) stream.getTracks().forEach((track) => track.stop());
+          enableTranscriptOnlyFallback();
+        }
+      })();
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       recognizer.onresult = (ev: any) => {
         let interim = '';
@@ -562,17 +697,7 @@ export function useVoiceController({
           transcript,
           speakingTextRef.current,
         );
-        if (
-          !triggered &&
-          isIntentionalBargeIn
-        ) {
-          triggered = true;
-          turnGenerationRef.current += 1;
-          cancelAllAudio({ keepBargeInMonitor: true });
-          window.VoiceBus.setState('listening');
-          setTranscript(transcript);
-          setCaption(transcript);
-        }
+        if (!triggered && isIntentionalBargeIn) maybeStartBargeIn(transcript);
 
         if (triggered) {
           setTranscript(transcript);

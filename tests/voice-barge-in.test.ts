@@ -218,8 +218,8 @@ describe('voice-controller barge-in wiring', () => {
     expect(source).toContain('speakingTextRef.current,');
     expect(source).toContain('cancelAllAudio({ keepBargeInMonitor: true });');
     expect(source).toContain('handleUserTurnRef.current');
-    expect(source).not.toContain('new VoiceBargeInDetector');
-    expect(source).not.toContain('calculateRms(');
+    expect(source).toContain('new VoiceBargeInDetector');
+    expect(source).toContain('calculateRms(buffer)');
   });
 
   it('disables barge-in only on the mobile viewport before opening SpeechRecognition', () => {
@@ -240,6 +240,59 @@ describe('voice-controller barge-in wiring', () => {
     );
     expect(bargeBlock).not.toContain('isMobileIntentionalBargeInTranscript');
     expect(source).toContain('recognizer.start();');
+  });
+
+  it('uses a desktop mic analyser gate before accepting barge-in transcripts', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+    const bargeStart = source.indexOf('const startBargeInMonitor = useCallback');
+    const bargeBlock = source.slice(bargeStart, source.indexOf('// stopAll', bargeStart));
+
+    expect(source).toContain("import { calculateRms, VoiceBargeInDetector } from './voice-barge-in'");
+    expect(source).toContain('const VOICE_BARGE_IN_ANALYSER_FFT_SIZE = 1024');
+    expect(source).toContain('const VOICE_BARGE_IN_NEAR_END_WINDOW_MS = 1200');
+    expect(source).toContain('const VOICE_BARGE_IN_ANALYSER_SETUP_TIMEOUT_MS = 1200');
+    expect(source).toContain('function buildBargeInAudioConstraints()');
+    expect(source).toContain("constraints.echoCancellation = 'all'");
+    expect(bargeBlock).toContain("let gateMode: 'pending' | 'hybrid' | 'transcript-only' = 'pending'");
+    expect(bargeBlock).toContain('const detector = new VoiceBargeInDetector();');
+    expect(bargeBlock).toContain('analyser.getByteTimeDomainData(buffer);');
+    expect(bargeBlock).toContain('detector.sample({ rms: calculateRms(buffer), nowMs: now })');
+    expect(bargeBlock).toContain('nearEndSpeechUntilMs = now + VOICE_BARGE_IN_NEAR_END_WINDOW_MS');
+    expect(bargeBlock).toContain('if (!triggered && isIntentionalBargeIn) maybeStartBargeIn(transcript);');
+  });
+
+  it('falls back to transcript-only desktop barge-in if analyser setup fails', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+    const bargeStart = source.indexOf('const startBargeInMonitor = useCallback');
+    const bargeBlock = source.slice(bargeStart, source.indexOf('// stopAll', bargeStart));
+
+    expect(bargeBlock).toContain('const enableTranscriptOnlyFallback = () => {');
+    expect(bargeBlock).toContain("gateMode = 'transcript-only';");
+    expect(bargeBlock).toContain('if (pendingIntentionalTranscript) beginBargeIn(pendingIntentionalTranscript);');
+    expect(bargeBlock).toContain('if (!navigator.mediaDevices?.getUserMedia) {');
+    expect(bargeBlock).toContain('enableTranscriptOnlyFallback();');
+    expect(bargeBlock).toContain('analyserSetupTimer = setTimeout(');
+    expect(bargeBlock).toContain('VOICE_BARGE_IN_ANALYSER_SETUP_TIMEOUT_MS');
+  });
+
+  it('cleans up desktop barge-in analyser media tracks and animation frames', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+    const bargeStart = source.indexOf('const startBargeInMonitor = useCallback');
+    const bargeBlock = source.slice(bargeStart, source.indexOf('// stopAll', bargeStart));
+
+    expect(bargeBlock).toContain('cancelAnimationFrame(analyserRaf)');
+    expect(bargeBlock).toContain('try { analyserCleanup(); } catch {}');
+    expect(bargeBlock).toContain('source.disconnect();');
+    expect(bargeBlock).toContain('stream.getTracks().forEach((track) => track.stop())');
   });
 
   it('does not send voice style instructions as user transcript content', () => {
