@@ -16,7 +16,6 @@ import {
   buildVoiceOpeningPrompt,
   isExplicitTourIntent,
   isIntentionalBargeInTranscript,
-  isMobileIntentionalBargeInTranscript,
   shouldPersistVoiceTurn,
   VOICE_BARGE_IN_MIN_WORDS,
   VOICE_OPEN_GREETING_DELAY_MS,
@@ -115,9 +114,9 @@ export function parseVoiceStreamLine(line: string, state: VoiceStreamParseState)
 
 type UserTurnHandler = (utterance: string, opts?: { kind?: VoiceTurnKind }) => Promise<void>;
 
-function isMobileBargeInContext(): boolean {
+function isMobileViewport(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
-  return window.matchMedia('(max-width: 639px), (pointer: coarse)').matches;
+  return window.matchMedia('(max-width: 639px)').matches;
 }
 
 export function useVoiceController({
@@ -499,6 +498,10 @@ export function useVoiceController({
     if (micDenied) return;
     if (bargeInStopRef.current) return;
     if (typeof window === 'undefined') return;
+    // Mobile Web Speech frequently hears Parz's TTS through the device speaker.
+    // Keep normal mobile listening intact, but disable interrupt-while-speaking
+    // on the mobile viewport so post-tour speech does not echo-trigger turns.
+    if (isMobileViewport()) return;
 
     // Prefer content-gated barge-in: keep recognition armed during TTS, but only
     // interrupt once the user has said at least three words. This avoids noise
@@ -554,11 +557,11 @@ export function useVoiceController({
         }
 
         const transcript = (finalText || interim || lastTranscript).trim();
-        const hasFinalText = finalText.trim().length > 0;
         if (transcript) lastTranscript = transcript;
-        const isIntentionalBargeIn = isMobileBargeInContext()
-          ? isMobileIntentionalBargeInTranscript(transcript, speakingTextRef.current, hasFinalText)
-          : isIntentionalBargeInTranscript(transcript, speakingTextRef.current);
+        const isIntentionalBargeIn = isIntentionalBargeInTranscript(
+          transcript,
+          speakingTextRef.current,
+        );
         if (
           !triggered &&
           isIntentionalBargeIn
