@@ -118,11 +118,6 @@ export function parseVoiceStreamLine(line: string, state: VoiceStreamParseState)
 
 type UserTurnHandler = (utterance: string, opts?: { kind?: VoiceTurnKind }) => Promise<void>;
 
-function isMobileViewport(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
-  return window.matchMedia('(max-width: 639px)').matches;
-}
-
 function buildBargeInAudioConstraints(): MediaTrackConstraints {
   const constraints: MediaTrackConstraints & { echoCancellation?: boolean | string } = {
     echoCancellation: true,
@@ -513,10 +508,12 @@ export function useVoiceController({
     if (micDenied) return;
     if (bargeInStopRef.current) return;
     if (typeof window === 'undefined') return;
-    // Mobile Web Speech frequently hears Parz's TTS through the device speaker.
-    // Keep normal mobile listening intact, but disable interrupt-while-speaking
-    // on the mobile viewport so post-tour speech does not echo-trigger turns.
-    if (isMobileViewport()) return;
+    // Barge-in is fully disabled on every viewport: desktop browsers were also
+    // hearing Parz's TTS through the speaker, and the transcript echo gate
+    // could not reliably reject ASR-mangled echoes — Parz kept cutting itself
+    // off mid-sentence. The user-initiated cancel path (stop button, mic
+    // toggle, new turn via cancelAllAudio) is unaffected.
+    return;
 
     // Prefer content-gated barge-in: keep recognition armed during TTS, but only
     // interrupt once the user has said at least three words. This avoids noise

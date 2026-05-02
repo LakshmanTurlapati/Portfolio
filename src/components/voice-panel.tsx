@@ -153,9 +153,24 @@ export function VoicePanel({
           color: textColor,
           cursor: presentation ? 'default' : 'pointer',
         }}
-        onClick={presentation ? undefined : onMic}
+        onClick={
+          presentation
+            ? undefined
+            : () => {
+                if (state === 'speaking' || state === 'thinking') onStop();
+                else onMic();
+              }
+        }
         role={presentation ? undefined : 'button'}
-        aria-label={presentation ? undefined : state === 'listening' ? 'Stop listening' : 'Start listening'}
+        aria-label={
+          presentation
+            ? undefined
+            : state === 'speaking' || state === 'thinking'
+              ? 'Stop'
+              : state === 'listening'
+                ? 'Stop listening'
+                : 'Start listening'
+        }
       >
         {/* Waveform or mic-denied banner */}
         {micDenied ? (
@@ -250,30 +265,32 @@ export function VoicePanel({
               <FaComment size={14} />
             </button>
           )}
-          {/* Stop */}
-          <button
-            tabIndex={presentation ? -1 : undefined}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (presentation) return;
-              onStop();
-            }}
-            title="Stop"
-            style={{
-              width: compact ? '40px' : '36px',
-              height: compact ? '40px' : '36px',
-              borderRadius: '50%',
-              border: `1px solid ${btnBorder}`,
-              background: btnBg,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: presentation ? 'default' : 'pointer',
-              color: textColor,
-            }}
-          >
-            <FaStop size={14} />
-          </button>
+          {/* Stop — only while Parz is mid-response */}
+          {(state === 'speaking' || state === 'thinking') && (
+            <button
+              tabIndex={presentation ? -1 : undefined}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (presentation) return;
+                onStop();
+              }}
+              title="Stop"
+              style={{
+                width: compact ? '40px' : '36px',
+                height: compact ? '40px' : '36px',
+                borderRadius: '50%',
+                border: `1px solid ${btnBorder}`,
+                background: btnBg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: presentation ? 'default' : 'pointer',
+                color: textColor,
+              }}
+            >
+              <FaStop size={14} />
+            </button>
+          )}
           {/* Close */}
           <button
             tabIndex={presentation ? -1 : undefined}

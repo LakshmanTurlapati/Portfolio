@@ -222,24 +222,20 @@ describe('voice-controller barge-in wiring', () => {
     expect(source).toContain('calculateRms(buffer)');
   });
 
-  it('disables barge-in only on the mobile viewport before opening SpeechRecognition', () => {
+  it('disables barge-in on every viewport before opening SpeechRecognition', () => {
     const source = readFileSync(
       join(process.cwd(), 'src/lib/voice-controller.ts'),
       'utf8',
     );
-    const helperStart = source.indexOf('function isMobileViewport()');
     const bargeStart = source.indexOf('const startBargeInMonitor = useCallback');
     const bargeBlock = source.slice(bargeStart, source.indexOf('// stopAll', bargeStart));
 
-    expect(helperStart).toBeGreaterThan(-1);
-    expect(source).toContain("window.matchMedia('(max-width: 639px)').matches");
-    expect(source).not.toContain('(pointer: coarse)');
-    expect(bargeBlock.indexOf('if (isMobileViewport()) return;')).toBeGreaterThan(-1);
-    expect(bargeBlock.indexOf('if (isMobileViewport()) return;')).toBeLessThan(
+    const earlyReturnIdx = bargeBlock.search(/if \(typeof window === 'undefined'\) return;\s*[\s\S]*?\n\s*return;/);
+    expect(earlyReturnIdx).toBeGreaterThan(-1);
+    expect(bargeBlock.indexOf('return;', earlyReturnIdx)).toBeLessThan(
       bargeBlock.indexOf('const SpeechRecognitionCtor'),
     );
     expect(bargeBlock).not.toContain('isMobileIntentionalBargeInTranscript');
-    expect(source).toContain('recognizer.start();');
   });
 
   it('uses a desktop mic analyser gate before accepting barge-in transcripts', () => {
