@@ -15,11 +15,13 @@ import {
 import {
   buildToolFallbackSpeech,
   buildVoiceOpeningPrompt,
+  chunkForTTS,
   isExplicitTourIntent,
   isIntentionalBargeInTranscript,
   shouldPersistVoiceTurn,
   VOICE_BARGE_IN_MIN_WORDS,
   VOICE_OPEN_GREETING_DELAY_MS,
+  VOICE_TTS_CHUNK_MAX_CHARS,
   type VoiceTurnKind,
 } from './voice-turn-policy';
 import { calculateRms, VoiceBargeInDetector } from './voice-barge-in';
@@ -790,137 +792,193 @@ export function useVoiceController({
         window.VoiceBus.setState('speaking');
         setCaption('Speaking\u2026');
 
-        fetch('/api/tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, voiceId: 'dMWVPH9DSxWOMrrrUso3' }),
-          signal: ac.signal,
-        })
-          .then(async (res) => {
-            if (ac.signal.aborted) return;
-            if (!res.ok) throw new Error(`TTS fetch failed: ${res.status}`);
-            const buffer = await res.arrayBuffer();
-            if (ac.signal.aborted) return;
-            const ctx = window.VoiceBus._getCtx();
-            if (!ctx) throw new Error('AudioContext unavailable');
-            // Phase 23 hotfix: actually await resume() before using the context.
-            // _getCtx fires resume() but doesn't await it — if the context is still
-            // suspended when source.start() runs, audio plays silently and onended
-            // never fires, hanging the speak Promise.
-            if (ctx.state === 'suspended') {
-              try { await ctx.resume(); } catch {}
+        // Why: ElevenLabs and our /api/tts proxy refuse very long single
+        // requests (proxy at 4000 chars). Grok answers can run longer and
+        // would otherwise 413, kick the catch arm, and fall back to the OS
+        // SpeechSynthesis voice — that's the "robotic voice on long answers"
+        // bug. Split here and play each chunk back-to-back through the same
+        // ElevenLabs voice. The 'speaking' state is entered ONCE above; only
+        // the FINAL chunk transitions back to 'idle' and resolves.
+        const chunks = chunkForTTS(text, VOICE_TTS_CHUNK_MAX_CHARS);
+        if (chunks.length === 0) {
+          window.VoiceBus.setState('idle');
+          speakingRef.current = false;
+          if (speakResolverRef.current === resolve) speakResolverRef.current = null;
+          speakAbortRef.current = null;
+          resolve();
+          return;
+        }
+
+        const synthFallback = (failedText: string) => {
+          const synth = window.speechSynthesis;
+          if (!synth) {
+            window.VoiceBus.setState('idle');
+            speakingRef.current = false;
+            if (speakResolverRef.current === resolve) speakResolverRef.current = null;
+            speakAbortRef.current = null;
+            resolve();
+            return;
+          }
+          // Cancel any queued utterances before starting ours
+          try { synth.cancel(); } catch {}
+          const u = new SpeechSynthesisUtterance(failedText);
+          speakingTextRef.current = failedText;
+          u.rate = 1.05;
+          u.pitch = 1.0;
+          u.volume = 1.0;
+          speechUtteranceRef.current = u;
+          window.VoiceBus.setState('speaking');
+          window.VoiceBus.attachTTSFake(u);
+          attachSynthSpokenCaptionProgress(u, failedText);
+          const finishSynth = () => {
+            if (speechUtteranceRef.current === u) {
+              stopBargeInMonitor();
+              stopSpokenCaptionProgress(true);
+              window.VoiceBus.setState('idle');
+              speakingRef.current = false;
+              speechUtteranceRef.current = null;
+              speakAbortRef.current = null;
+              if (speakResolverRef.current === resolve) speakResolverRef.current = null;
             }
-            if (ctx.state === 'suspended') {
-              throw new Error('AudioContext still suspended');
-            }
-            const decoded = await ctx.decodeAudioData(buffer);
-            if (ac.signal.aborted) return;
+            resolve();
+          };
+          // VOICE-07: wrap onend/onerror to clear the worst-case guard before
+          // calling finishSynth. Identity check inside finishSynth is the final
+          // safety net if both fire (RESEARCH.md Pitfall 3).
+          const wrappedFinishSynth = () => {
+            clearSynthGuard();
+            finishSynth();
+          };
+          u.onend = wrappedFinishSynth;
+          u.onerror = wrappedFinishSynth;
+          speakingRef.current = true;
+          // VOICE-07: worst-case timeout (50ms/char, 1s floor, 30s cap).
+          // Some browsers (notably Safari with disabled synth) silently no-op
+          // synth.speak() and never fire onend/onerror -- this guard ensures
+          // finishSynth is called and the speak() Promise resolves. Cleared by
+          // wrappedFinishSynth above and by clearSynthGuard() in cancelAllAudio.
+          const guardMs = Math.min(30000, Math.max(1000, failedText.length * 50));
+          synthGuardRef.current = setTimeout(() => {
+            synthGuardRef.current = null;
+            try { synth.cancel(); } catch {}
+            finishSynth(); // identity-checked finalizer -- safe even if onend already fired
+          }, guardMs);
+          synth.speak(u);
+          startBargeInMonitor();
+        };
 
-            const source = ctx.createBufferSource();
-            source.buffer = decoded;
+        const playChunkAt = (index: number) => {
+          if (ac.signal.aborted) return;
+          const chunkText = chunks[index];
+          const isFinal = index === chunks.length - 1;
 
-            // Create AnalyserNode for live RMS amplitude (drives VoiceBus.level)
-            const analyser = ctx.createAnalyser();
-            analyser.fftSize = 1024;
-            source.connect(analyser);
-            analyser.connect(ctx.destination);
+          fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: chunkText, voiceId: 'dMWVPH9DSxWOMrrrUso3' }),
+            signal: ac.signal,
+          })
+            .then(async (res) => {
+              if (ac.signal.aborted) return;
+              if (!res.ok) throw new Error(`TTS fetch failed: ${res.status}`);
+              const buffer = await res.arrayBuffer();
+              if (ac.signal.aborted) return;
+              const ctx = window.VoiceBus._getCtx();
+              if (!ctx) throw new Error('AudioContext unavailable');
+              // Phase 23 hotfix: actually await resume() before using the context.
+              // _getCtx fires resume() but doesn't await it — if the context is still
+              // suspended when source.start() runs, audio plays silently and onended
+              // never fires, hanging the speak Promise.
+              if (ctx.state === 'suspended') {
+                try { await ctx.resume(); } catch {}
+              }
+              if (ctx.state === 'suspended') {
+                throw new Error('AudioContext still suspended');
+              }
+              const decoded = await ctx.decodeAudioData(buffer);
+              if (ac.signal.aborted) return;
 
-            audioSourceRef.current = source;
-            startTimedSpokenCaptionProgress(text, decoded.duration);
+              const source = ctx.createBufferSource();
+              source.buffer = decoded;
 
-            // Start RMS loop — hooks live audio level into VoiceBus (per D-06)
-            window.VoiceBus._startLoop(analyser, 1.4);
+              // Create AnalyserNode for live RMS amplitude (drives VoiceBus.level)
+              const analyser = ctx.createAnalyser();
+              analyser.fftSize = 1024;
+              source.connect(analyser);
+              analyser.connect(ctx.destination);
 
-            const finishBufferPlayback = () => {
-              // Identity check: only mutate state if THIS source is still current.
-              // A cancelled source whose onended fires late must not touch state.
-              if (audioSourceRef.current === source) {
+              audioSourceRef.current = source;
+              startTimedSpokenCaptionProgress(chunkText, decoded.duration);
+
+              // Start RMS loop — hooks live audio level into VoiceBus (per D-06).
+              // Each chunk stops the previous chunk's loop in finishBufferPlayback
+              // below, so we never run two rAFs at once.
+              window.VoiceBus._startLoop(analyser, 1.4);
+
+              const finishBufferPlayback = () => {
+                // Identity check: only mutate state if THIS source is still current.
+                // A cancelled source whose onended fires late must not touch state.
+                if (audioSourceRef.current !== source) {
+                  // Cancelled or stale — the sequence is being torn down elsewhere.
+                  if (isFinal) resolve();
+                  return;
+                }
                 clearAudioPlaybackGuard();
+                audioSourceRef.current = null;
+                window.VoiceBus._stopLoop();
+                if (isFinal) {
+                  stopBargeInMonitor();
+                  stopSpokenCaptionProgress(true);
+                  window.VoiceBus.setState('idle');
+                  speakingRef.current = false;
+                  speakAbortRef.current = null;
+                  if (speakResolverRef.current === resolve) speakResolverRef.current = null;
+                  resolve();
+                } else {
+                  // Kick off the next chunk. Keep state == 'speaking' and the
+                  // shared abort/resolver so cancelAllAudio still tears the
+                  // whole sequence down cleanly.
+                  playChunkAt(index + 1);
+                }
+              };
+
+              source.onended = finishBufferPlayback;
+
+              speakingRef.current = true;
+              audioPlaybackGuardRef.current = setTimeout(() => {
+                if (audioSourceRef.current !== source) return;
+                try { source.stop(); } catch {}
+                finishBufferPlayback();
+              }, Math.round(decoded.duration * 1000) + VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS);
+              source.start();
+              startBargeInMonitor();
+            })
+            .catch((err) => {
+              // Cancelled by us — do not fall back to synth, do not resolve here
+              // (cancelAllAudio already resolved this Promise via speakResolverRef).
+              if (ac.signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
+              console.warn('[VoiceController] streamTTS chunk failed, falling back to SpeechSynthesis:', err);
+              if (index === 0) {
+                // No ElevenLabs audio played yet — fall back to synth for the
+                // full text so the user still hears the answer.
+                synthFallback(text);
+              } else {
+                // Some ElevenLabs audio already played; switching voices
+                // mid-thought is jarring. Resolve cleanly and let the user
+                // re-ask if they need the rest.
                 stopBargeInMonitor();
                 stopSpokenCaptionProgress(true);
                 window.VoiceBus._stopLoop();
                 window.VoiceBus.setState('idle');
                 speakingRef.current = false;
-                audioSourceRef.current = null;
-                speakAbortRef.current = null;
                 if (speakResolverRef.current === resolve) speakResolverRef.current = null;
-              }
-              resolve();
-            };
-
-            source.onended = finishBufferPlayback;
-
-            speakingRef.current = true;
-            audioPlaybackGuardRef.current = setTimeout(() => {
-              if (audioSourceRef.current !== source) return;
-              try { source.stop(); } catch {}
-              finishBufferPlayback();
-            }, Math.round(decoded.duration * 1000) + VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS);
-            source.start();
-            startBargeInMonitor();
-          })
-          .catch((err) => {
-            // Cancelled by us — do not fall back to synth, do not resolve here
-            // (cancelAllAudio already resolved this Promise via speakResolverRef).
-            if (ac.signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
-            console.warn('[VoiceController] streamTTS failed, falling back to SpeechSynthesis:', err);
-            // Fallback to SpeechSynthesisUtterance with fake amplitude
-            const synth = window.speechSynthesis;
-            if (!synth) {
-              window.VoiceBus.setState('idle');
-              speakingRef.current = false;
-              if (speakResolverRef.current === resolve) speakResolverRef.current = null;
-              speakAbortRef.current = null;
-              resolve();
-              return;
-            }
-            // Cancel any queued utterances before starting ours
-            try { synth.cancel(); } catch {}
-            const u = new SpeechSynthesisUtterance(text);
-            speakingTextRef.current = text;
-            u.rate = 1.05;
-            u.pitch = 1.0;
-            u.volume = 1.0;
-            speechUtteranceRef.current = u;
-            window.VoiceBus.setState('speaking');
-            window.VoiceBus.attachTTSFake(u);
-            attachSynthSpokenCaptionProgress(u, text);
-            const finishSynth = () => {
-              if (speechUtteranceRef.current === u) {
-                stopBargeInMonitor();
-                stopSpokenCaptionProgress(true);
-                window.VoiceBus.setState('idle');
-                speakingRef.current = false;
-                speechUtteranceRef.current = null;
                 speakAbortRef.current = null;
-                if (speakResolverRef.current === resolve) speakResolverRef.current = null;
+                resolve();
               }
-              resolve();
-            };
-            // VOICE-07: wrap onend/onerror to clear the worst-case guard before
-            // calling finishSynth. Identity check inside finishSynth is the final
-            // safety net if both fire (RESEARCH.md Pitfall 3).
-            const wrappedFinishSynth = () => {
-              clearSynthGuard();
-              finishSynth();
-            };
-            u.onend = wrappedFinishSynth;
-            u.onerror = wrappedFinishSynth;
-            speakingRef.current = true;
-            // VOICE-07: worst-case timeout (50ms/char, 1s floor, 30s cap).
-            // Some browsers (notably Safari with disabled synth) silently no-op
-            // synth.speak() and never fire onend/onerror -- this guard ensures
-            // finishSynth is called and the speak() Promise resolves. Cleared by
-            // wrappedFinishSynth above and by clearSynthGuard() in cancelAllAudio.
-            const guardMs = Math.min(30000, Math.max(1000, text.length * 50));
-            synthGuardRef.current = setTimeout(() => {
-              synthGuardRef.current = null;
-              try { synth.cancel(); } catch {}
-              finishSynth(); // identity-checked finalizer -- safe even if onend already fired
-            }, guardMs);
-            synth.speak(u);
-            startBargeInMonitor();
-          });
+            });
+        };
+
+        playChunkAt(0);
       });
     },
     [

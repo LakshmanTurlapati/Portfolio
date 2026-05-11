@@ -6,6 +6,7 @@ import { parseVoiceStreamLine, type VoiceStreamParseState } from '@/lib/voice-co
 import {
   buildToolFallbackSpeech,
   buildVoiceOpeningPrompt,
+  chunkForTTS,
   isExplicitTourIntent,
   isIntentionalBargeInTranscript,
   isMobileIntentionalBargeInTranscript,
@@ -14,6 +15,7 @@ import {
   VOICE_BARGE_IN_MIN_WORDS,
   VOICE_MOBILE_BARGE_IN_MIN_WORDS,
   VOICE_MOBILE_INTERIM_BARGE_IN_MIN_WORDS,
+  VOICE_TTS_CHUNK_MAX_CHARS,
 } from '@/lib/voice-turn-policy';
 
 describe('voice barge-in detector', () => {
@@ -149,6 +151,78 @@ describe('voice turn policy', () => {
         { name: 'openProject', args: { name: 'GitFly' } },
       ]),
     ).toBe('Opening GitFly.');
+  });
+});
+
+describe('chunkForTTS', () => {
+  it('returns nothing for empty or whitespace-only input', () => {
+    expect(chunkForTTS('', 100)).toEqual([]);
+    expect(chunkForTTS('   ', 100)).toEqual([]);
+    expect(chunkForTTS('\n\t  \n', 100)).toEqual([]);
+  });
+
+  it('returns a single chunk when text fits within the limit', () => {
+    expect(chunkForTTS('Short answer.', 100)).toEqual(['Short answer.']);
+    expect(chunkForTTS('  padded  ', 100)).toEqual(['padded']);
+  });
+
+  it('prefers sentence boundaries when splitting longer text', () => {
+    const text =
+      'Here is the first sentence about Lakshman. Here is the second sentence about Parz. Here is a third one for good measure.';
+    const chunks = chunkForTTS(text, 60);
+    expect(chunks.length).toBeGreaterThan(1);
+    // Each chunk should end on a sentence terminator (no mid-sentence cuts).
+    for (const chunk of chunks) {
+      expect(/[.!?]$/.test(chunk)).toBe(true);
+    }
+    expect(chunks.join(' ')).toContain('Here is the first sentence about Lakshman.');
+    expect(chunks.join(' ')).toContain('Here is a third one for good measure.');
+  });
+
+  it('falls back to clause punctuation when no sentence boundary fits', () => {
+    const text =
+      'Heading to portfolio, then opening Review Gate, then scrolling the preview to the bottom for the demo screenshot';
+    const chunks = chunkForTTS(text, 40);
+    expect(chunks.length).toBeGreaterThan(1);
+    // First chunk must end at a comma boundary, never mid-word.
+    expect(chunks[0].endsWith(',')).toBe(true);
+  });
+
+  it('falls back to whitespace when no punctuation fits', () => {
+    const text = 'alpha beta gamma delta epsilon zeta eta theta iota kappa lambda';
+    const chunks = chunkForTTS(text, 20);
+    expect(chunks.length).toBeGreaterThan(1);
+    // Each chunk must be a clean sequence of whole words (no broken word at the seam).
+    expect(chunks.join(' ').split(/\s+/).filter(Boolean)).toEqual(text.split(' '));
+  });
+
+  it('hard-cuts a pathological run with no whitespace so it still makes forward progress', () => {
+    const text = 'a'.repeat(5000);
+    const chunks = chunkForTTS(text, 1000);
+    expect(chunks.every((c) => c.length <= 1000)).toBe(true);
+    expect(chunks.join('').length).toBe(5000);
+  });
+
+  it('keeps every chunk under the requested cap on realistic long output', () => {
+    // Simulate a chatty Grok response (~6k chars of clean prose).
+    const sentence =
+      'This is exactly the kind of long-winded sentence Grok produces when the context calls for a deeper reply. ';
+    const text = sentence.repeat(60);
+    const chunks = chunkForTTS(text, 900);
+    expect(chunks.every((c) => c.length <= 900)).toBe(true);
+    expect(chunks.length).toBeGreaterThan(1);
+  });
+
+  it('uses VOICE_TTS_CHUNK_MAX_CHARS as the default cap', () => {
+    expect(VOICE_TTS_CHUNK_MAX_CHARS).toBeGreaterThan(0);
+    const text = 'sentence. '.repeat(VOICE_TTS_CHUNK_MAX_CHARS); // way over cap
+    const chunks = chunkForTTS(text);
+    expect(chunks.every((c) => c.length <= VOICE_TTS_CHUNK_MAX_CHARS)).toBe(true);
+  });
+
+  it('rejects nonsensical maxChars', () => {
+    expect(() => chunkForTTS('anything', 0)).toThrow();
+    expect(() => chunkForTTS('anything', -5)).toThrow();
   });
 });
 
@@ -376,9 +450,66 @@ describe('voice-controller barge-in wiring', () => {
     );
 
     expect(source).not.toContain('setCaption(text);');
-    expect(source).toContain('startTimedSpokenCaptionProgress(text, decoded.duration)');
-    expect(source).toContain('attachSynthSpokenCaptionProgress(u, text)');
+    // streamTTS now plays each chunk's caption progress via the chunkText var,
+    // and the synth fallback path uses failedText.
+    expect(source).toContain('startTimedSpokenCaptionProgress(chunkText, decoded.duration)');
+    expect(source).toContain('attachSynthSpokenCaptionProgress(u, failedText)');
     expect(source).toContain('stopSpokenCaptionProgress(true)');
+  });
+
+  it('chunks long TTS text and plays each chunk through ElevenLabs back-to-back', () => {
+    // Regression: long Grok answers > /api/tts cap used to 413 and fall back to
+    // the OS SpeechSynthesis voice (the "robotic voice on long answers" bug).
+    // The controller must now split text via chunkForTTS and play chunks
+    // sequentially under one 'speaking' state, only resolving once the last
+    // chunk's onended (or its playback guard) fires.
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain('chunkForTTS');
+    expect(source).toContain('VOICE_TTS_CHUNK_MAX_CHARS');
+    expect(source).toContain('const chunks = chunkForTTS(text, VOICE_TTS_CHUNK_MAX_CHARS)');
+    expect(source).toContain('const playChunkAt = (index: number) => {');
+    expect(source).toContain('const isFinal = index === chunks.length - 1;');
+    // setState('speaking') happens ONCE per streamTTS call (before chunk loop);
+    // the inner chunk loop must NOT toggle speaking again.
+    const streamTtsStart = source.indexOf('const streamTTS = useCallback');
+    const streamTtsEnd = source.indexOf('// speak — public wrapper', streamTtsStart);
+    expect(streamTtsStart).toBeGreaterThan(-1);
+    expect(streamTtsEnd).toBeGreaterThan(streamTtsStart);
+    const streamTtsBlock = source.slice(streamTtsStart, streamTtsEnd);
+    const speakingTransitions = streamTtsBlock.match(/setState\('speaking'\)/g) ?? [];
+    // One for the initial enter, one for the synth fallback path — never per chunk.
+    expect(speakingTransitions.length).toBeLessThanOrEqual(2);
+    // Recursion is the trigger for the next chunk; only the final chunk closes the speak Promise.
+    expect(streamTtsBlock).toContain('playChunkAt(index + 1);');
+    expect(streamTtsBlock).toContain('if (isFinal)');
+    expect(streamTtsBlock).toContain('synthFallback(text)');
+  });
+
+  it('keeps the chunk size safely under the TTS proxy character cap', () => {
+    // /api/tts caps requests at 4000 chars (see src/app/api/tts/route.ts).
+    // The chunker must not produce pieces that exceed that cap, otherwise the
+    // chunking-as-a-fix premise breaks for long Grok answers.
+    const ttsRoute = readFileSync(
+      join(process.cwd(), 'src/app/api/tts/route.ts'),
+      'utf8',
+    );
+    const policy = readFileSync(
+      join(process.cwd(), 'src/lib/voice-turn-policy.ts'),
+      'utf8',
+    );
+
+    const proxyCapMatch = ttsRoute.match(/text\.length > (\d+)/);
+    const chunkCapMatch = policy.match(/VOICE_TTS_CHUNK_MAX_CHARS = (\d+)/);
+
+    expect(proxyCapMatch).not.toBeNull();
+    expect(chunkCapMatch).not.toBeNull();
+    const proxyCap = Number(proxyCapMatch![1]);
+    const chunkCap = Number(chunkCapMatch![1]);
+    expect(chunkCap).toBeLessThanOrEqual(proxyCap);
   });
 });
 

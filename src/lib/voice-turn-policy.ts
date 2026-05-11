@@ -100,6 +100,82 @@ export function isMobileIntentionalBargeInTranscript(
   return isIntentionalBargeInTranscript(transcript, currentSpeech, minWords);
 }
 
+// Server `/api/tts` accepts up to 4000 chars per request; keep client chunks
+// safely under that so an off-by-one or a comma-heavy stretch never bumps
+// against the cap. Most Grok voice turns (maxOutputTokens=1000 ≈ 4000 chars)
+// still fit in a single chunk — only true overflow gets split.
+export const VOICE_TTS_CHUNK_MAX_CHARS = 3500;
+
+const VOICE_TTS_SENTENCE_BOUNDARIES = ['. ', '! ', '? ', '.\n', '!\n', '?\n'];
+const VOICE_TTS_CLAUSE_BOUNDARIES = [', ', '; ', ': '];
+const VOICE_TTS_MIN_BREAK_RATIO = 0.4;
+
+function lastIndexOfAny(
+  haystack: string,
+  needles: readonly string[],
+): { index: number; length: number } {
+  let bestIndex = -1;
+  let bestLen = 0;
+  for (const needle of needles) {
+    const idx = haystack.lastIndexOf(needle);
+    if (idx > bestIndex) {
+      bestIndex = idx;
+      bestLen = needle.length;
+    }
+  }
+  return { index: bestIndex, length: bestLen };
+}
+
+// Why: ElevenLabs (and our /api/tts proxy) refuse very long single requests.
+// Without splitting, long Grok answers used to throw 413 and fall back to the
+// OS SpeechSynthesis voice — the robotic-voice regression. Split at the most
+// natural boundary that still keeps each chunk under maxChars: sentence end
+// first, then clause punctuation, then whitespace, then a hard cut as a last
+// resort. Splits inside the first 40% of a chunk are rejected so we don't
+// emit a 5-word chunk followed by a 3000-char chunk.
+export function chunkForTTS(
+  text: string,
+  maxChars: number = VOICE_TTS_CHUNK_MAX_CHARS,
+): string[] {
+  if (maxChars < 1) throw new RangeError('maxChars must be at least 1');
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  if (trimmed.length <= maxChars) return [trimmed];
+
+  const minBreak = Math.max(1, Math.floor(maxChars * VOICE_TTS_MIN_BREAK_RATIO));
+  const chunks: string[] = [];
+  let remaining = trimmed;
+
+  while (remaining.length > maxChars) {
+    const window = remaining.slice(0, maxChars);
+
+    let breakAt = maxChars;
+    const sentence = lastIndexOfAny(window, VOICE_TTS_SENTENCE_BOUNDARIES);
+    if (sentence.index >= minBreak) {
+      breakAt = sentence.index + sentence.length;
+    } else {
+      const clause = lastIndexOfAny(window, VOICE_TTS_CLAUSE_BOUNDARIES);
+      if (clause.index >= minBreak) {
+        breakAt = clause.index + clause.length;
+      } else {
+        const spaceIdx = window.lastIndexOf(' ');
+        if (spaceIdx > 0) breakAt = spaceIdx + 1;
+      }
+    }
+
+    if (breakAt < 1) breakAt = maxChars;
+
+    const piece = remaining.slice(0, breakAt).trim();
+    if (piece) chunks.push(piece);
+    const next = remaining.slice(breakAt).trim();
+    // Defensive: if breakAt didn't advance, force progress to avoid an infinite loop.
+    remaining = next.length < remaining.length ? next : '';
+  }
+
+  if (remaining) chunks.push(remaining);
+  return chunks;
+}
+
 export interface VoiceToolCall {
   name: string;
   args: Record<string, unknown>;
