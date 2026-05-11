@@ -432,13 +432,23 @@ export function useVoiceController({
       1000,
       Math.min(30000, Math.round((durationSeconds ?? Math.max(1, words.length * 0.42)) * 1000)),
     );
+    // Why: ElevenLabs audio buffer playback has a small pre-roll between
+    // source.start() and the first audible word (buffer hand-off, output
+    // latency, etc.). Without a matching delay the caption window advances
+    // first and the rightmost word appears on screen ~150-250ms before the
+    // user hears it. Letting captions trail by a beat — clamped to 5% of the
+    // chunk so a 1s chunk doesn't sit on word #0 for half its length — makes
+    // them read like subtitles instead of leading the voice.
+    const captionHeadStartMs = Math.min(220, Math.max(80, Math.round(durationMs * 0.05)));
     const startedAt = performance.now();
     setCaption('Speaking\u2026');
 
     const tick = () => {
       if (generation !== spokenCaptionGenerationRef.current) return;
-      const elapsed = performance.now() - startedAt;
-      const progress = Math.min(1, elapsed / durationMs);
+      const elapsedRaw = performance.now() - startedAt;
+      const elapsed = Math.max(0, elapsedRaw - captionHeadStartMs);
+      const effectiveDurationMs = Math.max(1, durationMs - captionHeadStartMs);
+      const progress = Math.min(1, elapsed / effectiveDurationMs);
       const activeWordIndex = Math.min(words.length - 1, Math.floor(progress * words.length));
       setCaption(spokenCaptionWindow(words, activeWordIndex));
 
@@ -908,7 +918,6 @@ export function useVoiceController({
               analyser.connect(ctx.destination);
 
               audioSourceRef.current = source;
-              startTimedSpokenCaptionProgress(chunkText, decoded.duration);
 
               // Start RMS loop — hooks live audio level into VoiceBus (per D-06).
               // Each chunk stops the previous chunk's loop in finishBufferPlayback
@@ -951,6 +960,11 @@ export function useVoiceController({
                 finishBufferPlayback();
               }, Math.round(decoded.duration * 1000) + VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS);
               source.start();
+              // Why: start the caption rAF AFTER source.start() so the clock
+              // anchors to the audio onset, not the fetch+decode window. The
+              // head-start delay inside startTimedSpokenCaptionProgress then
+              // covers any remaining buffer pre-roll latency.
+              startTimedSpokenCaptionProgress(chunkText, decoded.duration);
               startBargeInMonitor();
             })
             .catch((err) => {

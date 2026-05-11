@@ -511,6 +511,42 @@ describe('voice-controller barge-in wiring', () => {
     const chunkCap = Number(chunkCapMatch![1]);
     expect(chunkCap).toBeLessThanOrEqual(proxyCap);
   });
+
+  it('starts the caption rAF clock after source.start so subtitles trail audio', () => {
+    // Regression: captions used to advance ahead of the ElevenLabs voice because
+    // startTimedSpokenCaptionProgress was called before source.start(), so the
+    // rAF clock anchored to the fetch+decode window instead of audio onset.
+    // The chunk-playback path must now schedule the caption tick AFTER
+    // source.start() and the caption tick itself must apply a head-start delay
+    // so words don't pop on screen during the audio buffer's pre-roll latency.
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+
+    const streamTtsStart = source.indexOf('const streamTTS = useCallback');
+    const streamTtsEnd = source.indexOf('// speak — public wrapper', streamTtsStart);
+    expect(streamTtsStart).toBeGreaterThan(-1);
+    expect(streamTtsEnd).toBeGreaterThan(streamTtsStart);
+    const streamTtsBlock = source.slice(streamTtsStart, streamTtsEnd);
+    const startCallIdx = streamTtsBlock.indexOf('source.start();');
+    const captionIdx = streamTtsBlock.indexOf(
+      'startTimedSpokenCaptionProgress(chunkText, decoded.duration)',
+    );
+    expect(startCallIdx).toBeGreaterThan(-1);
+    expect(captionIdx).toBeGreaterThan(startCallIdx);
+
+    // Head-start delay (subtitles trail by a beat). Must clamp so a 1s chunk
+    // doesn't sit on word #0 forever, and must not exceed ~250ms.
+    expect(source).toContain('captionHeadStartMs');
+    expect(source).toContain('elapsedRaw - captionHeadStartMs');
+    expect(source).toContain('durationMs - captionHeadStartMs');
+    const lagMatch = source.match(/captionHeadStartMs = Math\.min\((\d+),/);
+    expect(lagMatch).not.toBeNull();
+    const lagCap = Number(lagMatch![1]);
+    expect(lagCap).toBeGreaterThanOrEqual(150);
+    expect(lagCap).toBeLessThanOrEqual(300);
+  });
 });
 
 describe('voice panel caption layout', () => {
