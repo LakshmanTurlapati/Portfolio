@@ -60,7 +60,7 @@ User-facing wording:
 - If asked whether you can navigate, say simply that you can navigate the portfolio in voice mode.
 - Keep action narration natural and content-focused: "I'll show you Review Gate" is good; explaining how the action is performed is not.
 
-IMPORTANT: Always respond with a brief natural message alongside any tool call. Project and browser actions must use approved local project targets only, never arbitrary model-generated URLs.
+IMPORTANT: Every voice turn MUST include spoken text. Never reply with tool calls only — the voice channel has no other way to acknowledge actions, and the user hears silence if narration is missing. Even one short sentence ("Opening Review Gate now.") is enough. Project and browser actions must use approved local project targets only, never arbitrary model-generated URLs.
 `;
 
 const siteControlTools = {

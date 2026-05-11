@@ -99,3 +99,53 @@ export function isMobileIntentionalBargeInTranscript(
 
   return isIntentionalBargeInTranscript(transcript, currentSpeech, minWords);
 }
+
+export interface VoiceToolCall {
+  name: string;
+  args: Record<string, unknown>;
+}
+
+// Why: post-tour, Grok occasionally drops narration and returns only tool calls.
+// Without spoken output the state machine flips idle → listening, the user hears
+// nothing, and the tour-end handoff appears to loop listening ↔ thinking forever.
+// Speaking a brief tool-derived line breaks that silent loop and confirms the
+// action audibly. startTour / switchToText / endCall are intentionally omitted —
+// they are either gated upstream (isExplicitTourIntent) or short-circuit the
+// turn before this fallback runs.
+export function buildToolFallbackSpeech(toolCalls: readonly VoiceToolCall[]): string {
+  for (const tc of toolCalls) {
+    const args = (tc.args ?? {}) as Record<string, unknown>;
+    switch (tc.name) {
+      case 'openProject': {
+        const raw = args.name ?? args.slug;
+        const name = typeof raw === 'string' ? raw.trim() : '';
+        return name ? `Opening ${name}.` : 'Opening that project.';
+      }
+      case 'navigate': {
+        const raw = args.page;
+        const page = typeof raw === 'string' ? raw.trim() : '';
+        return page ? `Heading to the ${page} page.` : 'Switching pages.';
+      }
+      case 'scrollTo': {
+        const raw = args.section ?? args.selector;
+        const section = typeof raw === 'string' ? raw.trim() : '';
+        return section ? `Taking you to ${section}.` : 'Scrolling there.';
+      }
+      case 'scrollProjectPreview':
+        return 'Showing more of this project.';
+      case 'closeBrowser':
+        return 'Closing the browser view.';
+      case 'openCurrentProjectExternal':
+        return 'Opening it in a new tab.';
+      case 'toggleTheme':
+        return 'Switching the theme.';
+      case 'openLink':
+        return 'Opening that link.';
+      case 'unsupportedIframeControl':
+        return "I can move around the portfolio, but I can't operate that embedded site directly.";
+      default:
+        continue;
+    }
+  }
+  return '';
+}

@@ -13,6 +13,7 @@ import {
   wordIndexFromCharIndex,
 } from './voice-caption-window';
 import {
+  buildToolFallbackSpeech,
   buildVoiceOpeningPrompt,
   isExplicitTourIntent,
   isIntentionalBargeInTranscript,
@@ -1231,7 +1232,21 @@ export function useVoiceController({
         } else if (shouldStartTour) {
           await startGuidedTour(myTurn);
         } else if (toolCalls.length > 0) {
-          window.VoiceBus.setState('idle');
+          // Why: post-tour, Grok occasionally returns tool calls without any
+          // narration even though the prompt asks for one. The earlier code
+          // dropped straight back to listening, which presented as a silent
+          // listening ↔ thinking loop (no audible 'speaking' state). Speak a
+          // brief tool-derived acknowledgement so the state actually transitions
+          // through speaking and the user gets audible confirmation before the
+          // next listen turn. Fall back to a neutral phrase when no tool in the
+          // batch has a user-visible acknowledgement (rare: ignored startTour).
+          const fallback = buildToolFallbackSpeech(toolCalls) || 'Got it.';
+          await speak(fallback);
+          if (myTurn !== turnGenerationRef.current) return;
+          historyRef.current = [
+            ...historyRef.current,
+            { role: 'assistant', content: fallback },
+          ];
           setCaption('');
           resumeListeningIfActive();
         } else {

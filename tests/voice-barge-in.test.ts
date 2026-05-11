@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { calculateRms, VoiceBargeInDetector } from '@/lib/voice-barge-in';
 import { parseVoiceStreamLine, type VoiceStreamParseState } from '@/lib/voice-controller';
 import {
+  buildToolFallbackSpeech,
   buildVoiceOpeningPrompt,
   isExplicitTourIntent,
   isIntentionalBargeInTranscript,
@@ -117,6 +118,38 @@ describe('voice turn policy', () => {
     expect(isExplicitTourIntent('what can you do')).toBe(false);
     expect(isExplicitTourIntent(buildVoiceOpeningPrompt('home'))).toBe(false);
   });
+
+  it('produces a spoken acknowledgement for each user-visible voice tool', () => {
+    expect(buildToolFallbackSpeech([{ name: 'openProject', args: { name: 'FSB' } }])).toBe('Opening FSB.');
+    expect(buildToolFallbackSpeech([{ name: 'openProject', args: { slug: 'Review Gate' } }])).toBe('Opening Review Gate.');
+    expect(buildToolFallbackSpeech([{ name: 'openProject', args: {} }])).toBe('Opening that project.');
+    expect(buildToolFallbackSpeech([{ name: 'navigate', args: { page: 'portfolio' } }])).toBe('Heading to the portfolio page.');
+    expect(buildToolFallbackSpeech([{ name: 'scrollTo', args: { section: 'experience' } }])).toBe('Taking you to experience.');
+    expect(buildToolFallbackSpeech([{ name: 'scrollProjectPreview', args: { direction: 'down' } }])).toBe('Showing more of this project.');
+    expect(buildToolFallbackSpeech([{ name: 'closeBrowser', args: {} }])).toBe('Closing the browser view.');
+    expect(buildToolFallbackSpeech([{ name: 'openCurrentProjectExternal', args: {} }])).toBe('Opening it in a new tab.');
+    expect(buildToolFallbackSpeech([{ name: 'toggleTheme', args: {} }])).toBe('Switching the theme.');
+    expect(buildToolFallbackSpeech([{ name: 'openLink', args: { url: 'https://example.com' } }])).toBe('Opening that link.');
+    expect(buildToolFallbackSpeech([{ name: 'unsupportedIframeControl', args: {} }])).toContain("can't operate that embedded site");
+  });
+
+  it('returns no fallback for short-circuit tools so handleUserTurn can pick a neutral phrase', () => {
+    // startTour / switchToText / endCall are handled elsewhere in voice-controller
+    // — they must not produce a tool-derived line that the user would actually hear.
+    expect(buildToolFallbackSpeech([{ name: 'startTour', args: {} }])).toBe('');
+    expect(buildToolFallbackSpeech([{ name: 'switchToText', args: {} }])).toBe('');
+    expect(buildToolFallbackSpeech([{ name: 'endCall', args: {} }])).toBe('');
+    expect(buildToolFallbackSpeech([])).toBe('');
+  });
+
+  it('takes the first acknowledgeable tool when the model batches multiple calls', () => {
+    expect(
+      buildToolFallbackSpeech([
+        { name: 'startTour', args: {} },
+        { name: 'openProject', args: { name: 'GitFly' } },
+      ]),
+    ).toBe('Opening GitFly.');
+  });
 });
 
 describe('voice-controller barge-in wiring', () => {
@@ -169,6 +202,41 @@ describe('voice-controller barge-in wiring', () => {
 
     expect(emptyResponseBlock).not.toContain('resumeListeningIfActive();');
     expect(failureBlock).not.toContain('resumeListeningIfActive();');
+  });
+
+  it('speaks a tool-derived acknowledgement before resuming listening on tool-only turns', () => {
+    // Regression: post-tour, Grok sometimes drops narration and returns only
+    // tool calls. The previous code jumped straight back to listening, which
+    // presented as a silent listening ↔ thinking loop. The branch must now
+    // speak an audible fallback so the state transitions through 'speaking'
+    // and the user hears confirmation.
+    const source = readFileSync(
+      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      'utf8',
+    );
+
+    const toolBranchIndex = source.indexOf('} else if (toolCalls.length > 0) {');
+    expect(toolBranchIndex).toBeGreaterThan(-1);
+
+    const toolBranchBlock = source.slice(
+      toolBranchIndex,
+      source.indexOf('        } else {', toolBranchIndex),
+    );
+
+    expect(toolBranchBlock).toContain('buildToolFallbackSpeech(toolCalls)');
+    expect(toolBranchBlock).toContain("|| 'Got it.'");
+    expect(toolBranchBlock).toContain('await speak(fallback)');
+    // The speak must precede the listen resume — otherwise we are still silent.
+    expect(toolBranchBlock.indexOf('await speak(fallback)')).toBeLessThan(
+      toolBranchBlock.indexOf('resumeListeningIfActive();'),
+    );
+    // Stale-turn check: if a newer turn started during speak(), bail without
+    // resuming listening so we don't fight another in-flight turn.
+    expect(toolBranchBlock).toContain('if (myTurn !== turnGenerationRef.current) return;');
+    // The acknowledgement should be appended to history so the model sees it
+    // on the next turn — otherwise the conversation appears one-sided.
+    expect(toolBranchBlock).toContain("content: fallback");
+    expect(source).toContain("import {\n  buildToolFallbackSpeech,");
   });
 
   it('bounds chat and TTS waits so voice cannot hang after a turn', () => {
@@ -350,6 +418,21 @@ describe('voice chat prompt routing', () => {
       { name: 'navigate', args: { page: 'portfolio' } },
       { name: 'startTour', args: {} },
     ]);
+  });
+
+  it('requires the voice tool-instructions prompt to demand spoken text alongside tools', () => {
+    // The model used to occasionally return tool calls without narration on
+    // post-tour follow-ups. The strengthened wording pushes the model to always
+    // produce at least one sentence of spoken text — the controller now also
+    // covers the no-text case, but the prompt is the first line of defense.
+    const source = readFileSync(
+      join(process.cwd(), 'src/app/api/chat/route.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain('Every voice turn MUST include spoken text');
+    expect(source).toContain('Never reply with tool calls only');
+    expect(source).toContain('the user hears silence if narration is missing');
   });
 
   it('keeps conversational voice rules in the server-side prompt path', () => {
