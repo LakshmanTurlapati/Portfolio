@@ -39,7 +39,7 @@ export const bioSegments: BioSegment[] = [
   { text: "InfiniteChoice", bold: true },
   { text: ", leading development on " },
   { text: "Voyza", bold: true },
-  { text: ", our AI-first hotel booking platform. Goal is dead simple: kill the friction, make it stupid fast, and actually useful for people.\n\nCurrently going hard on two things:\n\n" },
+  { text: ", our AI first hotel booking platform. Goal is dead simple: kill the friction, make it stupid fast, and actually useful for people.\n\nCurrently going hard on two things:\n\n" },
   { text: "FSB (Full Self Browsing)", bold: true },
   { text: ": autonomous agents that can actually browse the web with memory and personality\n\n" },
   { text: "GitFly", bold: true },
