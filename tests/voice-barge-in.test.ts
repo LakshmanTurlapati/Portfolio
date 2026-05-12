@@ -638,11 +638,22 @@ describe('voice chat prompt routing', () => {
     );
 
     expect(source).toContain('startTour: tool');
-    // Why: all side-effect tools now require explicit user directives,
-    // mirroring the startTour discipline. The capitalized "Use ONLY"
-    // emphasizes the rule across every tool description so Grok no longer
-    // fires openProject / navigate / scrollTo on bare mentions.
+    // Why: all side-effect tools now require explicit user directives at the
+    // SCHEMA level (tool `description` field), because Grok weights tool
+    // descriptions above prose buried in a long system prompt. Earlier fixes
+    // that only tightened the prompt prose were ignored by the model.
     expect(source).toContain('Use ONLY when the user explicitly asks');
+    // Lock the regression in: every side-effect tool schema must carry a
+    // "Call this ONLY when" restriction. openProject was the smoking gun —
+    // bare "FSB" or "tell me about FSB" used to fire it because the schema
+    // description was permissive.
+    expect(source).toMatch(/openProject: tool\(\{\s*description:[^}]*Call this ONLY when the user gives an explicit/);
+    expect(source).toMatch(/navigate: tool\(\{\s*description:[^}]*Call this ONLY when the user gives an explicit/);
+    expect(source).toMatch(/scrollTo: tool\(\{\s*description:[^}]*Call this ONLY when the user gives an explicit/);
+    // The openProject schema must explicitly enumerate the NOT-trigger
+    // patterns so the model treats "tell me about FSB" as conversational.
+    expect(source).toMatch(/openProject:[\s\S]*Do NOT call this on bare mentions/);
+    expect(source).toMatch(/openProject:[\s\S]*tell me about FSB/);
     expect(source).toContain('continuous guided showcase until interrupted');
     expect(source).toContain('direct, playful, high-energy, practical');
     expect(source).toContain('Do not manually chain the whole tour');

@@ -64,63 +64,70 @@ User-facing wording:
 IMPORTANT: Every voice turn MUST include spoken text. Never reply with tool calls only — the voice channel has no other way to acknowledge actions, and the user hears silence if narration is missing. Even one short sentence ("Opening Review Gate now.") is enough. Project and browser actions must use approved local project targets only, never arbitrary model-generated URLs.
 `;
 
+// Why: Grok weighs each tool's own `description` field above prose buried in
+// a long system prompt. Earlier fixes only tightened the prompt prose, so the
+// model kept firing openProject on bare mentions ("tell me about FSB"). The
+// "Call this ONLY when..." restriction now lives at the schema level where
+// the model actually reasons about WHEN to invoke a tool. The system-prompt
+// block at siteControlToolInstructions above is kept as redundant
+// reinforcement.
 const siteControlTools = {
   navigate: tool({
-    description: 'Navigate to a page on the portfolio website. Valid pages: home, portfolio, about.',
+    description: 'Switch the page in the portfolio website (home, portfolio, about). Call this ONLY when the user gives an explicit page-switch directive ("go to portfolio", "show me the about page", "take me home"). Do NOT call this on incidental page mentions or general questions. For information requests about a page, answer in words instead.',
     inputSchema: z.object({
       page: z.enum(['home', 'portfolio', 'about']).describe('The page to navigate to'),
     }),
   }),
   openProject: tool({
-    description: 'Open a specific approved project target in the portfolio browser. Use a project name or alias from the portfolio, not an arbitrary URL.',
+    description: 'Open the in-portfolio browser onto a specific approved project (Parz-AI, FSB, GitFly, Review Gate, T2S, etc.). Call this ONLY when the user gives an explicit open/show/view directive for that project ("open FSB", "show me Review Gate", "let me see GitFly", "pull up Parz-AI", "demo FSB"). Do NOT call this on bare mentions, conversational questions, or information requests ("FSB?", "tell me about FSB", "what is GitFly", "what does Review Gate do", "explain it to me"). For information requests, answer in words and let the user request navigation explicitly afterward. Use approved project names/aliases from the portfolio, not arbitrary URLs.',
     inputSchema: z.object({
-      name: z.string().describe('The project name or alias to open, e.g. "Parz-AI", "FSB", "GitFly", "Review Gate", "T2S"'),
+      name: z.string().describe('Approved project name or alias, e.g. "Parz-AI", "FSB", "GitFly", "Review Gate", "T2S".'),
     }),
   }),
   scrollTo: tool({
-    description: 'Scroll to a section on the about page. Valid sections: about, experience, academics.',
+    description: 'Scroll the about page to a specific section (about, experience, academics). Call this ONLY when the user gives an explicit scroll/jump directive for a section ("scroll to experience", "jump to academics", "show me your education"). Do NOT call this on incidental section mentions.',
     inputSchema: z.object({
       section: z.enum(['about', 'experience', 'academics']).describe('The section to scroll to'),
     }),
   }),
   scrollProjectPreview: tool({
-    description: 'Scroll the current portfolio-owned project preview when that preview supports scrolling.',
+    description: 'Scroll inside a currently-open portfolio-owned project preview. Call this ONLY when (a) a preview is already open AND (b) the user explicitly asks to scroll it ("scroll down", "show me more of this", "keep scrolling", "go to the top").',
     inputSchema: z.object({
       direction: z.enum(['down', 'up', 'top', 'bottom']).optional().describe('Scroll direction for the current project preview'),
     }),
   }),
   closeBrowser: tool({
-    description: 'Close the inbuilt portfolio browser/project viewer if it is currently open.',
+    description: 'Close the inbuilt portfolio browser/project viewer if it is currently open. Call this ONLY when the user explicitly asks to close, dismiss, or back out of the project viewer ("close it", "close the browser", "back out", "dismiss this").',
     inputSchema: z.object({}),
   }),
   openCurrentProjectExternal: tool({
-    description: 'Open the currently active approved project browser target externally in a new tab.',
+    description: 'Open the currently-viewed approved project in a new browser tab (externally). Call this ONLY when the user explicitly asks to open the current project externally or in a new tab ("open it externally", "open in a new tab", "let me see it in a real tab").',
     inputSchema: z.object({}),
   }),
   unsupportedIframeControl: tool({
-    description: 'Use for unsupported requests to operate controls inside an embedded third-party site.',
+    description: 'Use for unsupported requests to operate controls inside an embedded third-party site (clicks, typing, form submission within an iframe).',
     inputSchema: z.object({}),
   }),
   toggleTheme: tool({
-    description: 'Toggle between dark and light theme.',
+    description: 'Toggle between dark and light theme on the portfolio. Call this ONLY when the user explicitly asks to switch, toggle, or change the theme/mode ("switch to dark mode", "toggle the theme", "go dark", "make it lighter").',
     inputSchema: z.object({}),
   }),
   openLink: tool({
-    description: 'Open an approved public portfolio, contact, or project URL in a new browser tab.',
+    description: 'Open an approved public portfolio/contact/project URL in a new browser tab. Call this ONLY when the user explicitly asks to open a link ("open the LinkedIn", "show me their GitHub"). Do NOT call this on incidental URL or platform mentions, and never open arbitrary model-invented URLs.',
     inputSchema: z.object({
       url: z.string().url().describe('The URL to open'),
     }),
   }),
   startTour: tool({
-    description: 'Start a continuous guided tour of the portfolio until the user interrupts it.',
+    description: 'Start a continuous guided tour/showcase/walkthrough of the portfolio (will run until interrupted). Call this ONLY when the user explicitly asks for a tour, walkthrough, showcase, or to be shown around ("give me a tour", "walk me through the portfolio", "show me around", "start a walkthrough"). Do NOT call this for normal questions about projects, Lakshman, Parz, capabilities, or work.',
     inputSchema: z.object({}),
   }),
   switchToText: tool({
-    description: 'Switch from voice mode to text chat mode.',
+    description: 'Switch from voice mode to text chat mode. Call this ONLY when the user explicitly asks to switch to text or chat mode ("switch to text", "let me type instead", "open the chat").',
     inputSchema: z.object({}),
   }),
   endCall: tool({
-    description: 'End the voice session and close voice mode.',
+    description: 'End the voice session and close voice mode. Call this ONLY when the user says goodbye, explicitly asks to end the conversation, stop voice mode, or hang up ("bye", "we are done", "end the call", "stop voice mode").',
     inputSchema: z.object({}),
   }),
 };

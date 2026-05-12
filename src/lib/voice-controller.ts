@@ -801,6 +801,7 @@ export function useVoiceController({
 
         window.VoiceBus.setState('speaking');
         setCaption('Speaking\u2026');
+        console.info('[VoiceTrace] streamTTS entry', { textLen: text.length });
 
         // Why: ElevenLabs and our /api/tts proxy refuse very long single
         // requests (proxy at 4000 chars). Grok answers can run longer and
@@ -810,7 +811,9 @@ export function useVoiceController({
         // ElevenLabs voice. The 'speaking' state is entered ONCE above; only
         // the FINAL chunk transitions back to 'idle' and resolves.
         const chunks = chunkForTTS(text, VOICE_TTS_CHUNK_MAX_CHARS);
+        console.info('[VoiceTrace] streamTTS chunked', { chunkCount: chunks.length });
         if (chunks.length === 0) {
+          console.warn('[VoiceTrace] streamTTS chunks empty, resolving early');
           window.VoiceBus.setState('idle');
           speakingRef.current = false;
           if (speakResolverRef.current === resolve) speakResolverRef.current = null;
@@ -820,8 +823,10 @@ export function useVoiceController({
         }
 
         const synthFallback = (failedText: string) => {
+          console.info('[VoiceTrace] synthFallback entry', { textLen: failedText.length });
           const synth = window.speechSynthesis;
           if (!synth) {
+            console.warn('[VoiceTrace] synthFallback: window.speechSynthesis missing → silent resolve (USER HEARS NOTHING)');
             window.VoiceBus.setState('idle');
             speakingRef.current = false;
             if (speakResolverRef.current === resolve) speakResolverRef.current = null;
@@ -829,6 +834,7 @@ export function useVoiceController({
             resolve();
             return;
           }
+          console.info('[VoiceTrace] synthFallback: using window.speechSynthesis');
           // Cancel any queued utterances before starting ours
           try { synth.cancel(); } catch {}
           const u = new SpeechSynthesisUtterance(failedText);
@@ -878,9 +884,13 @@ export function useVoiceController({
         };
 
         const playChunkAt = (index: number) => {
-          if (ac.signal.aborted) return;
+          if (ac.signal.aborted) {
+            console.info('[VoiceTrace] playChunkAt aborted pre-fetch', { index });
+            return;
+          }
           const chunkText = chunks[index];
           const isFinal = index === chunks.length - 1;
+          console.info('[VoiceTrace] playChunkAt fetch start', { index, chunkLen: chunkText.length, isFinal });
 
           fetch('/api/tts', {
             method: 'POST',
@@ -889,24 +899,33 @@ export function useVoiceController({
             signal: ac.signal,
           })
             .then(async (res) => {
-              if (ac.signal.aborted) return;
+              console.info('[VoiceTrace] /api/tts response', { index, status: res.status, ok: res.ok });
+              if (ac.signal.aborted) {
+                console.info('[VoiceTrace] aborted after fetch response', { index });
+                return;
+              }
               if (!res.ok) throw new Error(`TTS fetch failed: ${res.status}`);
               const buffer = await res.arrayBuffer();
               if (ac.signal.aborted) return;
               const ctx = window.VoiceBus._getCtx();
               if (!ctx) throw new Error('AudioContext unavailable');
+              console.info('[VoiceTrace] AudioContext state pre-resume', { index, state: ctx.state });
               // Phase 23 hotfix: actually await resume() before using the context.
               // _getCtx fires resume() but doesn't await it — if the context is still
               // suspended when source.start() runs, audio plays silently and onended
               // never fires, hanging the speak Promise.
               if (ctx.state === 'suspended') {
-                try { await ctx.resume(); } catch {}
+                try { await ctx.resume(); } catch (resumeErr) {
+                  console.warn('[VoiceTrace] AudioContext resume() failed', { index, err: resumeErr instanceof Error ? resumeErr.message : String(resumeErr) });
+                }
               }
               if (ctx.state === 'suspended') {
+                console.warn('[VoiceTrace] AudioContext still suspended after resume', { index });
                 throw new Error('AudioContext still suspended');
               }
               const decoded = await ctx.decodeAudioData(buffer);
               if (ac.signal.aborted) return;
+              console.info('[VoiceTrace] audio decoded', { index, duration: decoded.duration, ctxState: ctx.state });
 
               const source = ctx.createBufferSource();
               source.buffer = decoded;
@@ -951,14 +970,19 @@ export function useVoiceController({
                 }
               };
 
-              source.onended = finishBufferPlayback;
+              source.onended = () => {
+                console.info('[VoiceTrace] source.onended fired', { index });
+                finishBufferPlayback();
+              };
 
               speakingRef.current = true;
               audioPlaybackGuardRef.current = setTimeout(() => {
                 if (audioSourceRef.current !== source) return;
+                console.warn('[VoiceTrace] playback guard timeout fired (onended did not fire)', { index, duration: decoded.duration });
                 try { source.stop(); } catch {}
                 finishBufferPlayback();
               }, Math.round(decoded.duration * 1000) + VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS);
+              console.info('[VoiceTrace] source.start()', { index, ctxState: ctx.state });
               source.start();
               // Why: start the caption rAF AFTER source.start() so the clock
               // anchors to the audio onset, not the fetch+decode window. The
@@ -970,8 +994,11 @@ export function useVoiceController({
             .catch((err) => {
               // Cancelled by us — do not fall back to synth, do not resolve here
               // (cancelAllAudio already resolved this Promise via speakResolverRef).
-              if (ac.signal.aborted || (err instanceof Error && err.name === 'AbortError')) return;
-              console.warn('[VoiceController] streamTTS chunk failed, falling back to SpeechSynthesis:', err);
+              if (ac.signal.aborted || (err instanceof Error && err.name === 'AbortError')) {
+                console.info('[VoiceTrace] streamTTS aborted', { index });
+                return;
+              }
+              console.warn('[VoiceTrace] streamTTS chunk failed → synth fallback', { index, err: err instanceof Error ? err.message : String(err) });
               if (index === 0) {
                 // No ElevenLabs audio played yet — fall back to synth for the
                 // full text so the user still hears the answer.
@@ -1233,9 +1260,24 @@ export function useVoiceController({
         const clean = streamState.responseText.trim();
         let shouldStartTour = false;
 
+        // [VoiceTrace] Diagnostic logs to disambiguate the silent-audio
+        // failure mode in production. Filter the browser console for
+        // [VoiceTrace] to see the full turn lifecycle. Safe in production:
+        // logs only metadata (lengths, status codes, state names) — no
+        // transcripts or response text.
+        console.info('[VoiceTrace] stream complete', {
+          textLen: clean.length,
+          toolCount: toolCalls.length,
+          toolNames: toolCalls.map((t) => t.name),
+          turn: myTurn,
+        });
+
         // Phase 22: bail if a newer turn started while we were fetching — closes O-3.
         // Don't dispatch tools or speak; the user moved on to a different utterance.
-        if (myTurn !== turnGenerationRef.current) return;
+        if (myTurn !== turnGenerationRef.current) {
+          console.info('[VoiceTrace] turn stale, bailing before dispatch', { myTurn, current: turnGenerationRef.current });
+          return;
+        }
 
         // Append assistant response to history (text portion)
         if (clean) {
@@ -1307,7 +1349,9 @@ export function useVoiceController({
         // tools, stop at idle with a visible caption instead of silently looping
         // back into listening.
         if (clean) {
+          console.info('[VoiceTrace] branch=text-speak', { textLen: clean.length });
           await speak(clean);
+          console.info('[VoiceTrace] text-speak resolved', { turn: myTurn });
           if (myTurn !== turnGenerationRef.current) return;
           if (shouldStartTour) {
             await startGuidedTour(myTurn);
@@ -1315,6 +1359,7 @@ export function useVoiceController({
           }
           resumeListeningIfActive();
         } else if (shouldStartTour) {
+          console.info('[VoiceTrace] branch=tour');
           await startGuidedTour(myTurn);
         } else if (toolCalls.length > 0) {
           // Why: post-tour, Grok occasionally returns tool calls without any
@@ -1326,7 +1371,9 @@ export function useVoiceController({
           // next listen turn. Fall back to a neutral phrase when no tool in the
           // batch has a user-visible acknowledgement (rare: ignored startTour).
           const fallback = buildToolFallbackSpeech(toolCalls) || 'Got it.';
+          console.info('[VoiceTrace] branch=tool-fallback', { fallback, fallbackLen: fallback.length });
           await speak(fallback);
+          console.info('[VoiceTrace] tool-fallback speak resolved', { turn: myTurn });
           if (myTurn !== turnGenerationRef.current) return;
           historyRef.current = [
             ...historyRef.current,
@@ -1335,10 +1382,12 @@ export function useVoiceController({
           setCaption('');
           resumeListeningIfActive();
         } else {
+          console.info('[VoiceTrace] branch=empty-no-text-no-tools');
           window.VoiceBus.setState('idle');
           setCaption("I couldn't get a spoken response. Tap to try again.");
         }
-      } catch {
+      } catch (err) {
+        console.warn('[VoiceTrace] handleUserTurn threw', { err: err instanceof Error ? err.message : String(err), turn: myTurn });
         if (myTurn !== turnGenerationRef.current) return;
         // Surface a UI caption and stop at idle. Auto-resuming here creates the
         // confusing listening/thinking loop when /api/chat or /api/tts is blocked.
