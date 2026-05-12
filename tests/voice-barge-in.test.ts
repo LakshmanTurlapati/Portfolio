@@ -759,6 +759,19 @@ describe('site-control tool wiring', () => {
     expect(tourBlock).not.toContain('visible AI control');
   });
 
+  it('resets conversation context on every page reload instead of caching it', () => {
+    const voice = readFileSync(join(process.cwd(), 'src/lib/voice-controller.ts'), 'utf8');
+
+    // Why: history was previously rehydrated from localStorage on mount and
+    // re-written on close, so context survived across reloads. The user
+    // wants a fresh conversation every reload. Lock the regression in: no
+    // pf-voice-history write should reappear, and the mount-time cleanup
+    // must stay so existing cached histories from prior builds get wiped.
+    expect(voice).not.toContain("localStorage.setItem('pf-voice-history'");
+    expect(voice).not.toContain("localStorage.getItem('pf-voice-history')");
+    expect(voice).toContain("localStorage.removeItem('pf-voice-history')");
+  });
+
   it('ships four interchangeable tour narration variants with safe phrasing', async () => {
     const { TOUR_NARRATIONS, pickTourNarration } = await import('@/data/tour-narration');
     const fields = [

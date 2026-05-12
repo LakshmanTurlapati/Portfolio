@@ -220,15 +220,15 @@ export function useVoiceController({
     return unsub as () => void;
   }, []);
 
-  // Per D-22: load voice history from localStorage on mount
+  // History is per-page-session only — no cross-reload caching. historyRef
+  // lives in memory and resets to [] every time the component mounts (i.e.,
+  // every page reload). Clear any legacy pf-voice-history entry from prior
+  // builds so the first reload after the change wipes the cache cleanly.
+  // Also closes the privacy gap flagged in .planning/research/PITFALLS.md:246
+  // (sensitive content used to linger in localStorage across sessions).
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      const saved = localStorage.getItem('pf-voice-history');
-      if (saved) historyRef.current = JSON.parse(saved) as HistoryMessage[];
-    } catch {
-      // Ignore tampered/corrupt localStorage (T-08-08: accept risk)
-    }
+    try { localStorage.removeItem('pf-voice-history'); } catch {}
   }, []);
 
   // VOICE-09: runTool wraps every tool callback invocation so a throwing callback
@@ -1594,16 +1594,13 @@ export function useVoiceController({
     }, VOICE_OPEN_GREETING_DELAY_MS);
   }, [clearInitialGreetTimer, currentPage, handleUserTurn]);
 
-  // close — stop all audio and persist history to localStorage (per D-22)
+  // close — stop all audio. History is intentionally NOT persisted to
+  // localStorage: every page reload starts a fresh conversation. The
+  // in-memory historyRef still survives a close/reopen within the same
+  // page session so context is preserved across mid-session toggles.
   const close = useCallback(() => {
     activeRef.current = false;
     stopAll();
-    // Per D-22: persist last 20 messages to localStorage on close
-    try {
-      localStorage.setItem('pf-voice-history', JSON.stringify(historyRef.current.slice(-20)));
-    } catch {
-      // Ignore storage errors
-    }
     setActive(false);
   }, [stopAll]);
 
