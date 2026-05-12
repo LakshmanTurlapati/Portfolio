@@ -9,27 +9,16 @@ export const VOICE_OPEN_GREETING_DELAY_MS = 480;
 
 export function buildVoiceOpeningPrompt(page = 'home'): string {
   const safePage = /^[a-z0-9-]+$/i.test(page) ? page : 'home';
-  return `[Voice mode just opened on the ${safePage} page. Greet briefly in Parz's voice, then leave room for the user to respond. Voice channel: no markdown, no lists, no emoji.]`;
+  // Why: the prior wording ("Voice mode just opened on the X page") leaked
+  // into Grok's reply — greetings echoed "voice mode is active" almost every
+  // turn. Phrase this as an ambient cue with explicit no-announce guardrails
+  // so the opening line sounds nonchalant, like picking up a conversation
+  // rather than booting a feature.
+  return `[Cue: user is on the ${safePage} page; their mic is live. Reply with one short casual line in Parz's voice — like picking up mid-conversation, never an announcement. Do not narrate or describe any state, mode, channel, activation, or that anything just started. Output style: no markdown, no lists, no emoji — spoken prose only.]`;
 }
 
 export function shouldPersistVoiceTurn(kind: VoiceTurnKind): boolean {
   return kind === 'user';
-}
-
-export function isExplicitTourIntent(text: string): boolean {
-  const normalized = text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  if (!normalized) return false;
-  if (/\b(start|begin|give|take|run)\s+(me\s+)?((a|the)\s+)?(guided\s+)?tour\b/.test(normalized)) return true;
-  if (/\b(tour|walkthrough|walk-through)\s+(the\s+)?(site|portfolio|projects?)\b/.test(normalized)) return true;
-  if (/\bwalk\s+me\s+through\s+(the\s+)?(site|portfolio|projects?)\b/.test(normalized)) return true;
-  if (/\bshow\s+me\s+around\b/.test(normalized)) return true;
-  if (/\bshowcase\s+(the\s+)?(site|portfolio|projects?)\b/.test(normalized)) return true;
-  return false;
 }
 
 export function normalizeSpeechForEchoCheck(text: string): string {
@@ -186,8 +175,7 @@ export interface VoiceToolCall {
 // nothing, and the tour-end handoff appears to loop listening ↔ thinking forever.
 // Speaking a brief tool-derived line breaks that silent loop and confirms the
 // action audibly. startTour / switchToText / endCall are intentionally omitted —
-// they are either gated upstream (isExplicitTourIntent) or short-circuit the
-// turn before this fallback runs.
+// they short-circuit the turn before this fallback runs.
 export function buildToolFallbackSpeech(toolCalls: readonly VoiceToolCall[]): string {
   for (const tc of toolCalls) {
     const args = (tc.args ?? {}) as Record<string, unknown>;

@@ -7,7 +7,6 @@ import {
   buildToolFallbackSpeech,
   buildVoiceOpeningPrompt,
   chunkForTTS,
-  isExplicitTourIntent,
   isIntentionalBargeInTranscript,
   isMobileIntentionalBargeInTranscript,
   looksLikeCurrentSpeechEcho,
@@ -102,23 +101,17 @@ describe('voice turn policy', () => {
     expect(isMobileIntentionalBargeInTranscript('actually tell me about GitFly', currentSpeech, false)).toBe(true);
   });
 
-  it('builds a synthetic first-turn prompt without treating it as user history', () => {
-    expect(buildVoiceOpeningPrompt('portfolio')).toContain('portfolio page');
+  it('builds a nonchalant first-turn prompt that never leaks mode language', () => {
+    const prompt = buildVoiceOpeningPrompt('portfolio');
+    // Still respects the page parameter for situational context
+    expect(prompt).toContain('portfolio');
+    // Why: prior wording ("Voice mode just opened on the X page") got echoed
+    // into Grok's greeting. Lock the regression in so the opening line stays
+    // casual and never announces voice mode/activation.
+    expect(prompt).not.toMatch(/voice mode/i);
+    expect(prompt).not.toMatch(/just opened/i);
     expect(shouldPersistVoiceTurn('greet')).toBe(false);
     expect(shouldPersistVoiceTurn('user')).toBe(true);
-  });
-
-  it('recognizes explicit tour requests without treating normal questions as tours', () => {
-    expect(isExplicitTourIntent('give me a tour')).toBe(true);
-    expect(isExplicitTourIntent('walk me through the portfolio')).toBe(true);
-    expect(isExplicitTourIntent('show me around')).toBe(true);
-    expect(isExplicitTourIntent('start the guided tour')).toBe(true);
-    expect(isExplicitTourIntent('showcase the projects')).toBe(true);
-
-    expect(isExplicitTourIntent('tell me about Review Gate')).toBe(false);
-    expect(isExplicitTourIntent('what projects are you proud of')).toBe(false);
-    expect(isExplicitTourIntent('what can you do')).toBe(false);
-    expect(isExplicitTourIntent(buildVoiceOpeningPrompt('home'))).toBe(false);
   });
 
   it('produces a spoken acknowledgement for each user-visible voice tool', () => {
@@ -708,7 +701,12 @@ describe('site-control tool wiring', () => {
     expect(voice).toContain("case 'scrollProjectPreview'");
     expect(voice).toContain("case 'startTour'");
     expect(voice).toContain('startGuidedTour(myTurn)');
-    expect(voice).toContain("shouldStartTour = kind === 'user' && isExplicitTourIntent(utterance)");
+    // Why: tour activation is fully LLM-driven. Grok's startTour tool call
+    // is trusted; no client-side keyword pre-classifier gates it. The
+    // `kind === 'user'` guard remains so synthetic greet kickoffs cannot
+    // start a tour, but it is not utterance-keyword matching.
+    expect(voice).toContain("shouldStartTour = kind === 'user';");
+    expect(voice).not.toContain('isExplicitTourIntent');
     expect(voice).toContain("case 'switchToText'");
     expect(voice).toContain("case 'endCall'");
     expect(sessionProvider).toContain('toolCallbacksRef.current.toggleTheme');

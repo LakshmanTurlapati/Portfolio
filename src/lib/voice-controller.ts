@@ -16,7 +16,6 @@ import {
   buildToolFallbackSpeech,
   buildVoiceOpeningPrompt,
   chunkForTTS,
-  isExplicitTourIntent,
   isIntentionalBargeInTranscript,
   shouldPersistVoiceTurn,
   VOICE_BARGE_IN_MIN_WORDS,
@@ -1102,9 +1101,11 @@ export function useVoiceController({
   // voice mode opens.
   // - kind 'user' (default): existing path. Utterance is the user's transcription.
   //   It IS appended to history and the LLM sees it as a real user turn.
-  // - kind 'greet': utterance is a synthetic kickoff instruction (e.g. "[Voice mode
-  //   just opened on the home page. Greet briefly...]"). It is NOT appended to history
-  //   because the user never said it. Only the assistant's response goes to history.
+  // - kind 'greet': utterance is a synthetic kickoff cue (see
+  //   buildVoiceOpeningPrompt — phrased as an ambient cue, not an
+  //   announcement, so Grok's reply stays nonchalant). It is NOT appended to
+  //   history because the user never said it. Only the assistant's response
+  //   goes to history.
   const handleUserTurn = useCallback(
     async (utterance: string, opts: { kind?: VoiceTurnKind } = {}) => {
       const kind = opts.kind ?? 'user';
@@ -1270,7 +1271,13 @@ export function useVoiceController({
               dispatchToolCall('unsupportedIframeControl', {});
               break;
             case 'startTour':
-              shouldStartTour = kind === 'user' && isExplicitTourIntent(utterance);
+              // Trust Grok's tool-call decision. The system prompt at
+              // src/app/api/chat/route.ts already constrains startTour to
+              // explicit tour requests; a client-side keyword gate on top
+              // of that just discards Grok's reasoning. The `kind === 'user'`
+              // guard remains because synthetic greet kickoffs are not real
+              // user utterances and should never run a tour.
+              shouldStartTour = kind === 'user';
               break;
             case 'switchToText': {
               const voiceSnapshot = buildVoiceSnapshot();
