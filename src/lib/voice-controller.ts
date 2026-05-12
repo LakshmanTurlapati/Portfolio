@@ -1070,7 +1070,7 @@ export function useVoiceController({
 
         if (!(await act('closeBrowser', {}, 500))) return;
         if (!(await act('openProject', { slug: 'GitFly' }, 1100))) return;
-        if (!(await say("GitFly is the product-flavored side of the same obsession: AI-native dev workflows that feel current, fast, and practical. Public story only; the private source stays private."))) return;
+        if (!(await say("GitFly is the product-flavored side of the same obsession: AI-native dev workflows that feel current, fast, and practical. Live at gitfly.ai if you want to poke at it directly."))) return;
 
         if (!(await act('closeBrowser', {}, 500))) return;
         if (!(await act('openProject', { slug: 'Parz-AI' }, 1100))) return;
@@ -1081,7 +1081,7 @@ export function useVoiceController({
         if (!(await act('scrollTo', { selector: 'about' }, 1000))) return;
         if (!(await say("Now the human page. The short version: full-stack roots, then the AI rabbit hole, then a lot of stubborn systems work until the demos became actual tools."))) return;
         if (!(await act('scrollTo', { selector: 'experience' }, 900))) return;
-        if (!(await say("Current chapter: AI Enablement Engineer at InfiniteChoice, building Voyza as an AI-first hotel booking platform. That's the public-safe version; the deeper product details stay where they belong."))) return;
+        if (!(await say("Current chapter: AI Enablement Engineer at InfiniteChoice, building Voyza as an AI-first hotel booking platform — where most of the day-to-day energy goes."))) return;
         if (!(await act('scrollTo', { selector: 'academics' }, 900))) return;
         if (!(await say("That's the tour. If you want, interrupt me with any project name and I'll zoom into that instead."))) return;
 
