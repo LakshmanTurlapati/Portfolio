@@ -638,7 +638,11 @@ describe('voice chat prompt routing', () => {
     );
 
     expect(source).toContain('startTour: tool');
-    expect(source).toContain('Use only when the user explicitly asks');
+    // Why: all side-effect tools now require explicit user directives,
+    // mirroring the startTour discipline. The capitalized "Use ONLY"
+    // emphasizes the rule across every tool description so Grok no longer
+    // fires openProject / navigate / scrollTo on bare mentions.
+    expect(source).toContain('Use ONLY when the user explicitly asks');
     expect(source).toContain('continuous guided showcase until interrupted');
     expect(source).toContain('direct, playful, high-energy, practical');
     expect(source).toContain('Do not manually chain the whole tour');
