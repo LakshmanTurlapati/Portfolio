@@ -24,6 +24,7 @@ import {
   type VoiceTurnKind,
 } from './voice-turn-policy';
 import { calculateRms, VoiceBargeInDetector } from './voice-barge-in';
+import { pickTourNarration } from '@/data/tour-narration';
 import type { ChatMorphRect, ChatVoiceSnapshot } from '@/lib/chat-morph';
 import { Scribe, RealtimeEvents, CommitStrategy } from '@elevenlabs/client';
 import type { RealtimeConnection } from '@elevenlabs/client';
@@ -1053,37 +1054,42 @@ export function useVoiceController({
         return shouldContinue();
       };
 
+      // Pick a narration variant per tour run so repeat visitors get slight
+      // wording variation. The tool-call sequence below stays identical —
+      // contract-locked by tests/voice-barge-in.test.ts:736-756.
+      const narration = pickTourNarration();
+
       try {
         if (!(await act('navigate', { page: 'portfolio' }, 900))) return;
-        if (!(await say("Alright, here's the long version. This is not a static resume wall; it's the workbench version of the portfolio."))) return;
+        if (!(await say(narration.opener))) return;
 
         if (!(await act('openProject', { slug: 'Review Gate' }, 1200))) return;
-        if (!(await say("First stop: Review Gate. This one's very me: take a workflow that wastes requests, make the agent pause, and squeeze way more useful iteration out of the same session."))) return;
+        if (!(await say(narration.reviewGateIntro))) return;
         if (!(await act('scrollProjectPreview', { direction: 'down' }, 900))) return;
-        if (!(await say("The fun part is how practical it is: fewer dead-end AI sessions, more room to keep pushing inside the same request."))) return;
+        if (!(await say(narration.reviewGateMid))) return;
         if (!(await act('scrollProjectPreview', { direction: 'bottom' }, 900))) return;
-        if (!(await say("The headline is simple: it turns the end of an AI coding request into a checkpoint instead of a dead stop. Less ceremony, more shipping."))) return;
+        if (!(await say(narration.reviewGateClose))) return;
 
         if (!(await act('closeBrowser', {}, 500))) return;
         if (!(await act('openProject', { slug: 'FSB' }, 1100))) return;
-        if (!(await say("This is FSB, Full Self Browsing. It is the cleanest expression of the idea that AI control should feel tangible, bounded, and useful."))) return;
+        if (!(await say(narration.fsb))) return;
 
         if (!(await act('closeBrowser', {}, 500))) return;
         if (!(await act('openProject', { slug: 'GitFly' }, 1100))) return;
-        if (!(await say("GitFly is the product-flavored side of the same obsession: AI-native dev workflows that feel current, fast, and practical. Live at gitfly.ai if you want to poke at it directly."))) return;
+        if (!(await say(narration.gitFly))) return;
 
         if (!(await act('closeBrowser', {}, 500))) return;
         if (!(await act('openProject', { slug: 'Parz-AI' }, 1100))) return;
-        if (!(await say("And here's the bot-thread: Parz-AI. This is the older assistant work that fed into the portfolio voice layer you're using right now."))) return;
+        if (!(await say(narration.parzAi))) return;
         if (!(await act('scrollProjectPreview', { direction: 'down' }, 800))) return;
 
         if (!(await act('closeBrowser', {}, 500))) return;
         if (!(await act('scrollTo', { selector: 'about' }, 1000))) return;
-        if (!(await say("Now the human page. The short version: full-stack roots, then the AI rabbit hole, then a lot of stubborn systems work until the demos became actual tools."))) return;
+        if (!(await say(narration.aboutIntro))) return;
         if (!(await act('scrollTo', { selector: 'experience' }, 900))) return;
-        if (!(await say("Current chapter: AI Enablement Engineer at InfiniteChoice, building Voyza as an AI-first hotel booking platform — where most of the day-to-day energy goes."))) return;
+        if (!(await say(narration.experience))) return;
         if (!(await act('scrollTo', { selector: 'academics' }, 900))) return;
-        if (!(await say("That's the tour. If you want, interrupt me with any project name and I'll zoom into that instead."))) return;
+        if (!(await say(narration.signoff))) return;
 
         window.VoiceBus.setState('idle');
         setCaption('');

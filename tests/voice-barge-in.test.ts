@@ -755,6 +755,50 @@ describe('site-control tool wiring', () => {
     expect(tourBlock).not.toContain('visible AI control');
   });
 
+  it('ships four interchangeable tour narration variants with safe phrasing', async () => {
+    const { TOUR_NARRATIONS, pickTourNarration } = await import('@/data/tour-narration');
+    const fields = [
+      'opener',
+      'reviewGateIntro',
+      'reviewGateMid',
+      'reviewGateClose',
+      'fsb',
+      'gitFly',
+      'parzAi',
+      'aboutIntro',
+      'experience',
+      'signoff',
+    ] as const;
+
+    // Why: voice-controller passes one variant per tour run. The pick fn must
+    // return a narration that's actually in the array, and every variant must
+    // expose the full set of 10 named fields the tour script calls into.
+    expect(TOUR_NARRATIONS).toHaveLength(4);
+    for (const variant of TOUR_NARRATIONS) {
+      for (const field of fields) {
+        const line = variant[field];
+        expect(typeof line).toBe('string');
+        expect(line.length).toBeGreaterThan(0);
+        // Forbidden phrases from the source-contract tour test above —
+        // narration must respect the same allow-list whether it lives inline
+        // or in this data file.
+        expect(line).not.toContain('faking');
+        expect(line).not.toContain('iframe control');
+        expect(line).not.toContain('steering');
+        expect(line).not.toContain('driving a browser');
+        expect(line).not.toContain('local GitHub surface');
+        expect(line).not.toContain('Play' + 'wright');
+        expect(line).not.toContain('visible AI control');
+        // Regression lock: the defensive "private data stays private" /
+        // "public-safe version" disclaimers were removed in commit 989fa01.
+        // No variant should bring them back.
+        expect(line).not.toMatch(/private (source|data) stays private/i);
+        expect(line).not.toMatch(/public-safe version/i);
+      }
+    }
+    expect(TOUR_NARRATIONS).toContain(pickTourNarration());
+  });
+
   it('keeps navigate routed through dispatchToolCall for FSB captions', () => {
     const voice = readFileSync(
       join(process.cwd(), 'src/lib/voice-controller.ts'),
