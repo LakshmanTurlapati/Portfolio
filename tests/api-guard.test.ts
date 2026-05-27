@@ -6,7 +6,7 @@ import {
   validateChatMessages,
 } from '@/lib/api-guard';
 
-const VALID_ORIGIN = 'https://audienclature.com';
+const VALID_ORIGIN = 'https://parzival.live';
 
 function request(
   path = '/api/chat',

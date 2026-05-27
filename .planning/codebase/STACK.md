@@ -96,7 +96,7 @@ Lockfiles:
 - Git for version control
 
 **Production:**
-- Deployment Target: Web (hosted at audienclature.com)
+- Deployment Target: Web (hosted at parzival.live)
 - Platforms: Web (primary), Android, iOS, Linux, macOS, Windows
 - Browser Support: Chrome (recommended), Firefox, Safari, Edge
 - Hosting: Static web hosting (Flutter Web produces static files)

@@ -2,8 +2,7 @@ import { allProjects } from '@/data/projects';
 import { publicProfile } from '@/data/public-profile';
 
 const DIRECT_ALLOWED_HOSTS = new Set([
-  'audienclature.com',
-  'www.audienclature.com',
+  'parzival.live',
   'full-selfbrowsing.com',
   'www.full-selfbrowsing.com',
   'gitfly.ai',

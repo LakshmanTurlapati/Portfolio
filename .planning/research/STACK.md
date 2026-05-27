@@ -1,6 +1,6 @@
 # Technology Stack — v4.1 Parz Persona, Portfolio Context, and Site Control Refresh
 
-**Project:** Portfolio V2 / audienclature.com  
+**Project:** Portfolio V2 / parzival.live  
 **Milestone:** v4.1 Parz Persona, Portfolio Context, and Site Control Refresh  
 **Researched:** 2026-04-25  
 **Scope:** Stack additions/changes only for persona evals, AI site control, browser-preview project opening, and FSB-inspired control overlay. Voice/STT/TTS foundation is treated as existing integration context, not re-researched.  

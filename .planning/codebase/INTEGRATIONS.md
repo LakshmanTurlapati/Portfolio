@@ -90,7 +90,7 @@
 ## CI/CD & Deployment
 
 **Hosting:**
-- Static web hosting - Deployed at `https://audienclature.com`
+- Static web hosting - Deployed at `https://parzival.live`
 - Build Output: `build/web/` directory
 - Platform: Flutter Web (compiled to JavaScript, HTML, CSS)
 
@@ -174,7 +174,7 @@ Body:
 ## Deployment Configuration
 
 **Domain:**
-- Production: `audienclature.com`
+- Production: `parzival.live`
 - SSL/TLS: Standard HTTPS (assumed from domain setup)
 
 **Build Manifest:**

@@ -130,7 +130,7 @@ AI SDK tool schemas validate shape (`z.string().url()`), not business policy. Of
 
 **Prevention:**  
 - For `openProject`, never accept a URL from the model; accept only a project name/alias and resolve URL from trusted local data.
-- For `openLink`, either require user confirmation or allowlist known domains: `audienclature.com`, `parzival.live`, `full-selfbrowsing.com`, `gitfly.ai`, `github.com/LakshmanTurlapati`, LinkedIn profile, approved project hosts.
+- For `openLink`, either require user confirmation or allowlist known domains: `parzival.live`, `parzival.live`, `full-selfbrowsing.com`, `gitfly.ai`, `github.com/LakshmanTurlapati`, LinkedIn profile, approved project hosts.
 - Keep `noopener,noreferrer`; add explicit blocked-domain fallback message.
 - Log blocked URL attempts in development only without exposing user text in production logs.
 

@@ -32,7 +32,7 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Production API Verification
 
-- **API-03**: Owner can run the existing live Amplify/custom-domain API smoke script against a reachable `audienclature.com` or Amplify production URL.
+- **API-03**: Owner can run the existing live Amplify/custom-domain API smoke script against a reachable `parzival.live` or Amplify production URL.
 
 ## Out of Scope
 

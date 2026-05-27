@@ -98,7 +98,7 @@ v4.3 Progress: [██████████] 100% (1/1 phases complete, 1/1 p
 
 - No Phase 29 chat-boundary blockers remain.
 - Combined plan Vitest still has an out-of-scope persona parity failure in `tests/parz-contracts.test.ts`; boundary-specific `tests/voice-barge-in.test.ts` passes.
-- Live Amplify/custom-domain API smoke testing is future work until `audienclature.com` or the actual Amplify URL becomes publicly reachable.
+- Live Amplify/custom-domain API smoke testing is future work until `parzival.live` or the actual Amplify URL becomes publicly reachable.
 
 ## Session Continuity
 

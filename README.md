@@ -1,6 +1,6 @@
 # Portfolio Website
 
-Interactive Next.js portfolio for [audienclature.com](https://audienclature.com), featuring a responsive project gallery, animated visual system, AI chat persona, voice mode, site-control tooling, and GitHub activity stats.
+Interactive Next.js portfolio for [parzival.live](https://parzival.live), featuring a responsive project gallery, animated visual system, AI chat persona, voice mode, site-control tooling, and GitHub activity stats.
 
 ## Stack
 
@@ -73,7 +73,7 @@ The app is configured for standalone Next.js output and AWS Amplify/Fly-style de
 For production API smoke checks:
 
 ```bash
-PRODUCTION_BASE_URL=https://audienclature.com node scripts/verify-amplify-apis.mjs
+PRODUCTION_BASE_URL=https://parzival.live node scripts/verify-amplify-apis.mjs
 ```
 
 ## Assets

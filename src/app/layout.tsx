@@ -37,11 +37,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Turlapati's",
   description: 'Welcome to my portfolio!',
-  metadataBase: new URL('https://audienclature.com'),
+  metadataBase: new URL('https://parzival.live'),
   openGraph: {
     title: "Turlapati's",
     description: 'Welcome to my portfolio!',
-    url: 'https://audienclature.com',
+    url: 'https://parzival.live',
     siteName: "Turlapati's Portfolio",
     type: 'website',
   },

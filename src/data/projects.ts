@@ -75,7 +75,7 @@ export const pinnedProjects: Project[] = [
 export const shuffleableProjects: Project[] = [
   { name: "Blockchain Smartcontracts", image: "/assets/blockchain.jpg", links: { GitHub: "https://github.com/LakshmanTurlapati/Blockchain" } },
   { name: "Smart Fabric using IOT", image: "/assets/sfuit.jpg", links: { Website: "https://www.youtube.com/watch?v=AkKRSgQnT_c", GitHub: "https://github.com/prateek10201/sfuit-esp8266" } },
-  { name: "Portfolio", image: "/assets/portfolio.jpg", links: { Website: "https://audienclature.com", GitHub: "https://github.com/LakshmanTurlapati/Portfolio", Design: "https://www.figma.com/design/UeixAHUPLTSKiwHR9HVfT2/Portfolio?node-id=0-1" } },
+  { name: "Portfolio", image: "/assets/portfolio.jpg", links: { Website: "https://parzival.live", GitHub: "https://github.com/LakshmanTurlapati/Portfolio", Design: "https://www.figma.com/design/UeixAHUPLTSKiwHR9HVfT2/Portfolio?node-id=0-1" } },
   { name: "Financial Inclusion", image: "/assets/fi.png", links: { Website: "https://docs.google.com/document/d/1cq1xeUpl-lst5bj4376_QhCSo7HIc1EvPecKw0cmQGc/edit", GitHub: "https://github.com/LakshmanTurlapati/Financial-Inclusion-v2", Design: "https://www.figma.com/design/5kNlAtt2Hh6NTx2YAPLhIu/Financial-Inclusion" } },
   { name: "LinkedIn Auto Connect", image: "/assets/linkedin.png", links: { Website: "https://chromewebstore.google.com/detail/linkedin-auto-connect/jomecnphbmfpkcajfhkoebgmbcbakjoa", GitHub: "https://github.com/LakshmanTurlapati/linkedin-autoconnect-extension/tree/main" } },
   { name: "Service Portal", image: "/assets/chd.png", links: { GitHub: "https://github.com/LakshmanTurlapati/Church-Dwight-Solution-Center", Design: "https://www.figma.com/design/Lj0O8tBvyuGSx3LePBCuO1/C%26D" } },
@@ -224,7 +224,7 @@ export const PROJECT_DETAILS: Record<string, ProjectDetail> = {
     year: "2024 \u00b7 v3",
     role: "Designer & developer",
     stack: ["Flutter Web", "Dart", "Figma", "Google Fonts"],
-    overview: "The third iteration of audienclature.com, built entirely in Flutter Web. A single codebase renders both desktop and mobile layouts, with an AI chat persona, portfolio gallery, and animated backgrounds.",
+    overview: "The third iteration of parzival.live, built entirely in Flutter Web. A single codebase renders both desktop and mobile layouts, with an AI chat persona, portfolio gallery, and animated backgrounds.",
     highlights: [
       "AI chat persona fine-tuned on my own writing and project notes.",
       "Responsive adaptive layouts \u2014 desktop masonry, mobile stack.",

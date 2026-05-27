@@ -35,10 +35,7 @@ const ROUTE_LIMITS: Record<PaidApiRoute, RateLimitRule> = {
   'stt-token': { limit: 80, windowMs: TEN_MINUTES },
 };
 
-const DEFAULT_ALLOWED_ORIGINS = [
-  'https://audienclature.com',
-  'https://www.audienclature.com',
-];
+const DEFAULT_ALLOWED_ORIGINS = ['https://parzival.live'];
 
 declare global {
   var __portfolioApiRateLimits: Map<string, RateLimitEntry> | undefined;

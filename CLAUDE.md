@@ -2,7 +2,7 @@
 
 ## Project
 
-This repository is the active Next.js portfolio for audienclature.com. The old Flutter implementation has been removed from the branch; current development should target the Next.js App Router app under `src/`.
+This repository is the active Next.js portfolio for parzival.live. The old Flutter implementation has been removed from the branch; current development should target the Next.js App Router app under `src/`.
 
 The portfolio showcases projects, experience, education, a Parz AI chat persona, voice mode, project previews, and GitHub activity stats.
 

@@ -42,7 +42,7 @@
 **Deferred at v4.1 close (resolved or carried forward later):**
 
 - Resolved in v4.2: Wave 2 P1 audit findings in `21-AUDIT.md`: F-05 (openTextChat race), F-06 (STT session-started timeout), F-07 (SpeechSynthesis timeout), F-08 (registerToolCallbacks deregister), F-09 (tool callback try/catch).
-- Still future work: API-03 live Amplify / custom-domain smoke test against `audienclature.com` (script ready at `scripts/verify-amplify-apis.mjs`, blocked on a reachable production URL).
+- Still future work: API-03 live Amplify / custom-domain smoke test against `parzival.live` (script ready at `scripts/verify-amplify-apis.mjs`, blocked on a reachable production URL).
 - Resolved in v4.2: particle-background mobile performance, chat input iOS keyboard handling, project viewer mobile scope.
 - Resolved in v4.2: FSB-04 (overlay action captions), FSB-05 (mobile-specific overlay treatment), CHAT-UI-01 (chat popup/page redesign).
 

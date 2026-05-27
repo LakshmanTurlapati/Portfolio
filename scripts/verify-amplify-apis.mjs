@@ -6,7 +6,7 @@ import { writeFile } from 'node:fs/promises';
 const rawBaseUrl = process.env.PRODUCTION_BASE_URL;
 
 if (!rawBaseUrl) {
-  console.error('PRODUCTION_BASE_URL is required, e.g. https://audienclature.com');
+  console.error('PRODUCTION_BASE_URL is required, e.g. https://parzival.live');
   process.exit(2);
 }
 

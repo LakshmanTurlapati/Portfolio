@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Next.js portfolio site (audienclature.com) with Tailwind CSS, featuring an interactive canvas-based background system, rich project detail overlays, AI chat persona, voice mode, and GitHub stats. Originally migrated 1:1 from Flutter, now evolving with a v3 design overhaul adding new visual effects and features.
+A Next.js portfolio site (parzival.live) with Tailwind CSS, featuring an interactive canvas-based background system, rich project detail overlays, AI chat persona, voice mode, and GitHub stats. Originally migrated 1:1 from Flutter, now evolving with a v3 design overhaul adding new visual effects and features.
 
 ## Core Value
 
@@ -100,7 +100,7 @@ v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forwa
 
 ### Future
 
-- [ ] API-03: Live Amplify / custom-domain smoke test against `audienclature.com` (script ready at `scripts/verify-amplify-apis.mjs`; gated on reachable production URL)
+- [ ] API-03: Live Amplify / custom-domain smoke test against `parzival.live` (script ready at `scripts/verify-amplify-apis.mjs`; gated on reachable production URL)
 - [ ] CHAT-ANIM-01: Refine the DART chat popup's transition and animation details (voice-to-chat morph, open/close timing, message/send polish) without changing the final visual design baseline.
 
 ### Out of Scope
@@ -110,7 +110,7 @@ v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forwa
 - Backend database or user authentication -- not in current version
 - SEO optimization beyond basic meta tags -- can be added post-v3
 - Internationalization -- not in current version
-- Live Amplify/custom-domain API smoke testing -- deferred until `audienclature.com` or the actual Amplify URL is publicly reachable
+- Live Amplify/custom-domain API smoke testing -- deferred until `parzival.live` or the actual Amplify URL is publicly reachable
 - GitFly source code or private implementation details -- source is private; portfolio/Parz should link only to the public platform at https://gitfly.ai
 - Non-public InfiniteChoice/Voyza implementation details -- current role/product context only unless details are explicitly public
 - Voice bot internal wiring details -- explain only high-level public behavior or public GitHub code-level details when applicable
