@@ -8,7 +8,7 @@
 - [x] **v4.1 Parz Persona, Portfolio Context, and Site Control Refresh** — Phases 16-24 (shipped 2026-04-26, see `milestones/v4.1-ROADMAP.md`)
 - [x] **v4.2 Carry-forward Polish & Hardening** — Phases 25-28 (shipped 2026-04-27, see `milestones/v4.2-ROADMAP.md`)
 - [x] **v4.3 Legacy V2 Chat-Only Boundary** — Phase 29 (completed 2026-04-29)
-- [ ] **v4.4 Website Audit Remediation** — Phase 30
+- [x] **v4.4 Website Audit Remediation** — Phase 30 (completed 2026-06-11)
 
 ## Phases
 
@@ -66,16 +66,16 @@ Full archive: [`milestones/v4.2-ROADMAP.md`](milestones/v4.2-ROADMAP.md)
 
 ### Phase 30: Website Audit Remediation
 
-**Status:** Planned
+**Status:** Complete
 
 **Goal:** Fix the quick-audit findings except the explicitly deferred paid-API rate-limit redesign.
 
 **Requirements:** AUDIT-01, DEP-01, DEP-02, LINK-01, SEC-01, UX-01, LINT-01, VERIFY-01
 
-**Plans:** 0/1 plans complete
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 30-01-PLAN.md -- Hydration, dependency, link, browser-safety, tap-target, lint, and verification remediation
+- [x] 30-01-PLAN.md -- Hydration, dependency, link, browser-safety, tap-target, lint, and verification remediation
 
 **Scope:**
 
@@ -146,7 +146,7 @@ Phases execute in numeric order: 30
 | 27. FSB Overlay Polish                      | v4.2 | 3/3 | Complete    | 2026-04-27 |
 | 28. Chat UI Redesign                        | v4.2 | 3/3 | Complete    | 2026-04-27 |
 | 29. Legacy V2 Chat-Only Boundary            | v4.3 | 1/1 | Complete    | 2026-04-29 |
-| 30. Website Audit Remediation               | v4.4 | 0/1 | Planned     | —          |
+| 30. Website Audit Remediation               | v4.4 | 1/1 | Complete    | 2026-06-11 |
 
 ## Requirement Coverage
 
@@ -158,13 +158,13 @@ Phases execute in numeric order: 30
 | CHAT-04 | Phase 29 | Complete |
 | VOICE-01 | Phase 29 | Complete |
 | TEST-01 | Phase 29 | Complete |
-| AUDIT-01 | Phase 30 | Planned |
-| DEP-01 | Phase 30 | Planned |
-| DEP-02 | Phase 30 | Planned |
-| LINK-01 | Phase 30 | Planned |
-| SEC-01 | Phase 30 | Planned |
-| UX-01 | Phase 30 | Planned |
-| LINT-01 | Phase 30 | Planned |
-| VERIFY-01 | Phase 30 | Planned |
+| AUDIT-01 | Phase 30 | Complete |
+| DEP-01 | Phase 30 | Complete |
+| DEP-02 | Phase 30 | Complete |
+| LINK-01 | Phase 30 | Complete |
+| SEC-01 | Phase 30 | Complete |
+| UX-01 | Phase 30 | Complete |
+| LINT-01 | Phase 30 | Complete |
+| VERIFY-01 | Phase 30 | Complete |
 
 **Coverage:** 8/8 active v4.4 requirements mapped.

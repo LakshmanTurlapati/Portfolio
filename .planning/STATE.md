@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.4
 milestone_name: Website Audit Remediation
-status: planning
+status: completed
+stopped_at: Phase 30 complete
 last_updated: "2026-06-11T17:15:03.355Z"
 last_activity: 2026-06-11
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 1
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 100
 ---
 
 # Project State
@@ -20,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
-**Current focus:** v4.4 Website Audit Remediation.
+**Current focus:** v4.4 Website Audit Remediation complete.
 
 ## Current Position
 
 Phase: 30 — Website Audit Remediation
 Plan: 01 — Website Audit Remediation
-Status: Ready to execute
-Last activity: 2026-06-11 — Milestone v4.4 planned
+Status: Complete
+Last activity: 2026-06-11 — Phase 30 complete
 
 ```
-v4.4 Progress: [----------] 0% (0/1 phases complete, 0/1 plans complete)
+v4.4 Progress: [██████████] 100% (1/1 phases complete, 1/1 plans complete)
 ```
 
 ## Performance Metrics
@@ -53,7 +54,8 @@ v4.4 Progress: [----------] 0% (0/1 phases complete, 0/1 plans complete)
 | 28 | 3 | -- | -- |
 | Phase 29-legacy-v2-chat-only-boundary P01 | 4 min | 3 tasks | 5 files |
 | 29 | 1 | - | - |
-| 30 | 1 | - | - |
+| Phase 30-website-audit-remediation P01 | complete | 7 tasks | 16 source files + package lock |
+| 30 | 1 | complete | - |
 
 ## Accumulated Context
 
@@ -72,6 +74,8 @@ v4.4 Progress: [----------] 0% (0/1 phases complete, 0/1 plans complete)
 - [Phase 29-legacy-v2-chat-only-boundary]: Text chat site-control tools are now server-authoritatively gated on isVoice: true; stale enableSiteControl input is accepted only as ignored legacy input.
 - [Phase 29-legacy-v2-chat-only-boundary]: Legacy V2 popup and /chat use default useChat transport and contain no client-side SiteControl/tool dispatch path.
 - [v4.4-scope]: Fix all quick-audit findings except the paid-API rate-limit redesign, which remains future work.
+- [Phase 30-website-audit-remediation]: Portfolio/project matrix render-time randomness was replaced with deterministic ordering/values to prevent SSR/client hydration drift.
+- [Phase 30-website-audit-remediation]: Programmatic external opens now go through `openExternalUrl()` or existing safe feature strings with `noopener,noreferrer`.
 
 ### v4.2 Carry-forward Investigation (file:line evidence, verified 2026-04-26 against `e2a1383`)
 
@@ -98,7 +102,7 @@ v4.4 Progress: [----------] 0% (0/1 phases complete, 0/1 plans complete)
 
 ### Blockers/Concerns
 
-- No Phase 30 blockers yet.
+- No Phase 30 blockers remain.
 - Live Amplify/custom-domain API smoke testing is future work until `parzival.live` or the actual Amplify URL becomes publicly reachable.
 
 ## Session Continuity
@@ -107,7 +111,10 @@ Last session: 2026-04-29T20:48:36.899Z
 Stopped at: Completed 29-01-PLAN.md
 Resume file: None
 
-**Next:** Execute Phase 30 plan 01.
+**Next:** v4.4 complete; choose the next milestone or address API-RATE-01 separately when ready.
+
+**Completed Milestone:** v4.4 Website Audit Remediation -- 1 phase, 1 plan -- 2026-06-11
+**Completed Phase:** 30 (Website Audit Remediation) -- 1 plan -- 2026-06-11
 
 **Completed Milestone:** v4.2 Carry-forward Polish & Hardening -- 4 phases, 14 plans -- 2026-04-27
 **Completed Phase:** 28 (Chat UI Redesign) -- 3 plans -- 2026-04-27

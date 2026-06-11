@@ -9,26 +9,26 @@ Requirements for closing the quick website audit findings. The paid-API rate-lim
 
 ### Render Stability
 
-- [ ] **AUDIT-01**: User can open `/portfolio` on desktop and mobile without React hydration mismatch warnings caused by randomized project ordering.
+- [x] **AUDIT-01**: User can open `/portfolio` on desktop and mobile without React hydration mismatch warnings caused by randomized project ordering.
 
 ### Dependency Health
 
-- [ ] **DEP-01**: Developer can run normal `npm ci` without needing `--legacy-peer-deps`.
-- [ ] **DEP-02**: Known package audit advisories are resolved where safe by updating direct dependencies and lockfile entries without changing application behavior.
+- [x] **DEP-01**: Developer can run normal `npm ci` without needing `--legacy-peer-deps`.
+- [x] **DEP-02**: Known package audit advisories are resolved where safe by updating direct dependencies and lockfile entries without changing application behavior.
 
 ### Link and Browser Safety
 
-- [ ] **LINK-01**: Visible project actions no longer expose known broken/private project links discovered by the audit.
-- [ ] **SEC-01**: Programmatic external browser openings use `noopener,noreferrer` to avoid opener access.
+- [x] **LINK-01**: Visible project actions no longer expose known broken/private project links discovered by the audit.
+- [x] **SEC-01**: Programmatic external browser openings use `noopener,noreferrer` to avoid opener access.
 
 ### UI and Lint Polish
 
-- [ ] **UX-01**: Small interactive controls flagged by the audit use practical clickable/tappable dimensions while preserving the existing visual direction.
-- [ ] **LINT-01**: Existing lint warnings from the audit are resolved.
+- [x] **UX-01**: Small interactive controls flagged by the audit use practical clickable/tappable dimensions while preserving the existing visual direction.
+- [x] **LINT-01**: Existing lint warnings from the audit are resolved.
 
 ### Verification
 
-- [ ] **VERIFY-01**: Lint, unit tests, production build, dependency audit, and Playwright e2e checks pass after the remediation.
+- [x] **VERIFY-01**: Lint, unit tests, production build, dependency audit, and Playwright e2e checks pass after the remediation.
 
 ## Future Requirements
 
@@ -63,14 +63,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUDIT-01 | Phase 30 | Planned |
-| DEP-01 | Phase 30 | Planned |
-| DEP-02 | Phase 30 | Planned |
-| LINK-01 | Phase 30 | Planned |
-| SEC-01 | Phase 30 | Planned |
-| UX-01 | Phase 30 | Planned |
-| LINT-01 | Phase 30 | Planned |
-| VERIFY-01 | Phase 30 | Planned |
+| AUDIT-01 | Phase 30 | Complete |
+| DEP-01 | Phase 30 | Complete |
+| DEP-02 | Phase 30 | Complete |
+| LINK-01 | Phase 30 | Complete |
+| SEC-01 | Phase 30 | Complete |
+| UX-01 | Phase 30 | Complete |
+| LINT-01 | Phase 30 | Complete |
+| VERIFY-01 | Phase 30 | Complete |
 
 **Coverage:**
 - v4.4 requirements: 8 total
@@ -79,3 +79,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-06-11*
+*Last updated: 2026-06-11 after Phase 30 completion*
