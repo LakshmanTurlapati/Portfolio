@@ -155,7 +155,7 @@ function SectionNavLink({
   return (
     <button
       onClick={() => onSelect(section.id)}
-      className="flex items-center text-left transition-all duration-300"
+      className="flex min-h-11 items-center text-left transition-all duration-300"
       style={{
         color: 'var(--color-page-inverted-text)',
       }}

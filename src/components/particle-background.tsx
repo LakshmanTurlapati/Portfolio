@@ -57,10 +57,12 @@ export function ParticleBackground() {
 
   useEffect(() => {
     if (!mounted) return;
+    const container = containerRef.current;
+    if (!container) return;
     let destroyed = false;
 
     const init = () => {
-      if (destroyed || !containerRef.current || !window.particlesJS) return;
+      if (destroyed || !window.particlesJS) return;
 
       // Monochrome palette keyed to theme
       const palette = isDark
@@ -68,7 +70,7 @@ export function ParticleBackground() {
         : { particles: '#1a1a1a', lines: '#333333', accent: '#666666' };
 
       // Cancel stale breathing rAF before reinitializing pJS (per D-11, Pitfall 4)
-      try { (containerRef.current as ParticleContainer).__vmTick?.(); } catch { /* ignore */ }
+      try { (container as ParticleContainer).__vmTick?.(); } catch { /* ignore */ }
 
       // Verified: cleanup correct per Phase 6 audit
       // Order: destroy instances → clear array → remove canvas → call particlesJS()
@@ -78,7 +80,7 @@ export function ParticleBackground() {
         });
         window.pJSDom = [];
       }
-      const oldCanvas = containerRef.current.querySelector('canvas');
+      const oldCanvas = container.querySelector('canvas');
       if (oldCanvas) oldCanvas.remove();
 
       window.particlesJS('pf-particles', {
@@ -188,10 +190,8 @@ export function ParticleBackground() {
         };
         breathRaf = requestAnimationFrame(tick);
         // Expose cancellation so cleanup + reinit can stop the loop (per D-11, Pitfall 4)
-        if (containerRef.current) {
-          (containerRef.current as ParticleContainer).__vmTick =
-            () => { breathCancelled = true; if (breathRaf) cancelAnimationFrame(breathRaf); };
-        }
+        (container as ParticleContainer).__vmTick =
+          () => { breathCancelled = true; if (breathRaf) cancelAnimationFrame(breathRaf); };
       };
       waitForInst();
     };
@@ -200,7 +200,7 @@ export function ParticleBackground() {
 
     return () => {
       destroyed = true;
-      try { (containerRef.current as ParticleContainer).__vmTick?.(); } catch { /* ignore */ }
+      try { (container as ParticleContainer).__vmTick?.(); } catch { /* ignore */ }
     };
   }, [isDark, mounted, isMobile]);
 

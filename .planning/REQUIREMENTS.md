@@ -1,38 +1,50 @@
-# Requirements: Portfolio V2 -- v4.3 Legacy V2 Chat-Only Boundary
+# Requirements: Portfolio V2 -- v4.4 Website Audit Remediation
 
-**Defined:** 2026-04-29
+**Defined:** 2026-06-11
 **Core Value:** A visually striking, interactive portfolio that showcases projects with rich detail, ambient animations, and an AI persona.
 
-## v4.3 Requirements
+## v4.4 Requirements
 
-Requirements for the Legacy V2 text-chat boundary. Each maps to roadmap phases.
+Requirements for closing the quick website audit findings. The paid-API rate-limit redesign is intentionally excluded.
 
-### Text Chat Boundary
+### Render Stability
 
-- [x] **CHAT-01**: User can ask normal persona, portfolio, project, and broad-topic questions in Legacy V2 text chat and receive conversational answers without triggering site navigation or site-control side effects.
-- [x] **CHAT-02**: User who asks Legacy V2 text chat to navigate, open a project viewer, scroll the site, toggle theme, run a tour, control the browser shell, or use other advanced controls receives a concise response that says text chat cannot do that and points them to voice mode for advanced features.
-- [x] **CHAT-03**: Legacy V2 chat popup and the full `/chat` page send text-chat requests without enabling site-control tools.
-- [x] **CHAT-04**: Legacy V2 chat popup and the full `/chat` page do not execute accidental tool-call parts from assistant messages.
+- [x] **AUDIT-01**: User can open `/portfolio` on desktop and mobile without React hydration mismatch warnings caused by randomized project ordering.
 
-### Voice Control Preservation
+### Dependency Health
 
-- [x] **VOICE-01**: Voice mode still supports the existing advanced site-control tools, including navigation, project opening, about-section scrolling, project-preview scrolling, browser close/external open, theme toggling, switch-to-text, and end-call behavior.
+- [x] **DEP-01**: Developer can run normal `npm ci` without needing `--legacy-peer-deps`.
+- [x] **DEP-02**: Known package audit advisories are resolved where safe by updating direct dependencies and lockfile entries without changing application behavior.
 
-### Regression Coverage
+### Link and Browser Safety
 
-- [x] **TEST-01**: Automated tests prove the server prompt/tool routing, text-chat transport bodies, client-side no-tool execution path, and voice tool access boundary.
+- [x] **LINK-01**: Visible project actions no longer expose known broken/private project links discovered by the audit.
+- [x] **SEC-01**: Programmatic external browser openings use `noopener,noreferrer` to avoid opener access.
+
+### UI and Lint Polish
+
+- [x] **UX-01**: Small interactive controls flagged by the audit use practical clickable/tappable dimensions while preserving the existing visual direction.
+- [x] **LINT-01**: Existing lint warnings from the audit are resolved.
+
+### Verification
+
+- [x] **VERIFY-01**: Lint, unit tests, production build, dependency audit, and Playwright e2e checks pass after the remediation.
 
 ## Future Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
 
+### Production API Verification
+
+- **API-03**: Owner can run the existing live Amplify/custom-domain API smoke script against a reachable `parzival.live` or Amplify production URL.
+
 ### Chat Motion Polish
 
 - **CHAT-ANIM-01**: User experiences a more refined DART chat popup transition and send/message animation polish without changing the final visual design baseline.
 
-### Production API Verification
+### Paid API Quota Enforcement
 
-- **API-03**: Owner can run the existing live Amplify/custom-domain API smoke script against a reachable `parzival.live` or Amplify production URL.
+- **API-RATE-01**: Replace in-memory paid-API rate limiting with durable/shared quota enforcement and trusted proxy-header handling.
 
 ## Out of Scope
 
@@ -40,11 +52,10 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| Removing voice-mode site control | The user explicitly wants advanced navigation/tool behavior preserved in voice mode. |
-| Redesigning Legacy V2 chat visuals | v4.2 established the DART-refined popup as the final visual baseline; this milestone is behavior-only. |
-| Removing ordinary URL links from chat answers | Text chat can still answer and linkify normal URLs; only tool-driven site control is disallowed. |
-| Implementing CHAT-ANIM-01 | Transition polish remains future work unless explicitly pulled into scope later. |
-| Amplify/custom-domain API verification | API-03 is infra-gated and unrelated to the chat boundary. |
+| Durable/shared paid-API rate-limit redesign | User explicitly asked to fix everything except rate limiting in this milestone. |
+| Visual redesign of the portfolio | v4.4 is remediation, not a design direction change. |
+| New portfolio projects or new app features | Scope is limited to audit findings and verification. |
+| Live production custom-domain smoke test | API-03 remains infra-gated and unrelated to the local audit remediation. |
 
 ## Traceability
 
@@ -52,18 +63,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CHAT-01 | Phase 29 | Complete |
-| CHAT-02 | Phase 29 | Complete |
-| CHAT-03 | Phase 29 | Complete |
-| CHAT-04 | Phase 29 | Complete |
-| VOICE-01 | Phase 29 | Complete |
-| TEST-01 | Phase 29 | Complete |
+| AUDIT-01 | Phase 30 | Complete |
+| DEP-01 | Phase 30 | Complete |
+| DEP-02 | Phase 30 | Complete |
+| LINK-01 | Phase 30 | Complete |
+| SEC-01 | Phase 30 | Complete |
+| UX-01 | Phase 30 | Complete |
+| LINT-01 | Phase 30 | Complete |
+| VERIFY-01 | Phase 30 | Complete |
 
 **Coverage:**
-- v4.3 requirements: 6 total
-- Mapped to phases: 6
+- v4.4 requirements: 8 total
+- Mapped to phases: 8
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-04-29*
-*Last updated: 2026-04-29 after roadmap creation*
+*Requirements defined: 2026-06-11*
+*Last updated: 2026-06-11 after Phase 30 completion*

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Image from 'next/image';
 import { FaLink, FaCodeFork, FaFigma, FaGithub } from 'react-icons/fa6';
 import type { Project } from '@/data/projects';
 import { PROJECT_EFFECTS } from '@/data/projects';
@@ -92,11 +93,14 @@ export function PortfolioCard({
           <FaGithub />
         </div>
       ) : project.image ? (
-        <img
+        <Image
           className={`${isMobile ? 'rounded-lg' : 'rounded-xl'} w-[calc(100%-16px)] mx-2 mt-2 block`}
-          style={{ background: 'rgba(0,0,0,0.2)' }}
+          style={{ background: 'rgba(0,0,0,0.2)', height: 'auto' }}
           src={project.image}
           alt={project.name}
+          width={800}
+          height={520}
+          sizes={isMobile ? '344px' : '(max-width: 1020px) calc((100vw - 148px) / 2), (max-width: 1400px) calc((100vw - 174px) / 3), calc((100vw - 212px) / 4)'}
           loading="lazy"
         />
       ) : (
@@ -125,30 +129,33 @@ export function PortfolioCard({
         <div className={`flex shrink-0 ${isMobile ? 'gap-1' : 'gap-3'}`}>
           {project.links.Website && (
             <button
-              className={`${isMobile ? 'h-11 w-9' : 'text-sm'} grid place-items-center opacity-85 hover:opacity-100 hover:-translate-y-px transition-all`}
+              className={`${isMobile ? 'h-11 w-9' : 'h-8 w-8 text-sm'} grid place-items-center opacity-85 hover:opacity-100 hover:-translate-y-px transition-all`}
               style={{ color: isDark ? '#000' : '#fff' }}
               onClick={(e) => openLink(project.links.Website, 'Visit site', e)}
               title="Website"
+              aria-label={`Open ${project.name} website`}
             >
               <FaLink />
             </button>
           )}
           {project.links.GitHub && (
             <button
-              className={`${isMobile ? 'h-11 w-9' : 'text-sm'} grid place-items-center opacity-85 hover:opacity-100 hover:-translate-y-px transition-all`}
+              className={`${isMobile ? 'h-11 w-9' : 'h-8 w-8 text-sm'} grid place-items-center opacity-85 hover:opacity-100 hover:-translate-y-px transition-all`}
               style={{ color: isDark ? '#000' : '#fff' }}
               onClick={(e) => openLink(project.links.GitHub, 'Source', e)}
               title="GitHub"
+              aria-label={`Open ${project.name} source`}
             >
               <FaCodeFork />
             </button>
           )}
           {project.links.Design && (
             <button
-              className={`${isMobile ? 'h-11 w-9' : 'text-sm'} grid place-items-center opacity-85 hover:opacity-100 hover:-translate-y-px transition-all`}
+              className={`${isMobile ? 'h-11 w-9' : 'h-8 w-8 text-sm'} grid place-items-center opacity-85 hover:opacity-100 hover:-translate-y-px transition-all`}
               style={{ color: isDark ? '#000' : '#fff' }}
               onClick={(e) => openLink(project.links.Design, 'Design', e)}
               title="Design"
+              aria-label={`Open ${project.name} design`}
             >
               <FaFigma />
             </button>

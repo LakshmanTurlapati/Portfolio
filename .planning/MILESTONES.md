@@ -1,5 +1,45 @@
 # Milestones
 
+## v4.4 Website Audit Remediation (Shipped: 2026-06-11)
+
+**Phases completed:** 1 phase (30), 1 plan
+
+**Key accomplishments:**
+
+- Portfolio project ordering is deterministic across SSR and client hydration; rendered smoke checks show no `/portfolio` hydration page errors on desktop or mobile.
+- Dependency graph now installs with normal `npm ci`; React/React DOM, Next, eslint-config-next, Mermaid, and transitive advisories were updated through `package-lock.json`.
+- `npm audit --audit-level=moderate` reports 0 vulnerabilities.
+- Programmatic external opens now use `noopener,noreferrer` through a shared helper or existing safe feature strings.
+- Known broken/private visible project actions from the audit were removed: stale Blockchain GitHub link, private/unshared Figma design links, and the unreachable Revv Digital experience URL.
+- Desktop/mobile sampled controls now meet practical clickable/tappable target dimensions.
+- Lint warnings from the audit are resolved; `npm run lint`, `npm test`, `npm run build`, and `npm run test:e2e` pass.
+
+**Deferred:**
+
+- API-RATE-01: durable/shared paid-API quota enforcement and trusted proxy header handling remains future work by explicit user request.
+- External link checker still reports scripted-request blocks for Claude (`403` login redirect) and LinkedIn (`999` anti-bot response); these are not treated as broken user-facing links.
+
+---
+
+## v4.3 Legacy V2 Chat-Only Boundary (Shipped: 2026-04-29)
+
+**Phases completed:** 1 phase (29), 1 plan
+
+**Key accomplishments:**
+
+- Legacy V2 text chat now behaves as a conversation-only surface.
+- Text chat no longer enables navigation, project-opening, shell scrolling, theme toggling, tours, browser control, or other tool-backed site-control paths.
+- Voice mode retains advanced site-control behavior validated in v4.1/v4.2.
+- Regression coverage verifies the server and client boundary between text chat and voice tool access.
+
+**Deferred:**
+
+- Persona current-work parity follow-up remains tracked in `.planning/phases/29-legacy-v2-chat-only-boundary/deferred-items.md`.
+- CHAT-ANIM-01 remains future transition/motion polish.
+- API-03 custom-domain / Amplify smoke testing remains future work until a reachable custom-domain production URL is available.
+
+---
+
 ## v4.2 Carry-forward Polish & Hardening (Shipped: 2026-04-27)
 
 **Phases completed:** 4 phases (25-28), 14 plans

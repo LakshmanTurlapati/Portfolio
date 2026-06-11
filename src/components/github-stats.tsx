@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { FaGithub, FaFire, FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import type { GitHubActivity } from '@/lib/github-activity';
+import { openExternalUrl } from '@/lib/open-external';
 
 interface GitHubStatsProps {
   isDark: boolean;
@@ -13,7 +14,7 @@ interface GitHubStatsProps {
 
 export function GitHubStats({ isDark, activity, isLoading, hasError }: GitHubStatsProps) {
   const [hover, setHover] = useState(false);
-  const open = () => window.open('https://github.com/LakshmanTurlapati', '_blank');
+  const open = () => openExternalUrl('https://github.com/LakshmanTurlapati');
   const stats = formatStats(activity);
   const statusLabel = getStatusLabel(activity, isLoading, hasError);
   const degraded = hasError || activity?.source === 'fallback';

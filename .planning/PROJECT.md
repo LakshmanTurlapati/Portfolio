@@ -10,22 +10,22 @@ A visually striking, interactive portfolio that showcases projects with rich det
 
 ## Current State
 
-**Shipped:** v4.2 Carry-forward Polish & Hardening (2026-04-27)
+**Shipped:** v4.4 Website Audit Remediation (2026-06-11)
 
-v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forward hardening closed v4.1's remaining voice reliability, mobile UX, FSB overlay, and chat UI work: page-ready voice-to-text handoff, Scribe stall fallback, SpeechSynthesis timeout recovery, tool-callback exception wrapping, callback deregister contract, mobile particle reduction, iOS chat keyboard handling, mobile FSB overlay treatment, dynamic FSB action captions, and the DART-refined chat popup visual baseline. The refined popup is final for design direction; transition and animation refinements are future polish, not a v4.2 blocker. Manual cross-device UAT is retained as post-milestone QA, not an active milestone blocker.
+v4.4 is complete. The quick website audit findings are remediated except the intentionally deferred paid-API rate-limit redesign: portfolio hydration is stable, normal `npm ci` works, package advisories are cleared, programmatic external opens are hardened, known broken/private visible links are removed, small interactive targets are enlarged, lint warnings are resolved, and the verification matrix passes.
 
-## Current Milestone: v4.3 Legacy V2 Chat-Only Boundary
+## Current Milestone: v4.4 Website Audit Remediation
 
-**Goal:** Make Legacy V2 text chat a conversational-only surface while keeping advanced navigation and site-control features in voice mode.
+**Goal:** Close quick-audit findings across hydration stability, dependency health, external-link safety, project-link freshness, UI tap targets, lint warnings, and verification coverage while intentionally deferring the larger paid-API rate-limit redesign.
 
 **Target features:**
 
-- Legacy V2 chat popup and the full `/chat` page answer normally without navigation, project-opening, theme, browser, or shell-control tool calls.
-- Text chat requests for navigation or other advanced site-control actions get a concise redirect telling the user to use voice mode for advanced features.
-- Voice mode keeps the existing advanced site-control tool path intact.
-- Regression coverage proves text chat cannot trigger client-side site control and voice still can.
+- Portfolio route renders deterministically without React hydration mismatch warnings.
+- Dependency graph installs with normal `npm ci`, resolves known audit advisories where safe, and keeps build/test scripts green.
+- External browser openings use `noopener,noreferrer`, stale project links are repaired or removed, and small interactive controls meet practical target sizing.
+- Lint warnings found during the audit are resolved and regression coverage proves the fixes.
 
-**Last completed milestone:** v4.2 Carry-forward Polish & Hardening.
+**Last completed milestone:** v4.4 Website Audit Remediation.
 
 **Key context:** v4.2 is closed and live at `https://portfolio-v4-test.fly.dev/`. API-03 remains future work because custom-domain / Amplify verification is infra-gated. The active deployed target is Fly (`portfolio-v4-test.fly.dev`).
 
@@ -91,17 +91,31 @@ v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forwa
 - ✓ CHAT-UI-01 chat popup/page redesign — v4.2 Phase 28
 - ✓ GitHub Stats pill and home matrix now use live GitHub profile activity from `/api/github-stats` on Fly — post-v4.2 closure patch, 2026-04-27
 
+### Validated in v4.3
+
+- ✓ Legacy V2 text chat behaves as conversation only and cannot navigate, open project viewers, scroll the shell, toggle theme, or run other site-control tools — v4.3 Phase 29
+- ✓ Text chat responds to navigation/site-control requests by pointing users to voice mode for advanced features — v4.3 Phase 29
+- ✓ Voice mode retains the advanced site-control behavior validated in v4.1/v4.2 — v4.3 Phase 29
+- ✓ Regression tests cover the server and client boundary between text chat and voice tool control — v4.3 Phase 29
+
+### Validated in v4.4
+
+- ✓ Portfolio project ordering is SSR/client deterministic and no longer causes hydration mismatch warnings — v4.4 Phase 30
+- ✓ Dependency versions and lockfile allow normal `npm ci`, clear known package audit findings, and keep lint/test/build/e2e green — v4.4 Phase 30
+- ✓ External browser openings are hardened with `noopener,noreferrer` where programmatic `window.open` is used — v4.4 Phase 30
+- ✓ Broken or private project links discovered by the audit are removed from visible project actions — v4.4 Phase 30
+- ✓ Small desktop/mobile interactive targets from the audit are resized without disrupting the existing visual direction — v4.4 Phase 30
+- ✓ Existing lint warnings from the audit are resolved — v4.4 Phase 30
+
 ### Active
 
-- [ ] Legacy V2 text chat behaves as conversation only and cannot navigate, open project viewers, scroll the shell, toggle theme, or run other site-control tools.
-- [ ] Text chat responds to navigation/site-control requests by pointing users to voice mode for advanced features.
-- [ ] Voice mode retains the advanced site-control behavior validated in v4.1/v4.2.
-- [ ] Regression tests cover the server and client boundary between text chat and voice tool control.
+No active v4.4 requirements remain. Next milestone scope should be chosen explicitly.
 
 ### Future
 
 - [ ] API-03: Live Amplify / custom-domain smoke test against `parzival.live` (script ready at `scripts/verify-amplify-apis.mjs`; gated on reachable production URL)
 - [ ] CHAT-ANIM-01: Refine the DART chat popup's transition and animation details (voice-to-chat morph, open/close timing, message/send polish) without changing the final visual design baseline.
+- [ ] API-RATE-01: Replace the current in-memory paid-API limiter with durable/shared quota enforcement and trusted proxy header handling.
 
 ### Out of Scope
 
@@ -115,6 +129,7 @@ v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forwa
 - Non-public InfiniteChoice/Voyza implementation details -- current role/product context only unless details are explicitly public
 - Voice bot internal wiring details -- explain only high-level public behavior or public GitHub code-level details when applicable
 - Right-side project detail panel as a primary project experience -- user said it was never part of the design; project opens now go to the inbuilt browser instead
+- Durable/shared paid-API rate-limit redesign -- explicitly deferred from v4.4 at user request
 
 ## Context
 
@@ -171,6 +186,7 @@ v4.2 is complete and live at https://portfolio-v4-test.fly.dev/. The carry-forwa
 | Chat transitions/animations are future polish | Remaining work should refine motion without reopening the visual design decision | -- Future |
 | IframeViewer owns project/right preview overlay | GSD previously assumed the old right-side ProjectDetail surface; current code uses IframeViewer and its preview-control overlay | ✓ Good |
 | Legacy V2 text chat is conversation-only | User clarified that text chat should answer normally but should not navigate or run tool calls; advanced site-control belongs in voice mode | -- Pending |
+| v4.4 excludes durable rate-limit redesign | User asked to fix every audit finding except rate limiting in this milestone | ✓ Good |
 
 ## Evolution
 
@@ -190,4 +206,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-29 -- started v4.3 Legacy V2 chat-only boundary milestone*
+*Last updated: 2026-06-11 -- completed v4.4 Website Audit Remediation milestone*

@@ -4,7 +4,7 @@ export interface ExperienceEntry {
   company: string;
   descriptions: string[];
   skills: string[];
-  url: string;
+  url?: string;
 }
 
 export const experienceData: ExperienceEntry[] = [
@@ -48,7 +48,6 @@ export const experienceData: ExperienceEntry[] = [
       "Database management with MongoDB and deployed solutions on AWS to digital marketing initiatives.",
     ],
     skills: ["MEAN Stack", "AWS", "JavaScript", "Figma"],
-    url: "https://www.revvdigital.in/",
   },
   {
     timeline: "Jan - Apr 2019",

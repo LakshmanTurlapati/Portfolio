@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { FaXmark, FaArrowUpRightFromSquare, FaLink, FaFigma, FaGithub } from 'react-icons/fa6';
 import { GithubPreview } from './github-preview';
 import type { PreviewScroller } from '@/lib/site-control-utils';
+import { openExternalUrl } from '@/lib/open-external';
 
 type ViewerKind = 'figma' | 'github' | 'web';
 
@@ -133,7 +134,7 @@ export function IframeViewer({
             <button
               className="w-11 h-11 sm:w-8 sm:h-8 rounded-lg grid place-items-center text-xs opacity-70 hover:opacity-100 transition-opacity"
               style={{ color: isDark ? '#1a1a1a' : '#f3f2ee' }}
-              onClick={() => window.open(url, '_blank')}
+              onClick={() => openExternalUrl(url)}
               title="Open in new tab"
             >
               <FaArrowUpRightFromSquare />
@@ -169,7 +170,7 @@ export function IframeViewer({
                     background: isDark ? '#1a1a1a' : '#f3f2ee',
                     color: isDark ? '#fff' : '#1a1a1a',
                   }}
-                  onClick={() => window.open(url, '_blank')}
+                  onClick={() => openExternalUrl(url)}
                 >
                   <FaArrowUpRightFromSquare /> Open in new tab
                 </button>
@@ -213,7 +214,7 @@ export function IframeViewer({
                       background: isDark ? '#1a1a1a' : '#f3f2ee',
                       color: isDark ? '#fff' : '#1a1a1a',
                     }}
-                    onClick={() => window.open(url, '_blank')}
+                    onClick={() => openExternalUrl(url)}
                   >
                     Open
                   </button>
