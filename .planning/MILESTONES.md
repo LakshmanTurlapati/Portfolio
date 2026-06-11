@@ -1,5 +1,24 @@
 # Milestones
 
+## v4.3 Legacy V2 Chat-Only Boundary (Shipped: 2026-04-29)
+
+**Phases completed:** 1 phase (29), 1 plan
+
+**Key accomplishments:**
+
+- Legacy V2 text chat now behaves as a conversation-only surface.
+- Text chat no longer enables navigation, project-opening, shell scrolling, theme toggling, tours, browser control, or other tool-backed site-control paths.
+- Voice mode retains advanced site-control behavior validated in v4.1/v4.2.
+- Regression coverage verifies the server and client boundary between text chat and voice tool access.
+
+**Deferred:**
+
+- Persona current-work parity follow-up remains tracked in `.planning/phases/29-legacy-v2-chat-only-boundary/deferred-items.md`.
+- CHAT-ANIM-01 remains future transition/motion polish.
+- API-03 custom-domain / Amplify smoke testing remains future work until a reachable custom-domain production URL is available.
+
+---
+
 ## v4.2 Carry-forward Polish & Hardening (Shipped: 2026-04-27)
 
 **Phases completed:** 4 phases (25-28), 14 plans
