@@ -24,6 +24,7 @@ import {
   FaFile,
 } from 'react-icons/fa6';
 import type { PreviewScroller } from '@/lib/site-control-utils';
+import { openExternalUrl } from '@/lib/open-external';
 
 // ===== Helpers =====
 
@@ -457,7 +458,7 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
             background: isDark ? '#238636' : '#1f883d', color: '#fff',
             fontSize: 14, fontWeight: 500, cursor: 'pointer',
           }}
-          onClick={() => window.open(url, '_blank')}
+          onClick={() => openExternalUrl(url)}
         >
           <FaArrowUpRightFromSquare /> Open on GitHub
         </button>
@@ -571,19 +572,19 @@ export function GithubPreview({ url, isDark, onRegisterScroller }: GithubPreview
 
           {/* Actions: Watch / Fork / Star */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button style={btnStyle} onClick={() => window.open(repo.html_url + '/watchers', '_blank')}>
+            <button style={btnStyle} onClick={() => openExternalUrl(repo.html_url + '/watchers')}>
               <FaEye style={{ fontSize: 12 }} /> Watch
               <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', marginLeft: 2, background: countBg, borderRadius: 10 }}>
                 {formatNum(repo.subscribers_count || repo.watchers_count)}
               </span>
             </button>
-            <button style={btnStyle} onClick={() => window.open(repo.html_url + '/forks', '_blank')}>
+            <button style={btnStyle} onClick={() => openExternalUrl(repo.html_url + '/forks')}>
               <FaCodeFork style={{ fontSize: 12 }} /> Fork
               <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', marginLeft: 2, background: countBg, borderRadius: 10 }}>
                 {formatNum(repo.forks_count)}
               </span>
             </button>
-            <button style={btnStyle} onClick={() => window.open(repo.html_url + '/stargazers', '_blank')}>
+            <button style={btnStyle} onClick={() => openExternalUrl(repo.html_url + '/stargazers')}>
               <FaStar style={{ fontSize: 12 }} /> Star
               <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', marginLeft: 2, background: countBg, borderRadius: 10 }}>
                 {formatNum(repo.stargazers_count)}

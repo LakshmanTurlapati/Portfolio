@@ -1,5 +1,7 @@
 'use client';
 
+import { openExternalUrl } from '@/lib/open-external';
+
 interface TimelineEntryProps {
   timeline: string;
   title: string;
@@ -19,7 +21,7 @@ export function TimelineEntry({
 }: TimelineEntryProps) {
   const handleClick = () => {
     if (url) {
-      window.open(url, '_blank');
+      openExternalUrl(url);
     }
   };
 

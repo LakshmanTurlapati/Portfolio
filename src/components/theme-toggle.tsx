@@ -34,7 +34,7 @@ function MoonButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="cursor-pointer flex items-center justify-center bg-transparent border-none p-0"
+      className="min-h-11 min-w-11 cursor-pointer flex items-center justify-center bg-transparent border-none p-0"
     >
       <IoMoonSharp
         style={{
@@ -60,7 +60,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
   }
 
   return (
-    <div className={cn('flex flex-row items-center gap-[12px]', className)}>
+    <div className={cn('flex flex-row items-center gap-1', className)}>
       {/* Sun button */}
       <button
         type="button"
@@ -68,7 +68,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         onClick={() => {
           if (isDark) setTheme('light');
         }}
-        className="cursor-pointer flex items-center justify-center bg-transparent border-none p-0"
+        className="min-h-11 min-w-11 cursor-pointer flex items-center justify-center bg-transparent border-none p-0"
       >
         <SunIcon active={!isDark} />
       </button>

@@ -122,7 +122,7 @@ export function DesktopNavbar({ onAskParz, voiceActive, voiceProps, micDenied }:
           <button
             data-about-morph-source="true"
             onClick={handleAboutClick}
-            className="text-[16px] font-bold no-underline cursor-pointer border-none bg-transparent"
+            className="min-h-11 px-3 text-[16px] font-bold no-underline cursor-pointer border-none bg-transparent"
             style={{ color: 'var(--color-navbar-text)' }}
           >
             About Me
@@ -141,7 +141,7 @@ export function DesktopNavbar({ onAskParz, voiceActive, voiceProps, micDenied }:
               target="_blank"
               rel="noopener noreferrer"
               aria-label={link.label}
-              className="flex items-center justify-center"
+              className="flex h-11 w-9 items-center justify-center"
               style={{ color: 'var(--color-social-icon)' }}
             >
               <link.icon size={17} />

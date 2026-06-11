@@ -20,11 +20,21 @@ import {
 } from '@/lib/portfolio-button-morph';
 
 const EXIT_MORPH_DELAY_MS = 60;
+const PORTFOLIO_SHUFFLE_SEED = 0x50465a44;
 
-function shuffle<T>(array: T[]): T[] {
+function createSeededRandom(seed: number) {
+  let value = seed >>> 0;
+  return () => {
+    value = (value * 1664525 + 1013904223) >>> 0;
+    return value / 0x100000000;
+  };
+}
+
+function shuffle<T>(array: T[], seed = PORTFOLIO_SHUFFLE_SEED): T[] {
   const shuffled = [...array];
+  const random = createSeededRandom(seed);
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
@@ -437,12 +447,12 @@ function GridControlsPanel({
 
       <div className="mt-1 border-t border-current/10 pt-3 text-center text-[10px] leading-none opacity-60">
         Inspired from{' '}
-        <a
-          href="https://21st.dev/home"
-          target="_blank"
-          rel="noreferrer"
-          className="underline decoration-current/40 underline-offset-2 transition-opacity hover:opacity-80"
-        >
+          <a
+            href="https://21st.dev/home"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-current/40 underline-offset-2 transition-opacity hover:opacity-80"
+          >
           21st.dev
         </a>
       </div>

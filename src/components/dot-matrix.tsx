@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo } from 'react';
 
 interface DotMatrixProps {
   isMobile?: boolean;
@@ -12,13 +12,19 @@ const DOT_SIZE = 14; // px
 const MARGIN = DOT_SIZE * 0.15; // 2.1px
 const BORDER_RADIUS = DOT_SIZE * 0.2; // 2.8px
 
+function deterministicIntensity(row: number, col: number, columns: number) {
+  const value = Math.sin((row + 1) * 12.9898 + (col + 1) * 78.233 + columns * 37.719) * 43758.5453;
+  return value - Math.floor(value);
+}
+
 export function DotMatrix({ isMobile = false }: DotMatrixProps) {
   const columns = isMobile ? 20 : 48;
 
-  const [pattern] = useState(() =>
-    Array.from({ length: ROWS }, () =>
-      Array.from({ length: columns }, () => Math.random())
-    )
+  const pattern = useMemo(() =>
+    Array.from({ length: ROWS }, (_, rowIdx) =>
+      Array.from({ length: columns }, (_, colIdx) => deterministicIntensity(rowIdx, colIdx, columns))
+    ),
+    [columns]
   );
 
   return (

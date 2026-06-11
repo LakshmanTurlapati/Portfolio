@@ -13,7 +13,9 @@ export function useCanvas({ animate, onResize, willReadFrequently = false }: Use
   const frameRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const animateRef = useRef(animate);
+  const onResizeRef = useRef(onResize);
   animateRef.current = animate;
+  onResizeRef.current = onResize;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -29,8 +31,8 @@ export function useCanvas({ animate, onResize, willReadFrequently = false }: Use
         const dpr = window.devicePixelRatio || 1;
         canvas.width = width * dpr;
         canvas.height = height * dpr;
-        ctx.scale(dpr, dpr);
-        onResize?.(width, height);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        onResizeRef.current?.(width, height);
       }
     });
     observer.observe(canvas.parentElement || canvas);
@@ -48,7 +50,7 @@ export function useCanvas({ animate, onResize, willReadFrequently = false }: Use
       cancelAnimationFrame(frameRef.current);
       observer.disconnect();
     };
-  }, [willReadFrequently]); // onResize intentionally excluded -- use ref pattern if needed
+  }, [willReadFrequently]);
 
   return canvasRef;
 }
