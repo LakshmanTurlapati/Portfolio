@@ -1,4 +1,4 @@
-export interface ExperienceEntry {
+interface ExperienceEntry {
   timeline: string;
   title: string;
   company: string;

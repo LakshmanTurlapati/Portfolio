@@ -106,7 +106,7 @@ describe('voice turn policy', () => {
     // Still respects the page parameter for situational context
     expect(prompt).toContain('portfolio');
     // Why: prior wording ("Voice mode just opened on the X page") got echoed
-    // into Grok's greeting. Lock the regression in so the opening line stays
+    // into the model's greeting. Lock the regression in so the opening line stays
     // casual and never announces voice mode/activation.
     expect(prompt).not.toMatch(/voice mode/i);
     expect(prompt).not.toMatch(/just opened/i);
@@ -197,9 +197,9 @@ describe('chunkForTTS', () => {
   });
 
   it('keeps every chunk under the requested cap on realistic long output', () => {
-    // Simulate a chatty Grok response (~6k chars of clean prose).
+    // Simulate a chatty model response (~6k chars of clean prose).
     const sentence =
-      'This is exactly the kind of long-winded sentence Grok produces when the context calls for a deeper reply. ';
+      'This is exactly the kind of long-winded sentence a model produces when the context calls for a deeper reply. ';
     const text = sentence.repeat(60);
     const chunks = chunkForTTS(text, 900);
     expect(chunks.every((c) => c.length <= 900)).toBe(true);
@@ -272,37 +272,31 @@ describe('voice-controller barge-in wiring', () => {
   });
 
   it('speaks a tool-derived acknowledgement before resuming listening on tool-only turns', () => {
-    // Regression: post-tour, Grok sometimes drops narration and returns only
-    // tool calls. The previous code jumped straight back to listening, which
-    // presented as a silent listening ↔ thinking loop. The branch must now
-    // speak an audible fallback so the state transitions through 'speaking'
-    // and the user hears confirmation.
     const source = readFileSync(
       join(process.cwd(), 'src/lib/voice-controller.ts'),
       'utf8',
     );
 
-    const toolBranchIndex = source.indexOf('} else if (toolCalls.length > 0) {');
+    const toolBranchIndex = source.indexOf(
+      '} else if (envelopes.length > 0 && toolCalls.length > 0 && !hasTourCall) {',
+    );
     expect(toolBranchIndex).toBeGreaterThan(-1);
 
     const toolBranchBlock = source.slice(
       toolBranchIndex,
-      source.indexOf('        } else {', toolBranchIndex),
+      source.indexOf('        if (myTurn !== turnGenerationRef.current) return;', toolBranchIndex),
     );
 
     expect(toolBranchBlock).toContain('buildToolFallbackSpeech(toolCalls)');
     expect(toolBranchBlock).toContain("|| 'Got it.'");
     expect(toolBranchBlock).toContain('await speak(fallback)');
-    // The speak must precede the listen resume — otherwise we are still silent.
-    expect(toolBranchBlock.indexOf('await speak(fallback)')).toBeLessThan(
-      toolBranchBlock.indexOf('resumeListeningIfActive();'),
+    expect(source).toContain('deliveredAssistantText = fallback');
+    expect(source).toContain('appendAssistantHistory(toolResults)');
+    expect(source.indexOf('await speak(fallback)')).toBeLessThan(
+      source.indexOf('acceptConciergeEnvelope(envelope, dispatchAc.signal)'),
     );
-    // Stale-turn check: if a newer turn started during speak(), bail without
-    // resuming listening so we don't fight another in-flight turn.
-    expect(toolBranchBlock).toContain('if (myTurn !== turnGenerationRef.current) return;');
-    // The acknowledgement should be appended to history so the model sees it
-    // on the next turn — otherwise the conversation appears one-sided.
-    expect(toolBranchBlock).toContain("content: fallback");
+    expect(source).toContain('toolCalls.length > 0 && envelopes.length === 0');
+    expect(source).toContain("I couldn't safely verify that site action");
     expect(source).toContain("import {\n  buildToolFallbackSpeech,");
   });
 
@@ -327,18 +321,16 @@ describe('voice-controller barge-in wiring', () => {
     expect(source).toContain('VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS');
   });
 
-  it('clears tour transcript before handing control back to listening', () => {
+  it('delegates guided tours to the signed Concierge workflow', () => {
     const source = readFileSync(
       join(process.cwd(), 'src/lib/voice-controller.ts'),
       'utf8',
     );
-    const tourBlockStart = source.indexOf('const startGuidedTour = useCallback');
-    const tourBlock = source.slice(tourBlockStart, source.indexOf('// handleUserTurn', tourBlockStart));
 
-    expect(tourBlock).toContain("window.VoiceBus.setState('idle');");
-    expect(tourBlock).toContain("setCaption('');");
-    expect(tourBlock).toContain("setTranscript('');");
-    expect(tourBlock).toContain('resumeListeningIfActive();');
+    expect(source).not.toContain('startGuidedTour');
+    expect(source).not.toContain('tourGenerationRef');
+    expect(source).toContain('acceptConciergeEnvelope(envelope, dispatchAc.signal)');
+    expect(source).toContain('resumeListeningIfActive();');
   });
 
   it('gates speaking interruption on recognized user words, not raw mic noise', () => {
@@ -451,7 +443,7 @@ describe('voice-controller barge-in wiring', () => {
   });
 
   it('chunks long TTS text and plays each chunk through ElevenLabs back-to-back', () => {
-    // Regression: long Grok answers > /api/tts cap used to 413 and fall back to
+    // Regression: long model answers above the /api/tts cap used to 413 and fall back to
     // the OS SpeechSynthesis voice (the "robotic voice on long answers" bug).
     // The controller must now split text via chunkForTTS and play chunks
     // sequentially under one 'speaking' state, only resolving once the last
@@ -485,7 +477,7 @@ describe('voice-controller barge-in wiring', () => {
   it('keeps the chunk size safely under the TTS proxy character cap', () => {
     // /api/tts caps requests at 4000 chars (see src/app/api/tts/route.ts).
     // The chunker must not produce pieces that exceed that cap, otherwise the
-    // chunking-as-a-fix premise breaks for long Grok answers.
+    // chunking-as-a-fix premise breaks for long model answers.
     const ttsRoute = readFileSync(
       join(process.cwd(), 'src/app/api/tts/route.ts'),
       'utf8',
@@ -561,23 +553,38 @@ describe('voice panel caption layout', () => {
 
 describe('voice chat prompt routing', () => {
   it('parses AI SDK UI stream text and tool-input chunks for voice dispatch', () => {
-    const state: VoiceStreamParseState = { responseText: '', toolCalls: [] };
+    const state: VoiceStreamParseState = {
+      responseText: '',
+      toolCalls: [],
+      envelopes: [],
+      catalogRetry: false,
+    };
 
     parseVoiceStreamLine('data: {"type":"text-delta","delta":"Heading there."}', state);
     parseVoiceStreamLine(
-      'data: {"type":"tool-input-available","toolName":"navigate","input":{"page":"portfolio"}}',
+      'data: {"type":"tool-input-available","toolCallId":"call-nav","toolName":"navigate","input":{"page":"portfolio"}}',
       state,
     );
     parseVoiceStreamLine(
-      'data: {"type":"tool-input-available","toolName":"startTour","input":{}}',
+      'data: {"type":"tool-input-available","toolCallId":"call-tour","toolName":"startTour","input":{}}',
+      state,
+    );
+    parseVoiceStreamLine(
+      'data: {"type":"data-concierge-envelope","data":{"envelope":{"protected":"p","payload":"d","signature":"s"}}}',
+      state,
+    );
+    parseVoiceStreamLine(
+      'data: {"type":"data-concierge-retry","data":{"reason":"catalog-stale"}}',
       state,
     );
 
     expect(state.responseText).toBe('Heading there.');
     expect(state.toolCalls).toEqual([
-      { name: 'navigate', args: { page: 'portfolio' } },
-      { name: 'startTour', args: {} },
+      { id: 'call-nav', name: 'navigate', args: { page: 'portfolio' } },
+      { id: 'call-tour', name: 'startTour', args: {} },
     ]);
+    expect(state.envelopes).toEqual([{ protected: 'p', payload: 'd', signature: 's' }]);
+    expect(state.catalogRetry).toBe(true);
   });
 
   it('requires the voice tool-instructions prompt to demand spoken text alongside tools', () => {
@@ -625,8 +632,12 @@ describe('voice chat prompt routing', () => {
     expect(source).toContain('const textChatBoundaryInstructions');
     expect(source).toContain('use voice mode for navigation and site-control actions');
     expect(source).toContain('const isVoiceRequest = guarded.body.isVoice === true');
-    expect(source).toContain('const toolsEnabled = isVoiceRequest');
-    expect(source).toContain('...(toolsEnabled ? { tools: siteControlTools } : {})');
+    expect(source).toContain('if (!isVoiceRequest) {');
+    expect(source).toContain('tools: catalog.aiTools');
+    expect(source).toContain('createSignedBatchIssuer');
+    expect(source.indexOf('if (!isVoiceRequest) {')).toBeLessThan(
+      source.indexOf('const portfolioRuntime = createPortfolioConcierge()'),
+    );
     expect(source).not.toContain('Boolean(isVoice || enableSiteControl)');
     expect(source).not.toContain('const { isVoice, enableSiteControl }');
   });
@@ -636,24 +647,17 @@ describe('voice chat prompt routing', () => {
       join(process.cwd(), 'src/app/api/chat/route.ts'),
       'utf8',
     );
+    const concierge = readFileSync(
+      join(process.cwd(), 'src/lib/portfolio-concierge.ts'),
+      'utf8',
+    );
 
-    expect(source).toContain('startTour: tool');
-    // Why: all side-effect tools now require explicit user directives at the
-    // SCHEMA level (tool `description` field), because Grok weights tool
-    // descriptions above prose buried in a long system prompt. Earlier fixes
-    // that only tightened the prompt prose were ignored by the model.
-    expect(source).toContain('Use ONLY when the user explicitly asks');
-    // Lock the regression in: every side-effect tool schema must carry a
-    // "Call this ONLY when" restriction. openProject was the smoking gun —
-    // bare "FSB" or "tell me about FSB" used to fire it because the schema
-    // description was permissive.
-    expect(source).toMatch(/openProject: tool\(\{\s*description:[^}]*Call this ONLY when the user gives an explicit/);
-    expect(source).toMatch(/navigate: tool\(\{\s*description:[^}]*Call this ONLY when the user gives an explicit/);
-    expect(source).toMatch(/scrollTo: tool\(\{\s*description:[^}]*Call this ONLY when the user gives an explicit/);
-    // The openProject schema must explicitly enumerate the NOT-trigger
-    // patterns so the model treats "tell me about FSB" as conversational.
-    expect(source).toMatch(/openProject:[\s\S]*Do NOT call this on bare mentions/);
-    expect(source).toMatch(/openProject:[\s\S]*tell me about FSB/);
+    expect(concierge).toContain("name: 'startTour'");
+    expect(concierge).toContain('Call this only after an explicit');
+    expect(concierge).toMatch(/name: 'openProject',[\s\S]*Do not call it for a bare project mention/);
+    expect(concierge).toMatch(/name: 'navigate',[\s\S]*Do not call it for incidental page mentions/);
+    expect(concierge).toMatch(/name: 'scrollTo',[\s\S]*explicit scroll, jump, or show-section request/);
+    expect(source).toContain('createAISDKAdapter');
     expect(source).toContain('continuous guided showcase until interrupted');
     expect(source).toContain('direct, playful, high-energy, practical');
     expect(source).toContain('Do not manually chain the whole tour');
@@ -668,15 +672,16 @@ describe('voice chat prompt routing', () => {
 
 describe('site-control tool wiring', () => {
   it('wires project-preview scrolling through voice and preview surfaces', () => {
-    const route = readFileSync(join(process.cwd(), 'src/app/api/chat/route.ts'), 'utf8');
     const voice = readFileSync(join(process.cwd(), 'src/lib/voice-controller.ts'), 'utf8');
+    const concierge = readFileSync(join(process.cwd(), 'src/lib/portfolio-concierge.ts'), 'utf8');
     const provider = readFileSync(join(process.cwd(), 'src/providers/site-control-provider.tsx'), 'utf8');
     const iframeViewer = readFileSync(join(process.cwd(), 'src/components/iframe-viewer.tsx'), 'utf8');
     const githubPreview = readFileSync(join(process.cwd(), 'src/components/github-preview.tsx'), 'utf8');
 
-    expect(route).toContain('scrollProjectPreview: tool');
-    expect(voice).toContain("case 'scrollProjectPreview'");
-    expect(voice).toContain("runTool('scrollProjectPreview'");
+    expect(concierge).toContain("name: 'scrollProjectPreview'");
+    expect(concierge).toContain('context.previewScrollable === true');
+    expect(voice).toContain('acceptConciergeEnvelope(envelope, dispatchAc.signal)');
+    expect(voice).not.toContain("case 'scrollProjectPreview'");
     expect(provider).toContain('scrollProjectPreview: (direction?');
     expect(iframeViewer).toContain('onRegisterPreviewScroller');
     expect(iframeViewer).not.toContain('controlOverlayActive');
@@ -703,64 +708,60 @@ describe('site-control tool wiring', () => {
     }
   });
 
-  it('preserves voice-owned site-control tools and callbacks', () => {
+  it('routes voice-owned site control through signed Concierge batches', () => {
     const route = readFileSync(join(process.cwd(), 'src/app/api/chat/route.ts'), 'utf8');
     const voice = readFileSync(join(process.cwd(), 'src/lib/voice-controller.ts'), 'utf8');
     const sessionProvider = readFileSync(join(process.cwd(), 'src/providers/voice-session-provider.tsx'), 'utf8');
+    const concierge = readFileSync(join(process.cwd(), 'src/lib/portfolio-concierge.ts'), 'utf8');
 
-    expect(route).toContain('scrollProjectPreview: tool');
-    expect(route).toContain('startTour: tool');
-    expect(route).toContain('switchToText: tool');
-    expect(route).toContain('endCall: tool');
-    expect(voice).toContain('body: JSON.stringify({ messages, isVoice: true })');
-    expect(voice).toContain("case 'scrollProjectPreview'");
-    expect(voice).toContain("case 'startTour'");
-    expect(voice).toContain('startGuidedTour(myTurn)');
-    // Why: tour activation is fully LLM-driven. Grok's startTour tool call
-    // is trusted; no client-side keyword pre-classifier gates it. The
-    // `kind === 'user'` guard remains so synthetic greet kickoffs cannot
-    // start a tour, but it is not utterance-keyword matching.
-    expect(voice).toContain("shouldStartTour = kind === 'user';");
+    for (const action of ['scrollProjectPreview', 'startTour', 'switchToText', 'endCall']) {
+      expect(concierge).toContain(`name: '${action}'`);
+    }
+    expect(route).toContain('createSignedBatchIssuer');
+    expect(route).toContain("type: 'data-concierge-envelope'");
+    expect(voice).toContain('context: getConciergeContext()');
+    expect(voice).toContain('acceptConciergeEnvelope(envelope, dispatchAc.signal)');
+    expect(voice).not.toContain('dispatchToolCall');
     expect(voice).not.toContain('isExplicitTourIntent');
-    expect(voice).toContain("case 'switchToText'");
-    expect(voice).toContain("case 'endCall'");
-    expect(sessionProvider).toContain('toolCallbacksRef.current.toggleTheme');
-    expect(sessionProvider).toContain('toolCallbacksRef.current.openProject');
-    expect(sessionProvider).toContain('toolCallbacksRef.current.scrollTo');
-    expect(sessionProvider).toContain('toolCallbacksRef.current.scrollProjectPreview');
-    expect(sessionProvider).toContain('toolCallbacksRef.current.closeBrowser');
-    expect(sessionProvider).toContain('toolCallbacksRef.current.openCurrentProjectExternal');
-    expect(sessionProvider).toContain('toolCallbacksRef.current.unsupportedIframeControl');
+    expect(sessionProvider).toContain('createSignedBrowserBridge');
+    expect(sessionProvider).toContain('useConciergeBridge(runtime.bridge, mountedBridge)');
+    expect(sessionProvider).toContain('replayStore: createIndexedDBReplayStore');
   });
 
-  it('keeps registered tool callbacks live by mutating the callback ref in place', () => {
+  it('defers live context updates while a Concierge workflow is active', () => {
     const sessionProvider = readFileSync(join(process.cwd(), 'src/providers/voice-session-provider.tsx'), 'utf8');
 
-    expect(sessionProvider).toContain('Object.assign(toolCallbacksRef.current, callbacks)');
-    expect(sessionProvider).not.toContain('toolCallbacksRef.current = { ...toolCallbacksRef.current, ...callbacks }');
+    expect(sessionProvider).toContain('const acceptingRef = useRef(0)');
+    expect(sessionProvider).toContain('const pendingContextRef = useRef<PortfolioConciergeContext | null>(null)');
+    expect(sessionProvider).toContain('if (acceptingRef.current > 0)');
+    expect(sessionProvider).toContain('pendingContextRef.current = currentContext');
+    expect(sessionProvider).not.toContain('toolCallbacksRef');
   });
 
   it('guards voice openLink with the approved public URL allowlist', () => {
-    const sessionProvider = readFileSync(join(process.cwd(), 'src/providers/voice-session-provider.tsx'), 'utf8');
+    const provider = readFileSync(join(process.cwd(), 'src/providers/site-control-provider.tsx'), 'utf8');
 
-    expect(sessionProvider).toContain("import { isApprovedExternalLink } from '@/lib/approved-links'");
-    expect(sessionProvider).toContain('if (!isApprovedExternalLink(url))');
-    expect(sessionProvider).toContain("I can't open that link from voice mode.");
+    expect(provider).toContain("import { isApprovedExternalLink } from '@/lib/approved-links'");
+    expect(provider).toContain('if (!isApprovedExternalLink(url))');
+    expect(provider).toContain("I can't open that link from voice mode.");
   });
 
   it('defines the guided tour sequence as an interruptible multi-project showcase', () => {
-    const voice = readFileSync(join(process.cwd(), 'src/lib/voice-controller.ts'), 'utf8');
-    const tourBlockStart = voice.indexOf('const startGuidedTour = useCallback');
-    const tourBlock = voice.slice(tourBlockStart, voice.indexOf('// handleUserTurn', tourBlockStart));
+    const concierge = readFileSync(join(process.cwd(), 'src/lib/portfolio-concierge.ts'), 'utf8');
+    const tourBlockStart = concierge.indexOf("name: 'startTour'");
+    const tourBlock = concierge.slice(
+      tourBlockStart,
+      concierge.indexOf('const concierge = createConcierge', tourBlockStart),
+    );
 
-    expect(voice).toContain('tourGenerationRef');
-    expect(voice).toContain('waitForTourStep');
-    expect(voice).toContain("act('openProject', { slug: 'Review Gate' }");
-    expect(voice).toContain("act('scrollProjectPreview', { direction: 'down' }");
-    expect(voice).toContain("act('openProject', { slug: 'FSB' }");
-    expect(voice).toContain("act('openProject', { slug: 'GitFly' }");
-    expect(voice).toContain("act('openProject', { slug: 'Parz-AI' }");
-    expect(voice).toContain("act('scrollTo', { selector: 'experience' }");
+    expect(tourBlock).toContain('workflow.cleanup');
+    expect(tourBlock).toContain('workflow.delay');
+    expect(tourBlock).toContain("run('review-gate', 'openProject', { name: 'Review Gate' }");
+    expect(tourBlock).toContain("run('review-gate-scroll', 'scrollProjectPreview', { direction: 'down' }");
+    expect(tourBlock).toContain("run('fsb', 'openProject', { name: 'FSB' }");
+    expect(tourBlock).toContain("run('gitfly', 'openProject', { name: 'GitFly' }");
+    expect(tourBlock).toContain("run('parz-ai', 'openProject', { name: 'Parz-AI' }");
+    expect(tourBlock).toContain("run('experience', 'scrollTo', { section: 'experience' }");
     expect(tourBlock).not.toContain('faking');
     expect(tourBlock).not.toContain('iframe control');
     expect(tourBlock).not.toContain('steering');
@@ -827,13 +828,18 @@ describe('site-control tool wiring', () => {
     expect(TOUR_NARRATIONS).toContain(pickTourNarration());
   });
 
-  it('keeps navigate routed through dispatchToolCall for FSB captions', () => {
+  it('keeps navigate behind signed Concierge dispatch for lifecycle captions', () => {
     const voice = readFileSync(
       join(process.cwd(), 'src/lib/voice-controller.ts'),
       'utf8',
     );
 
-    expect(voice).toContain("case 'navigate':\n              dispatchToolCall('navigate', tc.args);");
+    const overlay = readFileSync(join(process.cwd(), 'src/components/fsb-control-overlay.tsx'), 'utf8');
+
+    expect(voice).toContain('acceptConciergeEnvelope(envelope, dispatchAc.signal)');
+    expect(voice).not.toContain('dispatchToolCall');
+    expect(overlay).toContain("case 'navigate':");
+    expect(overlay).toContain('concierge.onDispatch');
   });
 
   it('carries the voice capsule rect and panel snapshot into the text chat morph', () => {
@@ -868,9 +874,11 @@ describe('site-control tool wiring', () => {
     const iframeViewer = readFileSync(join(process.cwd(), 'src/components/iframe-viewer.tsx'), 'utf8');
     const overlay = readFileSync(join(process.cwd(), 'src/components/fsb-control-overlay.tsx'), 'utf8');
 
-    expect(provider).toContain('const [controlOverlayActive, setControlOverlayActive] = useState(false)');
-    expect(provider).toContain('const [tourControlActive, setTourControlActive] = useState(false)');
-    expect(provider).toContain('active={controlOverlayActive || tourControlActive}');
+    expect(provider).toContain('<FsbControlOverlay />');
+    expect(provider).not.toContain('controlOverlayActive');
+    expect(provider).not.toContain('tourControlActive');
+    expect(overlay).toContain('concierge.onDispatch');
+    expect(overlay).toContain('activeDispatchesRef');
     expect(iframeViewer).toContain('onRegisterPreviewScroller');
     expect(iframeViewer).toContain('onRegisterScroller={onRegisterPreviewScroller}');
     expect(overlay).not.toContain('fsb-control-viewport-glow');
@@ -879,15 +887,14 @@ describe('site-control tool wiring', () => {
 
   it('keeps the FSB badge mounted for the full guided tour lifecycle', () => {
     const provider = readFileSync(join(process.cwd(), 'src/providers/site-control-provider.tsx'), 'utf8');
-    const voice = readFileSync(join(process.cwd(), 'src/lib/voice-controller.ts'), 'utf8');
+    const overlay = readFileSync(join(process.cwd(), 'src/components/fsb-control-overlay.tsx'), 'utf8');
+    const concierge = readFileSync(join(process.cwd(), 'src/lib/portfolio-concierge.ts'), 'utf8');
 
-    expect(provider).toContain('const [tourControlActive, setTourControlActive] = useState(false)');
-    expect(provider).toContain("VoiceBus.on('site-control-tour-start'");
-    expect(provider).toContain("VoiceBus.on('site-control-tour-end'");
-    expect(provider).toContain('active={controlOverlayActive || tourControlActive}');
-    expect(voice).toContain("VoiceBus.emit('site-control-tour-start', { tourId })");
-    expect(voice).toContain("VoiceBus.emit('site-control-tour-end', { tourId })");
-    expect(voice).toContain("VoiceBus.emit('site-control-tour-end', { tourId: stoppedTourId })");
+    expect(provider).toContain('<FsbControlOverlay />');
+    expect(overlay).toContain('activeDispatches.add(event.dispatchId)');
+    expect(overlay).toContain('activeDispatches.delete(event.dispatchId)');
+    expect(concierge).toContain('workflow.run({');
+    expect(concierge).toContain('workflow.cleanup');
   });
 });
 

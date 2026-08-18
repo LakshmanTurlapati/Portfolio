@@ -37,10 +37,6 @@ async function waitForSiteControl(page: Page) {
   await page.waitForFunction(() => Boolean((window as WindowWithSiteControl).__parzSiteControl));
 }
 
-async function waitForControlIdle(page: Page) {
-  await expect(page.getByText('powered by FSB')).toBeHidden();
-}
-
 async function mockSpeechTokenFailure(page: Page) {
   await page.route('**/api/stt-token', async (route) => {
     await route.fulfill({
@@ -263,15 +259,14 @@ async function mockReviewGateGithubPreview(page: Page) {
   });
 }
 
-test('Parz site control navigates, scrolls, opens GitFly, and shows the FSB badge', async ({ page }) => {
+test('development site-control hook navigates, scrolls, and opens approved projects', async ({ page }) => {
   await mockReviewGateGithubPreview(page);
   await page.goto('/');
   await waitForSiteControl(page);
 
   await page.evaluate(() => (window as WindowWithSiteControl).__parzSiteControl?.navigate('portfolio'));
   await expect(page).toHaveURL(/\/portfolio$/);
-  await expect(page.getByText('powered by FSB')).toBeVisible();
-  await waitForControlIdle(page);
+  await expect(page.locator('.fsb-control-overlay')).toHaveCount(0);
 
   await waitForSiteControl(page);
   await page.evaluate(() => (window as WindowWithSiteControl).__parzSiteControl?.scrollTo('experience'));
@@ -280,9 +275,8 @@ test('Parz site control navigates, scrolls, opens GitFly, and shows the FSB badg
 
   await waitForSiteControl(page);
   await page.evaluate(() => (window as WindowWithSiteControl).__parzSiteControl?.openProject('GitFly'));
-  await expect(page.getByText('powered by FSB')).toBeVisible();
   await expect(page.getByText('gitfly.ai', { exact: true })).toBeVisible();
-  await waitForControlIdle(page);
+  await expect(page.locator('.fsb-control-overlay')).toHaveCount(0);
 
   await page.evaluate(() => (window as WindowWithSiteControl).__parzSiteControl?.openProject('Review Gate'));
   await expect(page.getByText('Review-Gate', { exact: true }).first()).toBeVisible();
@@ -298,8 +292,6 @@ test('Parz site control navigates, scrolls, opens GitFly, and shows the FSB badg
     'href',
     'https://github.com/LakshmanTurlapati/Review-Gate/blob/main/docs/setup.md',
   );
-  await waitForControlIdle(page);
-
   await expect
     .poll(
       () => page.evaluate(() =>
@@ -308,7 +300,7 @@ test('Parz site control navigates, scrolls, opens GitFly, and shows the FSB badg
       { timeout: 5000 },
     )
     .toMatchObject({ ok: true });
-  await expect(page.getByText('powered by FSB')).toBeVisible();
+  await expect(page.locator('.fsb-control-overlay')).toHaveCount(0);
   await expect(page.locator('.fsb-control-viewport-glow')).toHaveCount(0);
   await expect(page.getByTestId('fsb-preview-control-overlay')).toHaveCount(0);
   await expect(page.locator('.fsb-control-action-pulse')).toHaveCount(0);

@@ -10,25 +10,28 @@
 // Per D-13: driven by VoiceBus state events.
 // States are differentiated by animation PATTERN only, not color.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
+import { useConcierge } from '@full-self-browsing/concierge-react/client';
 import { useMounted } from '@/hooks/use-mounted';
 
 type GlowState = 'idle' | 'listening' | 'executing' | 'success' | 'error';
 
 export function VoiceGlow() {
   const mounted = useMounted();
+  const concierge = useConcierge();
   const { resolvedTheme } = useTheme();
   const [glowState, setGlowState] = useState<GlowState>('idle');
+  const activeDispatchesRef = useRef(new Set<string>());
 
   // --glow-color drives all rgba() calls in globals.css keyframes and utility classes.
   // Dark mode (dark background) → white glow. Light mode (light background) → black glow.
   const glowColor = resolvedTheme === 'dark' ? '255,255,255' : '0,0,0';
 
-  // Subscribe to VoiceBus state events — maps listening → 'listening', others → 'idle'.
-  // tool-executing / tool-success / tool-error are separate custom events (not VoiceState).
+  // VoiceBus remains the audio-state source. Concierge owns action lifecycle.
   useEffect(() => {
     if (!mounted || typeof window === 'undefined' || !window.VoiceBus) return;
+    const activeDispatches = activeDispatchesRef.current;
 
     const unsubState = window.VoiceBus.on('state', (s) => {
       const state = s as string;
@@ -41,28 +44,27 @@ export function VoiceGlow() {
       }
     });
 
-    // Per D-12: tool-executing → steady monochrome glow (VFBK-02)
-    const unsubExec = window.VoiceBus.on('tool-executing', () => {
-      setGlowState('executing');
-    });
+    const unsubscribeDispatch = concierge.onDispatch((event) => {
+      if (event.phase === 'accepted' || event.phase === 'waiting' || event.phase === 'executing') {
+        activeDispatches.add(event.dispatchId);
+        setGlowState('executing');
+        return;
+      }
 
-    // Per D-14: success glow flashes briefly (VFBK-03) — JS timer resets to idle after 1000ms
-    const unsubSuccess = window.VoiceBus.on('tool-success', () => {
-      setGlowState('success');
-    });
-
-    // Per D-14: error glow persists until VoiceBus state changes (VFBK-04)
-    const unsubError = window.VoiceBus.on('tool-error', () => {
-      setGlowState('error');
+      activeDispatches.delete(event.dispatchId);
+      if (activeDispatches.size > 0) {
+        setGlowState('executing');
+      } else {
+        setGlowState(event.phase === 'succeeded' ? 'success' : 'error');
+      }
     });
 
     return () => {
       (unsubState as () => void)();
-      (unsubExec as () => void)();
-      (unsubSuccess as () => void)();
-      (unsubError as () => void)();
+      unsubscribeDispatch();
+      activeDispatches.clear();
     };
-  }, [mounted]);
+  }, [concierge, mounted]);
 
   // Per D-14: success glow is one-shot — reset to idle after 1000ms (animation duration).
   // This matches the voiceGlowSuccess keyframe timing in globals.css.

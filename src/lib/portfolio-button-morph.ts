@@ -1,6 +1,6 @@
 export const PORTFOLIO_MORPH_DURATION_MS = 500;
 
-export interface MorphRect {
+interface MorphRect {
   left: number;
   top: number;
   width: number;

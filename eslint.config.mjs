@@ -14,6 +14,7 @@ const eslintConfig = [
   {
     ignores: [
       "node_modules/**",
+      ".context/**",
       ".claude/**",
       ".dart_tool/**",
       ".next/**",

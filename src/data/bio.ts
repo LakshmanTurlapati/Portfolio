@@ -1,4 +1,4 @@
-export interface BioSegment {
+interface BioSegment {
   text: string;
   bold?: boolean;
 }

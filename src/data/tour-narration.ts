@@ -8,7 +8,7 @@
 // script. Each variant follows the same content beats — same projects in the
 // same order, same tone, no defensive disclaimers about private data.
 
-export interface TourNarration {
+interface TourNarration {
   opener: string;
   reviewGateIntro: string;
   reviewGateMid: string;

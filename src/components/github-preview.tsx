@@ -201,7 +201,7 @@ const previewCache = new Map<string, GithubPreviewCacheEntry>();
 
 // ===== Component =====
 
-export interface GithubPreviewProps {
+interface GithubPreviewProps {
   url: string;
   isDark: boolean;
   onRegisterScroller?: (scroller: PreviewScroller | null) => void;

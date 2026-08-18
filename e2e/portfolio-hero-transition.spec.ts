@@ -1,9 +1,9 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 type RecordedAnimation = {
-  keyframes: Record<string, unknown> | Record<string, unknown>[];
-  options: { delay?: number; duration?: number; fill?: string; pseudoElement?: string };
-  targetDataset?: Record<string, string>;
+  keyframes: Record<string, unknown>;
+  options: { delay?: number; duration?: number; fill?: string; pseudoElement?: string | null };
+  targetDataset?: Record<string, string | undefined>;
   targetText?: string;
 };
 

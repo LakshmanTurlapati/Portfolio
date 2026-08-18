@@ -107,5 +107,3 @@ export const publicProfile = {
     linkedin: 'https://www.linkedin.com/in/lakshman-turlapati-3091aa191/',
   },
 } as const;
-
-export type PublicProfile = typeof publicProfile;

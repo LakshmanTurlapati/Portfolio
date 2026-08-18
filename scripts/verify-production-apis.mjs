@@ -25,11 +25,6 @@ if (parsedUrl.protocol !== 'https:') {
   process.exit(2);
 }
 
-if (baseUrl === 'https://portfolio-v4-test.fly.dev' || parsedUrl.hostname === 'portfolio-v4-test.fly.dev') {
-  console.error('Fly substitute is not valid for Phase 15 gap closure; use the Amplify production URL');
-  process.exit(2);
-}
-
 function contentType(response) {
   return response.headers.get('content-type') ?? '';
 }
@@ -95,10 +90,29 @@ async function testTextChat() {
   return passed;
 }
 
-async function testVoiceChat() {
+async function bootstrapConcierge() {
+  const response = await fetch(`${baseUrl}/api/concierge/bootstrap`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', Origin: baseUrl },
+  });
+  const type = contentType(response);
+  const body = await response.json().catch(() => null);
+  const cookie = response.headers.get('set-cookie')?.split(';', 1)[0] ?? '';
+  const passed = response.status === 200
+    && type.includes('application/json')
+    && typeof body?.sessionId === 'string'
+    && typeof body?.publicKeyPem === 'string'
+    && body.publicKeyPem.includes('BEGIN PUBLIC KEY')
+    && cookie.length > 0;
+
+  logRoute('/api/concierge/bootstrap', response.status, type, 'concierge_bootstrap', passed);
+  return { passed, cookie };
+}
+
+async function testVoiceChat(cookie) {
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: baseUrl },
+    headers: { 'Content-Type': 'application/json', Origin: baseUrl, Cookie: cookie },
     body: JSON.stringify({
       messages: [
         {
@@ -108,6 +122,13 @@ async function testVoiceChat() {
         },
       ],
       isVoice: true,
+      context: {
+        page: 'home',
+        browserOpen: false,
+        previewScrollable: false,
+        voiceActive: true,
+      },
+      userTurnId: `production-smoke-${Date.now()}`,
     }),
   });
 
@@ -116,6 +137,7 @@ async function testVoiceChat() {
   const passed = response.status === 200
     && type.includes('text/event-stream')
     && text.includes('data:')
+    && text.includes('data-concierge-envelope')
     && !text.includes('Chat service is not configured')
     && !text.includes('"error"');
 
@@ -164,7 +186,7 @@ async function testTts() {
   const buffer = Buffer.from(await response.arrayBuffer());
 
   if (response.status === 200) {
-    await writeFile('/tmp/parz-amplify-gap-test.mp3', buffer);
+    await writeFile('/tmp/parz-production-api-test.mp3', buffer);
   }
 
   const passed = response.status === 200
@@ -184,9 +206,11 @@ async function main() {
   }
 
   try {
+    const concierge = await bootstrapConcierge();
     const results = [
       await testTextChat(),
-      await testVoiceChat(),
+      concierge.passed,
+      concierge.passed && await testVoiceChat(concierge.cookie),
       await testSttToken(),
       await testTts(),
     ];

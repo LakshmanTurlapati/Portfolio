@@ -1,10 +1,44 @@
-import { streamText, UIMessage, convertToModelMessages, tool } from 'ai';
-import { xai } from '@ai-sdk/xai';
-import { z } from 'zod/v3';
+import { randomUUID } from 'node:crypto';
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  stepCountIs,
+  streamText,
+} from 'ai';
+import type { UIMessage } from 'ai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { createAISDKAdapter } from '@full-self-browsing/concierge/ai-sdk';
+import { createSignedBatchIssuer } from '@full-self-browsing/concierge/ai-sdk/server';
+import { cookies } from 'next/headers';
 import { systemPrompt } from '@/data/system-prompt';
 import { PARZ_CHAT_MODEL_CONFIG } from '@/lib/ai-model-config';
-import { hasEnvVar } from '@/lib/env';
+import { getConciergeSigningEnv, hasEnvVar } from '@/lib/env';
 import { parseGuardedJson, validateChatMessages } from '@/lib/api-guard';
+import {
+  createPortfolioConcierge,
+  portfolioConciergeContextSchema,
+  type PortfolioConciergeContext,
+} from '@/lib/portfolio-concierge';
+import {
+  CONCIERGE_AUDIENCE,
+  CONCIERGE_KEY_ID,
+  CONCIERGE_SESSION_COOKIE,
+  isConciergeSessionId,
+  type ConciergeUIData,
+} from '@/lib/concierge-protocol';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+type VoiceMessage = UIMessage<unknown, ConciergeUIData>;
+
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+  compatibility: 'strict',
+  appName: 'Parz AI',
+  appUrl: 'https://parzival.live',
+});
 
 const errorMessages = [
   'I might be updating my server right now. Please try again in a moment!',
@@ -64,76 +98,8 @@ User-facing wording:
 IMPORTANT: Every voice turn MUST include spoken text. Never reply with tool calls only — the voice channel has no other way to acknowledge actions, and the user hears silence if narration is missing. Even one short sentence ("Opening Review Gate now.") is enough. Project and browser actions must use approved local project targets only, never arbitrary model-generated URLs.
 `;
 
-// Why: Grok weighs each tool's own `description` field above prose buried in
-// a long system prompt. Earlier fixes only tightened the prompt prose, so the
-// model kept firing openProject on bare mentions ("tell me about FSB"). The
-// "Call this ONLY when..." restriction now lives at the schema level where
-// the model actually reasons about WHEN to invoke a tool. The system-prompt
-// block at siteControlToolInstructions above is kept as redundant
-// reinforcement.
-const siteControlTools = {
-  navigate: tool({
-    description: 'Switch the page in the portfolio website (home, portfolio, about). Call this ONLY when the user gives an explicit page-switch directive ("go to portfolio", "show me the about page", "take me home"). Do NOT call this on incidental page mentions or general questions. For information requests about a page, answer in words instead.',
-    inputSchema: z.object({
-      page: z.enum(['home', 'portfolio', 'about']).describe('The page to navigate to'),
-    }),
-  }),
-  openProject: tool({
-    description: 'Open the in-portfolio browser onto a specific approved project (Parz-AI, FSB, GitFly, Review Gate, T2S, etc.). Call this ONLY when the user gives an explicit open/show/view directive for that project ("open FSB", "show me Review Gate", "let me see GitFly", "pull up Parz-AI", "demo FSB"). Do NOT call this on bare mentions, conversational questions, or information requests ("FSB?", "tell me about FSB", "what is GitFly", "what does Review Gate do", "explain it to me"). For information requests, answer in words and let the user request navigation explicitly afterward. Use approved project names/aliases from the portfolio, not arbitrary URLs.',
-    inputSchema: z.object({
-      name: z.string().describe('Approved project name or alias, e.g. "Parz-AI", "FSB", "GitFly", "Review Gate", "T2S".'),
-    }),
-  }),
-  scrollTo: tool({
-    description: 'Scroll the about page to a specific section (about, experience, academics). Call this ONLY when the user gives an explicit scroll/jump directive for a section ("scroll to experience", "jump to academics", "show me your education"). Do NOT call this on incidental section mentions.',
-    inputSchema: z.object({
-      section: z.enum(['about', 'experience', 'academics']).describe('The section to scroll to'),
-    }),
-  }),
-  scrollProjectPreview: tool({
-    description: 'Scroll inside a currently-open portfolio-owned project preview. Call this ONLY when (a) a preview is already open AND (b) the user explicitly asks to scroll it ("scroll down", "show me more of this", "keep scrolling", "go to the top").',
-    inputSchema: z.object({
-      direction: z.enum(['down', 'up', 'top', 'bottom']).optional().describe('Scroll direction for the current project preview'),
-    }),
-  }),
-  closeBrowser: tool({
-    description: 'Close the inbuilt portfolio browser/project viewer if it is currently open. Call this ONLY when the user explicitly asks to close, dismiss, or back out of the project viewer ("close it", "close the browser", "back out", "dismiss this").',
-    inputSchema: z.object({}),
-  }),
-  openCurrentProjectExternal: tool({
-    description: 'Open the currently-viewed approved project in a new browser tab (externally). Call this ONLY when the user explicitly asks to open the current project externally or in a new tab ("open it externally", "open in a new tab", "let me see it in a real tab").',
-    inputSchema: z.object({}),
-  }),
-  unsupportedIframeControl: tool({
-    description: 'Use for unsupported requests to operate controls inside an embedded third-party site (clicks, typing, form submission within an iframe).',
-    inputSchema: z.object({}),
-  }),
-  toggleTheme: tool({
-    description: 'Toggle between dark and light theme on the portfolio. Call this ONLY when the user explicitly asks to switch, toggle, or change the theme/mode ("switch to dark mode", "toggle the theme", "go dark", "make it lighter").',
-    inputSchema: z.object({}),
-  }),
-  openLink: tool({
-    description: 'Open an approved public portfolio/contact/project URL in a new browser tab. Call this ONLY when the user explicitly asks to open a link ("open the LinkedIn", "show me their GitHub"). Do NOT call this on incidental URL or platform mentions, and never open arbitrary model-invented URLs.',
-    inputSchema: z.object({
-      url: z.string().url().describe('The URL to open'),
-    }),
-  }),
-  startTour: tool({
-    description: 'Start a continuous guided tour/showcase/walkthrough of the portfolio (will run until interrupted). Call this ONLY when the user explicitly asks for a tour, walkthrough, showcase, or to be shown around ("give me a tour", "walk me through the portfolio", "show me around", "start a walkthrough"). Do NOT call this for normal questions about projects, Lakshman, Parz, capabilities, or work.',
-    inputSchema: z.object({}),
-  }),
-  switchToText: tool({
-    description: 'Switch from voice mode to text chat mode. Call this ONLY when the user explicitly asks to switch to text or chat mode ("switch to text", "let me type instead", "open the chat").',
-    inputSchema: z.object({}),
-  }),
-  endCall: tool({
-    description: 'End the voice session and close voice mode. Call this ONLY when the user says goodbye, explicitly asks to end the conversation, stop voice mode, or hang up ("bye", "we are done", "end the call", "stop voice mode").',
-    inputSchema: z.object({}),
-  }),
-};
-
 export async function POST(req: Request) {
-  if (!hasEnvVar('XAI_API_KEY')) {
+  if (!hasEnvVar('OPENROUTER_API_KEY')) {
     return new Response(
       JSON.stringify({ error: 'Chat service is not configured. Please try again later.' }),
       { status: 503, headers: { 'Content-Type': 'application/json' } }
@@ -144,7 +110,8 @@ export async function POST(req: Request) {
     const guarded = await parseGuardedJson<{
       messages?: unknown;
       isVoice?: boolean;
-      enableSiteControl?: boolean;
+      context?: unknown;
+      userTurnId?: unknown;
     }>(req, {
       route: 'chat',
       maxBodyBytes: 256 * 1024,
@@ -156,7 +123,6 @@ export async function POST(req: Request) {
 
     const isVoiceRequest = guarded.body.isVoice === true;
     const messages = guarded.body.messages as UIMessage[];
-    const toolsEnabled = isVoiceRequest;
 
     const system = [
       systemPrompt,
@@ -164,16 +130,123 @@ export async function POST(req: Request) {
       isVoiceRequest ? siteControlToolInstructions : '',
     ].filter(Boolean).join('\n');
 
-    const result = streamText({
-      model: xai(PARZ_CHAT_MODEL_CONFIG.id),
-      system,
-      messages: await convertToModelMessages(messages),
-      maxOutputTokens: 1000,
-      temperature: 0.7,
-      ...(toolsEnabled ? { tools: siteControlTools } : {}),
+    const model = openrouter(PARZ_CHAT_MODEL_CONFIG.id, {
+      reasoning: { effort: 'low', exclude: true },
     });
 
-    return result.toUIMessageStreamResponse();
+    if (!isVoiceRequest) {
+      const result = streamText({
+        model,
+        system,
+        messages: await convertToModelMessages(messages),
+        maxOutputTokens: 2048,
+        temperature: 0.7,
+      });
+      return result.toUIMessageStreamResponse();
+    }
+
+    const parsedContext = portfolioConciergeContextSchema.safeParse(guarded.body.context);
+    const userTurnId = guarded.body.userTurnId;
+    if (
+      !parsedContext.success ||
+      typeof userTurnId !== 'string' ||
+      userTurnId.length < 1 ||
+      userTurnId.length > 256 ||
+      !/^[A-Za-z0-9._:-]+$/.test(userTurnId)
+    ) {
+      return Response.json({ error: 'The voice control context is invalid.' }, { status: 400 });
+    }
+
+    const sessionId = (await cookies()).get(CONCIERGE_SESSION_COOKIE)?.value;
+    if (!isConciergeSessionId(sessionId)) {
+      return Response.json(
+        { error: 'Bootstrap the Concierge session before using voice control.' },
+        { status: 401 },
+      );
+    }
+
+    let signing: ReturnType<typeof getConciergeSigningEnv>;
+    try {
+      signing = getConciergeSigningEnv();
+    } catch {
+      return Response.json(
+        { error: 'Voice control is not configured. Please try again later.' },
+        { status: 503, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+    const context: PortfolioConciergeContext = parsedContext.data;
+    const portfolioRuntime = createPortfolioConcierge();
+    const adapter = createAISDKAdapter({ concierge: portfolioRuntime.concierge });
+    const catalog = await adapter.resolveCatalog(context);
+    const issuer = createSignedBatchIssuer({
+      adapter,
+      audience: CONCIERGE_AUDIENCE,
+      keyId: CONCIERGE_KEY_ID,
+      privateKey: { format: 'pkcs8-pem', data: signing.privateKeyPem },
+    });
+    const voiceMessages = messages as VoiceMessage[];
+    const modelMessages = await convertToModelMessages(voiceMessages, {
+      tools: catalog.aiTools,
+    });
+
+    const stream = createUIMessageStream<VoiceMessage>({
+      originalMessages: voiceMessages,
+      execute: ({ writer }) => {
+        let stepSequence = 0;
+        const result = streamText({
+          model,
+          system,
+          messages: modelMessages,
+          tools: catalog.aiTools,
+          stopWhen: stepCountIs(1),
+          maxOutputTokens: 2048,
+          temperature: 0.7,
+          abortSignal: req.signal,
+          onStepFinish: async (step) => {
+            const prepared = adapter.prepareStep({
+              catalog,
+              responseId: `${sessionId}:${randomUUID()}:${stepSequence}`,
+              userTurnId,
+              toolCalls: step.toolCalls.map((call) => ({
+                toolCallId: call.toolCallId,
+                toolName: call.toolName,
+                input: call.input,
+                dynamic: call.dynamic,
+                invalid: call.invalid,
+                providerExecuted: call.providerExecuted,
+              })),
+            });
+            stepSequence += 1;
+            if (prepared.kind !== 'ready') return;
+
+            const issued = await issuer.issue({
+              sessionId,
+              currentContext: context,
+              prepared: prepared.value,
+              signal: req.signal,
+            });
+            if (issued.kind === 'issued') {
+              writer.write({
+                type: 'data-concierge-envelope',
+                data: { envelope: issued.envelope },
+              });
+            } else if (issued.kind === 'stale-catalog') {
+              writer.write({
+                type: 'data-concierge-retry',
+                data: { reason: 'catalog-stale' },
+              });
+            }
+          },
+        });
+        writer.merge(result.toUIMessageStream());
+      },
+      onError: () => 'The voice model request failed.',
+    });
+
+    return createUIMessageStreamResponse({
+      stream,
+      headers: { 'Cache-Control': 'no-store' },
+    });
   } catch {
     const message = errorMessages[Math.floor(Math.random() * errorMessages.length)];
     return new Response(

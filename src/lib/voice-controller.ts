@@ -3,7 +3,7 @@
 // src/lib/voice-controller.ts
 // Full voice session state machine — STT (ElevenLabs Scribe + Web Speech fallback),
 // ElevenLabs TTS, AI agent loop, barge-in, persistent memory, accessibility shortcuts.
-// Tours / walkthroughs are driven by the LLM via tool calls (no hardcoded script).
+// Tours / walkthroughs are selected by the LLM and executed as a Concierge workflow.
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { isStopIntent } from './voice-commands';
@@ -24,11 +24,16 @@ import {
   type VoiceTurnKind,
 } from './voice-turn-policy';
 import { calculateRms, VoiceBargeInDetector } from './voice-barge-in';
-import { pickTourNarration } from '@/data/tour-narration';
 import type { ChatMorphRect, ChatVoiceSnapshot } from '@/lib/chat-morph';
+import type {
+  BrowserBatchReport,
+  SignedToolBatchEnvelopeV1,
+} from '@full-self-browsing/concierge/ai-sdk';
+import type { UIMessage } from 'ai';
+import type { AbortSignalLike } from '@full-self-browsing/concierge';
 import { Scribe, RealtimeEvents, CommitStrategy } from '@elevenlabs/client';
 import type { RealtimeConnection } from '@elevenlabs/client';
-import type { ControlResult } from '@/providers/site-control-provider';
+import type { PortfolioConciergeContext } from '@/lib/portfolio-concierge';
 
 const VOICE_CHAT_RESPONSE_TIMEOUT_MS = 35000;
 const VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS = 1750;
@@ -36,39 +41,29 @@ const VOICE_BARGE_IN_ANALYSER_FFT_SIZE = 1024;
 const VOICE_BARGE_IN_NEAR_END_WINDOW_MS = 1200;
 const VOICE_BARGE_IN_ANALYSER_SETUP_TIMEOUT_MS = 1200;
 
-// ToolCallbacks carries App-level handlers for tool calls in AI responses.
-// All fields are optional so callers can wire only what they support this phase.
-// Un-wired tools log a console.warn and are no-ops — they do NOT silently succeed.
-export interface ToolCallbacks {
-  openProject?: (args: { slug: string }) => ControlResult | void;
-  scrollTo?: (args: { selector: string }) => ControlResult | void;
-  scrollProjectPreview?: (args: { direction?: string }) => ControlResult | void;
-  closeBrowser?: () => ControlResult;
-  openCurrentProjectExternal?: () => ControlResult;
-  unsupportedIframeControl?: () => ControlResult;
-  openLink?: (args: { url: string }) => ControlResult | void;
-  toggleTheme?: () => void;
-  // navigate is handled internally by goPage; not in ToolCallbacks.
-  // endCall is handled internally by close(); not in ToolCallbacks.
-}
-
-export interface VoiceControllerOptions {
-  goPage: (page: string, originX?: number, originY?: number) => void;
+interface VoiceControllerOptions {
   openTextChat: (
     initialText?: string,
     originRect?: ChatMorphRect,
     voiceSnapshot?: ChatVoiceSnapshot,
   ) => void;
   currentPage?: string;
-  toolCallbacks?: ToolCallbacks;   // per D-19: tool calls plumbed from App level
+  getConciergeContext: () => PortfolioConciergeContext;
+  acceptConciergeEnvelope: (
+    envelope: SignedToolBatchEnvelopeV1,
+    signal: AbortSignal,
+  ) => Promise<BrowserBatchReport>;
 }
 
-interface VoiceControllerResult {
+export interface VoiceControllerResult {
   active: boolean;
   open: () => void;
   close: () => void;
   micDenied: boolean;         // true if getUserMedia was blocked (per D-25)
   prefersReduced: boolean;    // per D-24: caller can skip GSAP morph when true
+  announce: (text: string, signal: AbortSignalLike) => Promise<void>;
+  stopAnnouncement: () => void;
+  getSnapshot: () => ChatVoiceSnapshot;
   voiceProps: {
     state: string;
     caption: string;
@@ -81,12 +76,47 @@ interface VoiceControllerResult {
 }
 
 // Rolling message history entry
-interface HistoryMessage {
+interface VoiceHistoryMessage {
   role: 'user' | 'assistant';
   content: string;
+  toolResults?: readonly VoiceHistoryToolResult[];
 }
 
-export interface VoiceStreamToolCall {
+interface VoiceHistoryToolResult {
+  toolCallId: string;
+  toolName: string;
+  input: unknown;
+  output: unknown;
+}
+
+export function buildVoiceHistoryMessages(
+  history: readonly VoiceHistoryMessage[],
+  createId: () => string = () => Math.random().toString(36).slice(2),
+): UIMessage[] {
+  return history.map((message) => {
+    const parts: UIMessage['parts'] = message.content
+      ? [{ type: 'text', text: message.content }]
+      : [];
+    for (const result of message.toolResults ?? []) {
+      parts.push({
+        type: 'dynamic-tool',
+        toolCallId: result.toolCallId,
+        toolName: result.toolName,
+        state: 'output-available',
+        input: result.input,
+        output: result.output,
+      });
+    }
+    return {
+      id: createId(),
+      role: message.role,
+      parts,
+    };
+  });
+}
+
+interface VoiceStreamToolCall {
+  id: string;
   name: string;
   args: Record<string, unknown>;
 }
@@ -94,6 +124,8 @@ export interface VoiceStreamToolCall {
 export interface VoiceStreamParseState {
   responseText: string;
   toolCalls: VoiceStreamToolCall[];
+  envelopes: SignedToolBatchEnvelopeV1[];
+  catalogRetry: boolean;
 }
 
 export function parseVoiceStreamLine(line: string, state: VoiceStreamParseState): void {
@@ -105,8 +137,28 @@ export function parseVoiceStreamLine(line: string, state: VoiceStreamParseState)
       if (evt.type === 'text-delta' && typeof evt.delta === 'string') {
         state.responseText += evt.delta;
       }
-      if (evt.type === 'tool-input-available' && evt.toolName) {
-        state.toolCalls.push({ name: evt.toolName, args: evt.input || {} });
+      if (
+        evt.type === 'tool-input-available' &&
+        typeof evt.toolCallId === 'string' &&
+        typeof evt.toolName === 'string'
+      ) {
+        state.toolCalls.push({
+          id: evt.toolCallId,
+          name: evt.toolName,
+          args: evt.input || {},
+        });
+      }
+      if (
+        evt.type === 'data-concierge-envelope' &&
+        evt.data?.envelope &&
+        typeof evt.data.envelope.protected === 'string' &&
+        typeof evt.data.envelope.payload === 'string' &&
+        typeof evt.data.envelope.signature === 'string'
+      ) {
+        state.envelopes.push(evt.data.envelope as SignedToolBatchEnvelopeV1);
+      }
+      if (evt.type === 'data-concierge-retry' && evt.data?.reason === 'catalog-stale') {
+        state.catalogRetry = true;
       }
     } catch {}
     return;
@@ -133,10 +185,10 @@ function buildBargeInAudioConstraints(): MediaTrackConstraints {
 }
 
 export function useVoiceController({
-  goPage,
   openTextChat,
   currentPage,
-  toolCallbacks,
+  getConciergeContext,
+  acceptConciergeEnvelope,
 }: VoiceControllerOptions): VoiceControllerResult {
 
   const [active, setActive] = useState(false);
@@ -183,9 +235,9 @@ export function useVoiceController({
   const detachMicRef = useRef<(() => void) | null>(null);
   const bargeInStopRef = useRef<(() => void) | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
-  const historyRef = useRef<HistoryMessage[]>([]);
+  const historyRef = useRef<VoiceHistoryMessage[]>([]);
   const activeRef = useRef(false);  // shadow ref to read active in callbacks
-  const tourGenerationRef = useRef(0);
+  const conciergeAbortRef = useRef<AbortController | null>(null);
   const micPermissionGrantedRef = useRef(false);
   const startingListenRef = useRef(false);
   const listenGenerationRef = useRef(0);
@@ -230,134 +282,6 @@ export function useVoiceController({
     if (typeof window === 'undefined') return;
     try { localStorage.removeItem('pf-voice-history'); } catch {}
   }, []);
-
-  // VOICE-09: runTool wraps every tool callback invocation so a throwing callback
-  // does not abort the voice turn. Emits 'tool-executing' before invocation and
-  // 'tool-success' / 'tool-error' on settle. Returns { ok } so callers can inspect
-  // outcome (synchronous path only -- async resolves to ok=true optimistically).
-  // Phase 27 / FSB-04: 'tool-executing' now carries a { name, args } payload so
-  // caption consumers (FsbControlOverlay) can render context-aware captions like
-  // 'Opening {projectName}…' and 'Navigating to {page}…'. 'tool-success' and
-  // 'tool-error' remain payload-less — caption layer persists the last args until
-  // success/error arrives. Existing payload-agnostic subscribers (voice-glow.tsx)
-  // continue to work because they ignore the payload.
-  const runTool = (
-    name: string,
-    args: Record<string, unknown>,
-    fn: () => unknown,
-  ): { ok: boolean } => {
-    const hasBus = typeof window !== 'undefined' && !!window.VoiceBus;
-    if (hasBus) window.VoiceBus.emit('tool-executing', { name, args });
-    try {
-      const result = fn();
-      if (result && typeof (result as { then?: unknown }).then === 'function') {
-        (result as Promise<unknown>).then(
-          (r) => {
-            const ok = !(r && typeof r === 'object' && 'ok' in (r as object) && (r as { ok: boolean }).ok === false);
-            if (hasBus) window.VoiceBus.emit(ok ? 'tool-success' : 'tool-error');
-          },
-          (err) => {
-            console.error(`[VoiceController] ${name} rejected:`, err);
-            if (hasBus) window.VoiceBus.emit('tool-error');
-          }
-        );
-        return { ok: true };
-      }
-      const ok = !(result && typeof result === 'object' && 'ok' in (result as object) && (result as { ok: boolean }).ok === false);
-      if (hasBus) window.VoiceBus.emit(ok ? 'tool-success' : 'tool-error');
-      return { ok };
-    } catch (err) {
-      console.error(`[VoiceController] ${name} threw:`, err);
-      if (hasBus) window.VoiceBus.emit('tool-error');
-      return { ok: false };
-    }
-  };
-
-  // dispatchToolCall — single dispatch point for all step.call entries and AI tool responses.
-  // Per D-19: openProject is wired when toolCallbacks.openProject provided; others console.warn on miss.
-  // Phase 13: emits VoiceBus 'tool-executing' before callback and 'tool-success'/'tool-error' after.
-  // Phase 25 / VOICE-09: callback invocations now route through runTool so a throwing callback
-  // no longer aborts the voice turn.
-  const dispatchToolCall = useCallback(
-    (name: string, args: Record<string, unknown>): void => {
-      switch (name) {
-        case 'openProject':
-          if (toolCallbacks?.openProject) {
-            runTool('openProject', args, () => toolCallbacks.openProject!(args as { slug: string }));
-          } else {
-            console.warn('[VoiceController] openProject tool called but no toolCallbacks.openProject provided');
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
-          }
-          break;
-        case 'scrollTo':
-          if (toolCallbacks?.scrollTo) {
-            runTool('scrollTo', args, () => toolCallbacks.scrollTo!(args as { selector: string }));
-          } else {
-            console.warn('[VoiceController] scrollTo tool called but no toolCallbacks.scrollTo provided');
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
-          }
-          break;
-        case 'scrollProjectPreview':
-          if (toolCallbacks?.scrollProjectPreview) {
-            runTool('scrollProjectPreview', args, () => toolCallbacks.scrollProjectPreview!(args as { direction?: string }));
-          } else {
-            console.warn('[VoiceController] scrollProjectPreview tool called but no toolCallbacks.scrollProjectPreview provided');
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
-          }
-          break;
-        case 'openLink':
-          if (toolCallbacks?.openLink) {
-            runTool('openLink', args, () => toolCallbacks.openLink!(args as { url: string }));
-          } else {
-            console.warn('[VoiceController] openLink tool called but no toolCallbacks.openLink provided');
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
-          }
-          break;
-        case 'closeBrowser':
-          if (toolCallbacks?.closeBrowser) {
-            runTool('closeBrowser', args, () => toolCallbacks.closeBrowser!());
-          } else {
-            console.warn('[VoiceController] closeBrowser tool called but no toolCallbacks.closeBrowser provided');
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
-          }
-          break;
-        case 'openCurrentProjectExternal':
-          if (toolCallbacks?.openCurrentProjectExternal) {
-            runTool('openCurrentProjectExternal', args, () => toolCallbacks.openCurrentProjectExternal!());
-          } else {
-            console.warn('[VoiceController] openCurrentProjectExternal tool called but no toolCallbacks.openCurrentProjectExternal provided');
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
-          }
-          break;
-        case 'unsupportedIframeControl':
-          if (toolCallbacks?.unsupportedIframeControl) {
-            runTool('unsupportedIframeControl', args, () => toolCallbacks.unsupportedIframeControl!());
-          } else {
-            console.warn('[VoiceController] unsupportedIframeControl tool called but no toolCallbacks.unsupportedIframeControl provided');
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
-          }
-          break;
-        case 'toggleTheme':
-          if (toolCallbacks?.toggleTheme) {
-            runTool('toggleTheme', args, () => toolCallbacks.toggleTheme!());
-          } else {
-            console.warn('[VoiceController] toggleTheme tool called but no toolCallbacks.toggleTheme provided');
-            if (typeof window !== 'undefined' && window.VoiceBus) window.VoiceBus.emit('tool-error');
-          }
-          break;
-        case 'navigate':
-          runTool('navigate', args, () => {
-            goPage((args as { page: string }).page);
-          });
-          break;
-        case 'endCall':
-          break;
-        default:
-          console.warn(`[VoiceController] Unknown tool call: ${name}`, args);
-      }
-    },
-    [toolCallbacks, goPage]
-  );
 
   // VOICE-06: clear the Scribe SESSION_STARTED guard timer if one is armed.
   // Idempotent — safe to call from any of the five clear sites.
@@ -763,11 +687,8 @@ export function useVoiceController({
   // stopAll — cancel all ongoing audio/speech/recognition
   const stopAll = useCallback(() => {
     clearInitialGreetTimer();
-    const stoppedTourId = tourGenerationRef.current;
-    tourGenerationRef.current += 1;
-    if (stoppedTourId > 0) {
-      window.VoiceBus.emit('site-control-tour-end', { tourId: stoppedTourId });
-    }
+    try { conciergeAbortRef.current?.abort(); } catch {}
+    conciergeAbortRef.current = null;
     listenGenerationRef.current += 1;
     turnGenerationRef.current += 1;
     startingListenRef.current = false;
@@ -804,7 +725,7 @@ export function useVoiceController({
         console.info('[VoiceTrace] streamTTS entry', { textLen: text.length });
 
         // Why: ElevenLabs and our /api/tts proxy refuse very long single
-        // requests (proxy at 4000 chars). Grok answers can run longer and
+        // requests (proxy at 4000 chars). Model answers can run longer and
         // would otherwise 413, kick the catch arm, and fall back to the OS
         // SpeechSynthesis voice — that's the "robotic voice on long answers"
         // bug. Split here and play each chunk back-to-back through the same
@@ -1041,6 +962,17 @@ export function useVoiceController({
     [streamTTS]
   );
 
+  const announce = useCallback(async (text: string, signal: AbortSignalLike): Promise<void> => {
+    if (signal.aborted || !text) return;
+    const abort = () => cancelAllAudio();
+    signal.addEventListener('abort', abort);
+    try {
+      if (!signal.aborted) await speak(text);
+    } finally {
+      signal.removeEventListener('abort', abort);
+    }
+  }, [cancelAllAudio, speak]);
+
   const resumeListeningIfActive = useCallback(() => {
     if (!activeRef.current) return;
     if (window.VoiceBus.state !== 'idle') return;
@@ -1048,95 +980,14 @@ export function useVoiceController({
     if (start) void start();
   }, []);
 
-  const waitForTourStep = useCallback((ms: number, tourId: number, turnId: number): Promise<boolean> => {
-    return new Promise((resolve) => {
-      window.setTimeout(() => {
-        resolve(
-          activeRef.current &&
-          tourGenerationRef.current === tourId &&
-          turnGenerationRef.current === turnId,
-        );
-      }, ms);
-    });
-  }, []);
-
-  const startGuidedTour = useCallback(
-    async (turnId: number) => {
-      const tourId = ++tourGenerationRef.current;
-      window.VoiceBus.emit('site-control-tour-start', { tourId });
-      const shouldContinue = () =>
-        activeRef.current &&
-        tourGenerationRef.current === tourId &&
-        turnGenerationRef.current === turnId;
-
-      const pause = (ms: number) => waitForTourStep(ms, tourId, turnId);
-      const act = async (name: string, args: Record<string, unknown> = {}, delayMs = 850) => {
-        if (!shouldContinue()) return false;
-        dispatchToolCall(name, args);
-        return pause(delayMs);
-      };
-      const say = async (line: string) => {
-        if (!shouldContinue()) return false;
-        await speak(line);
-        return shouldContinue();
-      };
-
-      // Pick a narration variant per tour run so repeat visitors get slight
-      // wording variation. The tool-call sequence below stays identical —
-      // contract-locked by tests/voice-barge-in.test.ts:736-756.
-      const narration = pickTourNarration();
-
-      try {
-        if (!(await act('navigate', { page: 'portfolio' }, 900))) return;
-        if (!(await say(narration.opener))) return;
-
-        if (!(await act('openProject', { slug: 'Review Gate' }, 1200))) return;
-        if (!(await say(narration.reviewGateIntro))) return;
-        if (!(await act('scrollProjectPreview', { direction: 'down' }, 900))) return;
-        if (!(await say(narration.reviewGateMid))) return;
-        if (!(await act('scrollProjectPreview', { direction: 'bottom' }, 900))) return;
-        if (!(await say(narration.reviewGateClose))) return;
-
-        if (!(await act('closeBrowser', {}, 500))) return;
-        if (!(await act('openProject', { slug: 'FSB' }, 1100))) return;
-        if (!(await say(narration.fsb))) return;
-
-        if (!(await act('closeBrowser', {}, 500))) return;
-        if (!(await act('openProject', { slug: 'GitFly' }, 1100))) return;
-        if (!(await say(narration.gitFly))) return;
-
-        if (!(await act('closeBrowser', {}, 500))) return;
-        if (!(await act('openProject', { slug: 'Parz-AI' }, 1100))) return;
-        if (!(await say(narration.parzAi))) return;
-        if (!(await act('scrollProjectPreview', { direction: 'down' }, 800))) return;
-
-        if (!(await act('closeBrowser', {}, 500))) return;
-        if (!(await act('scrollTo', { selector: 'about' }, 1000))) return;
-        if (!(await say(narration.aboutIntro))) return;
-        if (!(await act('scrollTo', { selector: 'experience' }, 900))) return;
-        if (!(await say(narration.experience))) return;
-        if (!(await act('scrollTo', { selector: 'academics' }, 900))) return;
-        if (!(await say(narration.signoff))) return;
-
-        window.VoiceBus.setState('idle');
-        setCaption('');
-        setTranscript('');
-        resumeListeningIfActive();
-      } finally {
-        window.VoiceBus.emit('site-control-tour-end', { tourId });
-      }
-    },
-    [dispatchToolCall, resumeListeningIfActive, speak, waitForTourStep],
-  );
-
-  // handleUserTurn — ALL utterances go to Grok (except local stop for instant response).
+  // handleUserTurn — all utterances go to the chat model except local stop commands.
   // The optional `greet` path drives the first speak-then-listen turn when
   // voice mode opens.
   // - kind 'user' (default): existing path. Utterance is the user's transcription.
   //   It IS appended to history and the LLM sees it as a real user turn.
   // - kind 'greet': utterance is a synthetic kickoff cue (see
   //   buildVoiceOpeningPrompt — phrased as an ambient cue, not an
-  //   announcement, so Grok's reply stays nonchalant). It is NOT appended to
+  //   announcement, so the model's reply stays nonchalant). It is NOT appended to
   //   history because the user never said it. Only the assistant's response
   //   goes to history.
   const handleUserTurn = useCallback(
@@ -1154,11 +1005,8 @@ export function useVoiceController({
       // Phase 22: cancel any in-flight TTS/fetch from a prior turn so a slow previous
       // response doesn't keep talking over this one. Closes overlap mode O-4.
       cancelAllAudio();
-      const stoppedTourId = tourGenerationRef.current;
-      tourGenerationRef.current += 1;
-      if (stoppedTourId > 0) {
-        window.VoiceBus.emit('site-control-tour-end', { tourId: stoppedTourId });
-      }
+      try { conciergeAbortRef.current?.abort(); } catch {}
+      conciergeAbortRef.current = null;
 
       // Phase 22: bump the turn generation. Older parallel turns (e.g. Web Speech
       // multi-final firing handleUserTurn twice — overlap mode O-3) check this and
@@ -1179,7 +1027,7 @@ export function useVoiceController({
         }
       }
 
-      // Everything else goes to Grok — it decides intent via tool calls
+      // Everything else goes to the model, which decides intent via tool calls.
       try {
         // For real user turns: append to history so the LLM sees it.
         // For greet: do NOT append — the trigger is synthetic, the user never said it.
@@ -1190,12 +1038,7 @@ export function useVoiceController({
           ];
         }
 
-        const baseMessages = historyRef.current.slice(-20).map((m) => ({
-          id: Math.random().toString(36).slice(2),
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-          parts: [{ type: 'text' as const, text: m.content }],
-        }));
+        const baseMessages = buildVoiceHistoryMessages(historyRef.current.slice(-20));
 
         // For greet: append the synthetic trigger as a one-shot user message
         // so the LLM has something to respond to. It is not in history.
@@ -1211,54 +1054,76 @@ export function useVoiceController({
             ]
           : baseMessages;
 
-        const streamState: VoiceStreamParseState = { responseText: '', toolCalls: [] };
-        const chatAc = new AbortController();
-        const chatTimeout = setTimeout(() => chatAc.abort(), VOICE_CHAT_RESPONSE_TIMEOUT_MS);
-        abortActiveChatRequest();
-        chatAbortRef.current = chatAc;
-        chatTimeoutRef.current = chatTimeout;
+        const userTurnId = typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `turn-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        let streamState: VoiceStreamParseState = {
+          responseText: '',
+          toolCalls: [],
+          envelopes: [],
+          catalogRetry: false,
+        };
 
-        try {
-          const res = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages, isVoice: true }),
-            signal: chatAc.signal,
-          });
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          streamState = {
+            responseText: '',
+            toolCalls: [],
+            envelopes: [],
+            catalogRetry: false,
+          };
+          const chatAc = new AbortController();
+          const chatTimeout = setTimeout(() => chatAc.abort(), VOICE_CHAT_RESPONSE_TIMEOUT_MS);
+          abortActiveChatRequest();
+          chatAbortRef.current = chatAc;
+          chatTimeoutRef.current = chatTimeout;
 
-          if (!res.ok) throw new Error(`/api/chat returned ${res.status}`);
+          try {
+            const res = await fetch('/api/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                messages,
+                isVoice: true,
+                context: getConciergeContext(),
+                userTurnId,
+              }),
+              signal: chatAc.signal,
+            });
 
-          const reader = res.body?.getReader();
-          const decoder = new TextDecoder();
+            if (!res.ok) throw new Error(`/api/chat returned ${res.status}`);
 
-          // F-01: keep a leftover buffer between reads so JSON events that span
-          // chunk boundaries are not silently dropped by JSON.parse inside the catch.
-          if (reader) {
-            let buffer = '';
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) {
-                buffer += decoder.decode();
-                if (buffer) parseVoiceStreamLine(buffer, streamState);
-                break;
+            const reader = res.body?.getReader();
+            const decoder = new TextDecoder();
+            if (reader) {
+              let buffer = '';
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                  buffer += decoder.decode();
+                  if (buffer) parseVoiceStreamLine(buffer, streamState);
+                  break;
+                }
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() ?? '';
+                for (const line of lines) parseVoiceStreamLine(line, streamState);
               }
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop() ?? '';
-              for (const line of lines) parseVoiceStreamLine(line, streamState);
+            }
+          } finally {
+            if (chatAbortRef.current === chatAc) chatAbortRef.current = null;
+            if (chatTimeoutRef.current === chatTimeout) {
+              clearTimeout(chatTimeout);
+              chatTimeoutRef.current = null;
             }
           }
-        } finally {
-          if (chatAbortRef.current === chatAc) chatAbortRef.current = null;
-          if (chatTimeoutRef.current === chatTimeout) {
-            clearTimeout(chatTimeout);
-            chatTimeoutRef.current = null;
-          }
+
+          if (!streamState.catalogRetry) break;
+          if (attempt === 1) throw new Error('Concierge catalog stayed stale after retry');
         }
 
-        const { toolCalls } = streamState;
+        const { toolCalls, envelopes } = streamState;
         const clean = streamState.responseText.trim();
-        let shouldStartTour = false;
+        const hasTourCall = toolCalls.some((toolCall) => toolCall.name === 'startTour');
 
         // [VoiceTrace] Diagnostic logs to disambiguate the silent-audio
         // failure mode in production. Filter the browser console for
@@ -1269,6 +1134,7 @@ export function useVoiceController({
           textLen: clean.length,
           toolCount: toolCalls.length,
           toolNames: toolCalls.map((t) => t.name),
+          signedBatchCount: envelopes.length,
           turn: myTurn,
         });
 
@@ -1279,109 +1145,87 @@ export function useVoiceController({
           return;
         }
 
-        // Append assistant response to history (text portion)
-        if (clean) {
+        let deliveredAssistantText = clean;
+        const appendAssistantHistory = (toolResults: readonly VoiceHistoryToolResult[] = []) => {
+          if (!deliveredAssistantText && toolResults.length === 0) return;
           historyRef.current = [
             ...historyRef.current,
-            { role: 'assistant', content: clean },
+            {
+              role: 'assistant',
+              content: deliveredAssistantText,
+              ...(toolResults.length > 0 ? { toolResults } : {}),
+            },
           ];
-        }
+        };
 
-        // Execute tool calls from Grok
-        for (const tc of toolCalls) {
-          switch (tc.name) {
-            case 'navigate':
-              dispatchToolCall('navigate', tc.args);
-              break;
-            case 'openProject': {
-              dispatchToolCall('openProject', { slug: (tc.args as { name: string }).name });
-              break;
-            }
-            case 'scrollTo':
-              dispatchToolCall('scrollTo', { selector: (tc.args as { section: string }).section });
-              break;
-            case 'scrollProjectPreview':
-              dispatchToolCall('scrollProjectPreview', { direction: (tc.args as { direction?: string }).direction ?? 'down' });
-              break;
-            case 'toggleTheme':
-              dispatchToolCall('toggleTheme', {});
-              break;
-            case 'openLink':
-              dispatchToolCall('openLink', tc.args);
-              break;
-            case 'closeBrowser':
-              dispatchToolCall('closeBrowser', {});
-              break;
-            case 'openCurrentProjectExternal':
-              dispatchToolCall('openCurrentProjectExternal', {});
-              break;
-            case 'unsupportedIframeControl':
-              dispatchToolCall('unsupportedIframeControl', {});
-              break;
-            case 'startTour':
-              // Trust Grok's tool-call decision. The system prompt at
-              // src/app/api/chat/route.ts already constrains startTour to
-              // explicit tour requests; a client-side keyword gate on top
-              // of that just discards Grok's reasoning. The `kind === 'user'`
-              // guard remains because synthetic greet kickoffs are not real
-              // user utterances and should never run a tour.
-              shouldStartTour = kind === 'user';
-              break;
-            case 'switchToText': {
-              const voiceSnapshot = buildVoiceSnapshot();
-              stopAll();
-              openTextChat(undefined, undefined, voiceSnapshot);
-              activeRef.current = false;
-              setActive(false);
-              return; // Don't speak after switching to text
-            }
-            case 'endCall':
-              if (clean) await speak(clean);
-              stopAll();
-              activeRef.current = false;
-              setActive(false);
-              return; // Don't speak again after ending
-          }
-        }
-
-        // Speak the text response (if any). If the model only emitted tool calls,
-        // return to listening after those actions. If there is neither text nor
-        // tools, stop at idle with a visible caption instead of silently looping
-        // back into listening.
         if (clean) {
           console.info('[VoiceTrace] branch=text-speak', { textLen: clean.length });
           await speak(clean);
           console.info('[VoiceTrace] text-speak resolved', { turn: myTurn });
           if (myTurn !== turnGenerationRef.current) return;
-          if (shouldStartTour) {
-            await startGuidedTour(myTurn);
-            return;
-          }
-          resumeListeningIfActive();
-        } else if (shouldStartTour) {
-          console.info('[VoiceTrace] branch=tour');
-          await startGuidedTour(myTurn);
-        } else if (toolCalls.length > 0) {
-          // Why: post-tour, Grok occasionally returns tool calls without any
-          // narration even though the prompt asks for one. The earlier code
-          // dropped straight back to listening, which presented as a silent
-          // listening ↔ thinking loop (no audible 'speaking' state). Speak a
-          // brief tool-derived acknowledgement so the state actually transitions
-          // through speaking and the user gets audible confirmation before the
-          // next listen turn. Fall back to a neutral phrase when no tool in the
-          // batch has a user-visible acknowledgement (rare: ignored startTour).
+        } else if (envelopes.length > 0 && toolCalls.length > 0 && !hasTourCall) {
           const fallback = buildToolFallbackSpeech(toolCalls) || 'Got it.';
           console.info('[VoiceTrace] branch=tool-fallback', { fallback, fallbackLen: fallback.length });
           await speak(fallback);
           console.info('[VoiceTrace] tool-fallback speak resolved', { turn: myTurn });
           if (myTurn !== turnGenerationRef.current) return;
-          historyRef.current = [
-            ...historyRef.current,
-            { role: 'assistant', content: fallback },
-          ];
+          deliveredAssistantText = fallback;
           setCaption('');
+        }
+
+        if (myTurn !== turnGenerationRef.current) return;
+
+        if (toolCalls.length > 0 && envelopes.length === 0) {
+          appendAssistantHistory();
+          const verificationFailure = "I couldn't safely verify that site action. Please try again.";
+          await speak(verificationFailure);
+          if (myTurn !== turnGenerationRef.current) return;
+          window.VoiceBus.setState('idle');
+          setCaption(verificationFailure);
+          return;
+        }
+
+        if (envelopes.length > 0) {
+          const dispatchAc = new AbortController();
+          const toolResults: VoiceHistoryToolResult[] = [];
+          conciergeAbortRef.current = dispatchAc;
+          try {
+            for (const envelope of envelopes) {
+              const report = await acceptConciergeEnvelope(envelope, dispatchAc.signal);
+              if (myTurn !== turnGenerationRef.current) return;
+              if (report.kind === 'terminal') {
+                appendAssistantHistory(toolResults);
+                return;
+              }
+              if (report.kind === 'rejected') {
+                if (report.code === 'aborted') return;
+                appendAssistantHistory(toolResults);
+                console.warn('[VoiceTrace] signed batch rejected', { code: report.code, turn: myTurn });
+                const rejectionMessage = "I couldn't safely complete that site action. Please try again.";
+                await speak(rejectionMessage);
+                if (myTurn !== turnGenerationRef.current) return;
+                setCaption(rejectionMessage);
+                return;
+              }
+              for (const row of report.rows) {
+                const call = toolCalls.find((candidate) => candidate.id === row.callId);
+                toolResults.push({
+                  toolCallId: row.callId,
+                  toolName: row.name,
+                  input: call?.args ?? {},
+                  output: row.result,
+                });
+              }
+            }
+          } finally {
+            if (conciergeAbortRef.current === dispatchAc) conciergeAbortRef.current = null;
+          }
+          appendAssistantHistory(toolResults);
           resumeListeningIfActive();
-        } else {
+        } else if (clean) {
+          appendAssistantHistory();
+          resumeListeningIfActive();
+        } else if (toolCalls.length === 0) {
           console.info('[VoiceTrace] branch=empty-no-text-no-tools');
           window.VoiceBus.setState('idle');
           setCaption("I couldn't get a spoken response. Tap to try again.");
@@ -1396,15 +1240,13 @@ export function useVoiceController({
       }
     },
     [
-      openTextChat,
+      acceptConciergeEnvelope,
       speak,
-      stopAll,
-      dispatchToolCall,
       cancelAllAudio,
       clearInitialGreetTimer,
+      getConciergeContext,
       resumeListeningIfActive,
-      buildVoiceSnapshot,
-      startGuidedTour,
+      stopAll,
     ]
   );
 
@@ -1699,6 +1541,9 @@ export function useVoiceController({
     close,
     micDenied,
     prefersReduced,
+    announce,
+    stopAnnouncement: cancelAllAudio,
+    getSnapshot: buildVoiceSnapshot,
     voiceProps: {
       state: voiceState,
       caption,

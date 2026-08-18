@@ -1,6 +1,6 @@
 export const PARZ_CHAT_MODEL_CONFIG = {
-  id: 'grok-4.20-0309-non-reasoning',
-  contextWindowTokens: 2_000_000,
-  inputPricePerMillionTokensUsd: 1.25,
-  outputPricePerMillionTokensUsd: 2.5,
+  id: 'deepseek/deepseek-v4-flash-0731',
+  contextWindowTokens: 1_048_576,
+  inputPricePerMillionTokensUsd: 0.08,
+  outputPricePerMillionTokensUsd: 0.252,
 } as const;

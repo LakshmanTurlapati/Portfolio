@@ -1,4 +1,4 @@
-export interface VoiceBargeInOptions {
+interface VoiceBargeInOptions {
   warmupMs?: number;
   sustainMs?: number;
   cooldownMs?: number;
@@ -7,12 +7,12 @@ export interface VoiceBargeInOptions {
   noiseOffset?: number;
 }
 
-export interface VoiceBargeInSample {
+interface VoiceBargeInSample {
   rms: number;
   nowMs: number;
 }
 
-export const DEFAULT_BARGE_IN_OPTIONS = {
+const DEFAULT_BARGE_IN_OPTIONS = {
   warmupMs: 700,
   sustainMs: 220,
   cooldownMs: 1200,

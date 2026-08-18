@@ -7,7 +7,7 @@ export interface Project {
   preferredTarget?: keyof Project['links'];
 }
 
-export interface ProjectDetail {
+interface ProjectDetail {
   tagline?: string;
   year?: string;
   role?: string;

@@ -1,4 +1,4 @@
-export interface EducationEntry {
+interface EducationEntry {
   timeline: string;
   title: string;
   institution: string;

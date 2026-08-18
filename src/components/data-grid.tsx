@@ -30,7 +30,7 @@ export const DEFAULT_DG_CFG: DataGridConfig = {
 };
 
 // Shared hover state written by cards, read by the grid each frame
-export interface CardHoverState {
+interface CardHoverState {
   active: boolean;
   cx: number;
   cy: number;
@@ -44,10 +44,6 @@ const cardHover: CardHoverState = { active: false, cx: 0, cy: 0, effect: 'ripple
 
 export function setCardHover(state: Partial<CardHoverState>) {
   Object.assign(cardHover, state);
-}
-
-export function getCardHover(): CardHoverState {
-  return cardHover;
 }
 
 function computeHoverMod(

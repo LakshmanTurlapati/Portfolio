@@ -3,6 +3,7 @@ import { Lato, Instrument_Serif } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { TransitionProvider } from '@/providers/transition-provider';
 import { VoiceBusProvider } from '@/providers/voice-bus-provider';
+import { PortfolioConciergeProvider } from '@/providers/concierge-provider';
 import { VoiceSessionProvider } from '@/providers/voice-session-provider';
 import { SiteControlProvider } from '@/providers/site-control-provider';
 import { VoiceOverlay } from '@/components/voice-overlay';
@@ -68,14 +69,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <TransitionProvider>
             <VoiceBusProvider>
-              <SiteControlProvider>
-                <VoiceSessionProvider>
-                  <MobileHomeContinuityLayer />
-                  {children}
-                  <VoiceOverlay />
-                  <VoiceGlow />
-                </VoiceSessionProvider>
-              </SiteControlProvider>
+              <PortfolioConciergeProvider>
+                <SiteControlProvider>
+                  <VoiceSessionProvider>
+                    <MobileHomeContinuityLayer />
+                    {children}
+                    <VoiceOverlay />
+                    <VoiceGlow />
+                  </VoiceSessionProvider>
+                </SiteControlProvider>
+              </PortfolioConciergeProvider>
             </VoiceBusProvider>
           </TransitionProvider>
         </ThemeProvider>

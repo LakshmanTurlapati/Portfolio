@@ -1,9 +1,7 @@
 'use client';
 
-// Phase 27 / FSB-04: Caption state machine inside the FSB control overlay.
-// Subscribes to VoiceBus tool-executing / tool-success / tool-error events
-// (payload `{ name, args }` from Plan 27-01) and renders a context-aware
-// caption inside the badge while a tool runs. After tool-success the caption
+// Caption state machine inside the FSB control overlay. Concierge lifecycle
+// events are the sole source of action state. After success the caption
 // holds for SUCCESS_HOLD_MS (1500ms); after tool-error it holds for
 // ERROR_HOLD_MS (3000ms); then it cross-fades back to the idle text
 // (`powered by FSB`). Timers are cleared on unmount and on rapid re-trigger.
@@ -14,33 +12,33 @@
 // text content (T-27-03 mitigation).
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import type { DispatchEvent } from '@full-self-browsing/concierge';
+import { useConcierge } from '@full-self-browsing/concierge-react/client';
 import { useMounted } from '@/hooks/use-mounted';
 import { resolveProject } from '@/data/projects';
-
-interface FsbControlOverlayProps {
-  active: boolean;
-}
 
 const IDLE_TEXT = 'powered by FSB';
 const SUCCESS_HOLD_MS = 1500;
 const ERROR_HOLD_MS = 3000;
 const FADE_MS = 200;
 
-type ToolExecutingPayload = { name: string; args: Record<string, unknown> };
 type OverlayTone = 'on-light' | 'on-dark';
 type OverlayStatus = 'acting' | 'success' | 'error';
 
 // Per CONTEXT 27 + UI-SPEC: locked caption copy. Trailing char is U+2026 (…).
 // Unknown tool names return null so the badge falls back to IDLE_TEXT
 // (T-27-04 mitigation: never render args for unknown tool names).
-function resolveCaption(payload: ToolExecutingPayload): string | null {
-  const { name, args } = payload;
+function resolveCaption(event: DispatchEvent): string | null {
+  const { name } = event;
+  const args = event.input.kind === 'included' && event.input.value !== null &&
+      typeof event.input.value === 'object'
+    ? event.input.value as Record<string, unknown>
+    : {};
   switch (name) {
     case 'openProject': {
-      const slug = (args as { slug?: string }).slug ?? '';
-      const project = slug ? resolveProject(slug) : null;
-      // Fall back to the slug if resolveProject misses (defensive — caption never crashes).
-      const display = project?.name ?? slug ?? '';
+      const projectName = (args as { name?: string }).name ?? '';
+      const project = projectName ? resolveProject(projectName) : null;
+      const display = project?.name ?? projectName;
       return `Opening ${display}\u2026`;
     }
     case 'scrollTo':
@@ -59,6 +57,14 @@ function resolveCaption(payload: ToolExecutingPayload): string | null {
       const page = (args as { page?: string }).page ?? '';
       return `Navigating to ${page}\u2026`;
     }
+    case 'startTour':
+      return 'Guiding the tour\u2026';
+    case 'switchToText':
+      return 'Switching to text\u2026';
+    case 'endCall':
+      return 'Ending voice mode\u2026';
+    case 'unsupportedIframeControl':
+      return 'Checking browser controls\u2026';
     default:
       // Unknown tool name -> render IDLE_TEXT, no crash. Per UI-SPEC fallback rule.
       return null;
@@ -135,8 +141,10 @@ function sampledOverlayTone(overlay: HTMLElement): OverlayTone {
   return avg > 0.45 ? 'on-light' : 'on-dark';
 }
 
-export function FsbControlOverlay({ active }: FsbControlOverlayProps) {
+export function FsbControlOverlay() {
   const mounted = useMounted();
+  const concierge = useConcierge();
+  const [active, setActive] = useState(false);
   const [caption, setCaption] = useState<string | null>(null);
   const [overlayTone, setOverlayTone] = useState<OverlayTone>('on-dark');
   const [status, setStatus] = useState<OverlayStatus>('acting');
@@ -146,6 +154,7 @@ export function FsbControlOverlay({ active }: FsbControlOverlayProps) {
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reducedMotionRef = useRef(false);
+  const activeDispatchesRef = useRef(new Set<string>());
 
   // Detect reduced-motion once on mount (matches voice-controller pattern).
   useEffect(() => {
@@ -153,7 +162,7 @@ export function FsbControlOverlay({ active }: FsbControlOverlayProps) {
     reducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }, []);
 
-  const clearTimers = () => {
+  const clearTimers = useCallback(() => {
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
@@ -162,26 +171,7 @@ export function FsbControlOverlay({ active }: FsbControlOverlayProps) {
       clearTimeout(fadeTimerRef.current);
       fadeTimerRef.current = null;
     }
-  };
-
-  const scheduleReturnToIdle = (holdMs: number) => {
-    clearTimers();
-    hideTimerRef.current = setTimeout(() => {
-      hideTimerRef.current = null;
-      if (reducedMotionRef.current) {
-        setCaption(null);
-        setVisible(true);
-        return;
-      }
-      // Fade out current caption, then swap to idle and fade back in.
-      setVisible(false);
-      fadeTimerRef.current = setTimeout(() => {
-        fadeTimerRef.current = null;
-        setCaption(null);
-        setVisible(true);
-      }, FADE_MS);
-    }, holdMs);
-  };
+  }, []);
 
   const updateDynamicContrast = useCallback(() => {
     const overlay = overlayRef.current;
@@ -190,49 +180,53 @@ export function FsbControlOverlay({ active }: FsbControlOverlayProps) {
   }, []);
 
   useEffect(() => {
-    if (!mounted || typeof window === 'undefined' || !window.VoiceBus) return;
+    if (!mounted) return;
+    const activeDispatches = activeDispatchesRef.current;
 
-    const unsubExec = window.VoiceBus.on('tool-executing', (raw) => {
-      const payload = raw as ToolExecutingPayload | undefined;
-      if (!payload || typeof payload !== 'object' || typeof payload.name !== 'string') return;
-      const next = resolveCaption(payload);
-      // Cancel any pending success/error hold or fade — latest event wins (T-27-05).
+    const unsubscribe = concierge.onDispatch((event) => {
+      if (event.phase === 'accepted' || event.phase === 'waiting' || event.phase === 'executing') {
+        activeDispatches.add(event.dispatchId);
+        clearTimers();
+        setActive(true);
+        setCaption(resolveCaption(event));
+        setStatus('acting');
+        setVisible(true);
+        return;
+      }
+
+      activeDispatches.delete(event.dispatchId);
+      if (activeDispatches.size > 0) {
+        setStatus('acting');
+        return;
+      }
+
+      const succeeded = event.phase === 'succeeded';
+      setStatus(succeeded ? 'success' : 'error');
       clearTimers();
-      // null next -> unknown tool, leave caption at idle (IDLE_TEXT).
-      setCaption(next);
-      setStatus('acting');
-      setVisible(true);
-    });
-
-    const unsubSuccess = window.VoiceBus.on('tool-success', () => {
-      // Hold caption for SUCCESS_HOLD_MS, then return to idle.
-      setStatus('success');
-      scheduleReturnToIdle(SUCCESS_HOLD_MS);
-    });
-
-    const unsubError = window.VoiceBus.on('tool-error', () => {
-      setStatus('error');
-      scheduleReturnToIdle(ERROR_HOLD_MS);
+      hideTimerRef.current = setTimeout(() => {
+        hideTimerRef.current = null;
+        if (reducedMotionRef.current) {
+          setActive(false);
+          setCaption(null);
+          setVisible(true);
+          return;
+        }
+        setVisible(false);
+        fadeTimerRef.current = setTimeout(() => {
+          fadeTimerRef.current = null;
+          setActive(false);
+          setCaption(null);
+          setVisible(true);
+        }, FADE_MS);
+      }, succeeded ? SUCCESS_HOLD_MS : ERROR_HOLD_MS);
     });
 
     return () => {
-      (unsubExec as () => void)();
-      (unsubSuccess as () => void)();
-      (unsubError as () => void)();
+      unsubscribe();
+      activeDispatches.clear();
       clearTimers();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted]);
-
-  // When the overlay deactivates, drop pending timers. Caption is cleared via
-  // the `if (!active) return null` guard below (component unmounts).
-  useEffect(() => {
-    if (!active) {
-      clearTimers();
-      return;
-    }
-    setStatus('acting');
-  }, [active]);
+  }, [clearTimers, concierge, mounted]);
 
   useEffect(() => {
     if (!mounted || !active) return;

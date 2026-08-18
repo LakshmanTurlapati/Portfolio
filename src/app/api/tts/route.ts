@@ -37,9 +37,9 @@ export async function POST(req: Request) {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    // Why: voice-controller chunks long Grok answers at VOICE_TTS_CHUNK_MAX_CHARS
-    // (3500) and sends each piece here. The proxy cap was 1000 — well below
-    // chat's maxOutputTokens=1000 (~4000 chars) and below ElevenLabs' own
+    // The voice controller chunks long model answers at VOICE_TTS_CHUNK_MAX_CHARS
+    // (3500) and sends each piece here. The proxy cap was 1000 — below common
+    // model response lengths and below ElevenLabs' own
     // ~5000-char per-request ceiling for eleven_turbo_v2_5 — which caused long
     // responses to 413 and fall back to the OS synth voice. 4000 stays safely
     // inside the model's limit while giving the chunker headroom.

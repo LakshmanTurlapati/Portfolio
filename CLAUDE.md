@@ -12,7 +12,8 @@ The portfolio showcases projects, experience, education, a Parz AI chat persona,
 - React 19
 - TypeScript
 - Tailwind CSS v4
-- AI SDK with xAI
+- AI SDK with OpenRouter
+- Concierge v0.2.1 for signed browser-action control
 - ElevenLabs STT/TTS
 - Vitest for unit tests
 - Playwright for browser tests
@@ -26,7 +27,6 @@ The portfolio showcases projects, experience, education, a Parz AI chat persona,
 - `src/data/` - public portfolio content, project metadata, persona prompt, experience, and education data
 - `public/assets/` - project image assets served by Next.js
 - `public/icons/` - portfolio icon assets
-- `public/pcm-processor.js` - audio worklet used by voice mode
 - `tests/` - Vitest tests
 - `e2e/` - Playwright tests
 
@@ -36,14 +36,15 @@ Server-side secrets must stay out of the client bundle.
 
 Required:
 
-- `XAI_API_KEY` for chat and site-control responses
+- `OPENROUTER_API_KEY` for chat and site-control responses
 - `ELEVENLABS_API_KEY` for voice STT/TTS features
+- `CONCIERGE_ES256_PRIVATE_KEY_PEM_B64` and `CONCIERGE_ES256_PUBLIC_KEY_PEM_B64` for signed browser actions
 
 Optional:
 
 - `GITHUB_TOKEN` for higher GitHub API rate limits
 - `ALLOWED_API_ORIGINS` for additional paid API caller origins
-- `PRODUCTION_BASE_URL` for `scripts/verify-amplify-apis.mjs`
+- `PRODUCTION_BASE_URL` for `scripts/verify-production-apis.mjs`
 
 ## Development Commands
 

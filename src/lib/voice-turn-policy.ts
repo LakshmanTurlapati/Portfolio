@@ -10,7 +10,7 @@ export const VOICE_OPEN_GREETING_DELAY_MS = 480;
 export function buildVoiceOpeningPrompt(page = 'home'): string {
   const safePage = /^[a-z0-9-]+$/i.test(page) ? page : 'home';
   // Why: the prior wording ("Voice mode just opened on the X page") leaked
-  // into Grok's reply — greetings echoed "voice mode is active" almost every
+  // into the model's reply — greetings echoed "voice mode is active" almost every
   // turn. Phrase this as an ambient cue with explicit no-announce guardrails
   // so the opening line sounds nonchalant, like picking up a conversation
   // rather than booting a feature.
@@ -21,7 +21,7 @@ export function shouldPersistVoiceTurn(kind: VoiceTurnKind): boolean {
   return kind === 'user';
 }
 
-export function normalizeSpeechForEchoCheck(text: string): string {
+function normalizeSpeechForEchoCheck(text: string): string {
   return text
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, ' ')
@@ -91,8 +91,8 @@ export function isMobileIntentionalBargeInTranscript(
 
 // Server `/api/tts` accepts up to 4000 chars per request; keep client chunks
 // safely under that so an off-by-one or a comma-heavy stretch never bumps
-// against the cap. Most Grok voice turns (maxOutputTokens=1000 ≈ 4000 chars)
-// still fit in a single chunk — only true overflow gets split.
+// against the cap. Brief voice turns usually fit in a single chunk; only true
+// overflow gets split.
 export const VOICE_TTS_CHUNK_MAX_CHARS = 3500;
 
 const VOICE_TTS_SENTENCE_BOUNDARIES = ['. ', '! ', '? ', '.\n', '!\n', '?\n'];
@@ -116,7 +116,7 @@ function lastIndexOfAny(
 }
 
 // Why: ElevenLabs (and our /api/tts proxy) refuse very long single requests.
-// Without splitting, long Grok answers used to throw 413 and fall back to the
+// Without splitting, long model answers used to throw 413 and fall back to the
 // OS SpeechSynthesis voice — the robotic-voice regression. Split at the most
 // natural boundary that still keeps each chunk under maxChars: sentence end
 // first, then clause punctuation, then whitespace, then a hard cut as a last
@@ -165,12 +165,12 @@ export function chunkForTTS(
   return chunks;
 }
 
-export interface VoiceToolCall {
+interface VoiceToolCall {
   name: string;
   args: Record<string, unknown>;
 }
 
-// Why: post-tour, Grok occasionally drops narration and returns only tool calls.
+// Why: the model can occasionally drop narration and return only tool calls.
 // Without spoken output the state machine flips idle → listening, the user hears
 // nothing, and the tour-end handoff appears to loop listening ↔ thinking forever.
 // Speaking a brief tool-derived line breaks that silent loop and confirms the

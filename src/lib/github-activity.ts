@@ -1,12 +1,12 @@
-export type GitHubActivitySource = 'github' | 'fallback';
+type GitHubActivitySource = 'github' | 'fallback';
 
-export interface GitHubContributionDay {
+interface GitHubContributionDay {
   date: string;
   count: number;
   level: number;
 }
 
-export interface GitHubContributionCell extends GitHubContributionDay {
+interface GitHubContributionCell extends GitHubContributionDay {
   isPlaceholder: boolean;
 }
 
@@ -33,7 +33,7 @@ interface BuildGitHubActivityInput {
 const ROWS_PER_WEEK = 7;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-export const FALLBACK_GITHUB_STATS = {
+const FALLBACK_GITHUB_STATS = {
   totalContributions: 4899,
   currentStreak: 3,
   longestStreak: 49,

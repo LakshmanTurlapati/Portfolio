@@ -23,7 +23,7 @@ const UNEMBEDDABLE_HOSTS = [
   'youtube.com', 'youtu.be',
 ];
 
-export function isUnembeddable(url: string): boolean {
+function isUnembeddable(url: string): boolean {
   try {
     const h = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
     return UNEMBEDDABLE_HOSTS.some((bad) => h === bad || h.endsWith('.' + bad));
