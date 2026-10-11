@@ -1,4 +1,4 @@
-type PaidApiRoute = 'chat' | 'tts' | 'stt-token';
+type PaidApiRoute = 'chat' | 'voice-session';
 
 type RateLimitRule = {
   limit: number;
@@ -31,8 +31,9 @@ const GLOBAL_LIMIT: RateLimitRule = { limit: 300, windowMs: FIFTEEN_MINUTES };
 
 const ROUTE_LIMITS: Record<PaidApiRoute, RateLimitRule> = {
   chat: { limit: 100, windowMs: TEN_MINUTES },
-  tts: { limit: 150, windowMs: TEN_MINUTES },
-  'stt-token': { limit: 80, windowMs: TEN_MINUTES },
+  // A voice session is one live Grok Voice websocket, so this stays below the old
+  // combined TTS + STT budget while still allowing retries.
+  'voice-session': { limit: 200, windowMs: TEN_MINUTES },
 };
 
 const DEFAULT_ALLOWED_ORIGINS = ['https://parzival.live'];

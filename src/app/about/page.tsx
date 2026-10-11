@@ -129,14 +129,14 @@ function FooterText({ compact = false }: { compact?: boolean }) {
       >
         Fly.io
       </a>
-      , and given a voice with{' '}
+      ,       and given a voice with{' '}
       <a
-        href="https://elevenlabs.io"
+        href="https://x.ai"
         target="_blank"
         rel="noreferrer"
         className="font-semibold underline decoration-current/40 underline-offset-2 transition-opacity hover:opacity-100"
       >
-        ElevenLabs
+        Grok
       </a>
       .
     </p>

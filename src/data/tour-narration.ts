@@ -43,7 +43,7 @@ export const TOUR_NARRATIONS: readonly TourNarration[] = [
     aboutIntro:
       "Now the human page. The short version: full-stack roots, then the AI rabbit hole, then a lot of stubborn systems work until the demos became actual tools.",
     experience:
-      "Current chapter: AI Enablement Engineer at InfiniteChoice, building Voyza as an AI-first hotel booking platform — where most of the day-to-day energy goes.",
+      "Current chapter: AI Enablement Engineer at Voyza, building Voyza as an AI-first hotel booking platform — where most of the day-to-day energy goes.",
     signoff:
       "That's the tour. If you want, interrupt me with any project name and I'll zoom into that instead.",
   },
@@ -65,7 +65,7 @@ export const TOUR_NARRATIONS: readonly TourNarration[] = [
     aboutIntro:
       "Onto the human page. Short version: full-stack roots, then deep into AI, then a lot of stubborn systems work until the demos turned into actual tools.",
     experience:
-      "Right now: AI Enablement Engineer at InfiniteChoice, building Voyza as an AI-first hotel booking platform — most of the daily energy lives there.",
+      "Right now: AI Enablement Engineer at Voyza, building Voyza as an AI-first hotel booking platform — most of the daily energy lives there.",
     signoff:
       "That's the run. If something caught your eye, name a project and I'll dive deeper into it.",
   },
@@ -87,7 +87,7 @@ export const TOUR_NARRATIONS: readonly TourNarration[] = [
     aboutIntro:
       "Hopping over to the human page. Short version: full-stack roots, then the AI rabbit hole, then a stretch of stubborn systems work until demos became real tools.",
     experience:
-      "Currently: AI Enablement Engineer at InfiniteChoice, building Voyza, an AI-first hotel booking platform — that's where the day-to-day energy goes.",
+      "Currently: AI Enablement Engineer at Voyza, building Voyza, an AI-first hotel booking platform — that's where the day-to-day energy goes.",
     signoff:
       "That's the loop. Cut in with any project name and I'll go deeper on it.",
   },
@@ -109,7 +109,7 @@ export const TOUR_NARRATIONS: readonly TourNarration[] = [
     aboutIntro:
       "Over to the human page. Short version: full-stack roots, then the AI rabbit hole, then a lot of stubborn systems work until the demos became actual tools.",
     experience:
-      "Right now: AI Enablement Engineer at InfiniteChoice, building Voyza as an AI-first hotel booking platform — that's where most of the daily energy goes.",
+      "Right now: AI Enablement Engineer at Voyza, building Voyza as an AI-first hotel booking platform — that's where most of the daily energy goes.",
     signoff:
       "That's the tour. Hop in with any project name and I'll zoom into it.",
   },

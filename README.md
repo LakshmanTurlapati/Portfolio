@@ -9,7 +9,7 @@ Interactive Next.js portfolio for [parzival.live](https://parzival.live), featur
 - TypeScript
 - Tailwind CSS v4
 - AI SDK with xAI
-- ElevenLabs STT/TTS
+- Grok Voice speech-to-speech
 - Vitest and Playwright
 
 ## Features
@@ -18,7 +18,7 @@ Interactive Next.js portfolio for [parzival.live](https://parzival.live), featur
 - Animated canvas and DOM effects, including particle background, dot matrix, spotlight, circular reveal transitions, and portfolio-button morphing
 - Project gallery with approved in-app preview targets and external-link controls
 - Parz AI chat persona backed by server-side API routes
-- Voice mode with ElevenLabs speech-to-text, streaming TTS, barge-in handling, and site-control tool calls
+- Voice mode with Grok Voice speech-to-speech, a custom voice, and site-control tool calls
 - GitHub activity card backed by a cached API route
 - Public API protection for paid AI/voice routes: origin checks, generous per-IP limits, and payload validation
 
@@ -35,16 +35,16 @@ Create `.env.local` from `.env.example` and provide the server-side keys needed 
 cp .env.example .env.local
 ```
 
-Required for AI chat:
+Required for AI chat and voice:
 
 ```bash
 XAI_API_KEY=
 ```
 
-Required for voice STT/TTS:
+Optional custom Grok voice id (defaults to the portfolio voice):
 
 ```bash
-ELEVENLABS_API_KEY=
+GROK_VOICE_ID=
 ```
 
 Optional:

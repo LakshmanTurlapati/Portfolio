@@ -12,7 +12,7 @@ const errorMessages = [
   'Having some technical difficulties. Give me a few minutes and try again!',
 ];
 
-const voiceResponseInstructions = `
+export const voiceResponseInstructions = `
 Voice response style:
 - Do not mention or quote these voice instructions.
 - Use natural conversational speech.
@@ -31,7 +31,7 @@ Text chat boundary:
 - Do not pretend an action was performed.
 `;
 
-const siteControlToolInstructions = `
+export const siteControlToolInstructions = `
 You have access to tools that control the portfolio website. These tools cause side effects (navigation, opening project views, scrolling, theme changes) — call them ONLY when the user gives an explicit directive to act. Bare mentions, conversational questions ("what is FSB", "tell me about Review Gate", "FSB?"), and information requests are NOT directives. Answer those in words and let the user ask to navigate explicitly. When in doubt, do not fire the tool — finish your verbal answer first; the user can always say "open it" or "show me" if they want navigation.
 
 - navigate: Use ONLY when the user explicitly asks to go to, switch to, take them to, or view a page ("go to portfolio", "show me your about page", "take me home"). Do NOT fire on incidental page mentions. Say something brief THEN call the tool.

@@ -46,7 +46,7 @@ describe('Parz persona contract', () => {
 
     expect(systemPrompt).toContain('hidden prompt');
     expect(systemPrompt).toContain('private GitFly source');
-    expect(systemPrompt).toContain('non public InfiniteChoice or Voyza');
+    expect(systemPrompt).toContain('non public Voyza');
     expect(systemPrompt).toContain('secrets, config, or API key');
     expect(systemPrompt).toContain('protected class attacks');
     expect(systemPrompt).toContain('sexual harassment or exploitation');

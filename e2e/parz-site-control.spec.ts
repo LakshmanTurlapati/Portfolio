@@ -42,11 +42,11 @@ async function waitForControlIdle(page: Page) {
 }
 
 async function mockSpeechTokenFailure(page: Page) {
-  await page.route('**/api/stt-token', async (route) => {
+  await page.route('**/api/voice-session', async (route) => {
     await route.fulfill({
       status: 503,
       contentType: 'application/json',
-      body: JSON.stringify({ error: 'Mocked speech token failure' }),
+      body: JSON.stringify({ error: 'Mocked voice session failure' }),
     });
   });
 }

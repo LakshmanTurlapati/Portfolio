@@ -272,59 +272,40 @@ describe('voice-controller barge-in wiring', () => {
   });
 
   it('speaks a tool-derived acknowledgement before resuming listening on tool-only turns', () => {
-    // Regression: post-tour, Grok sometimes drops narration and returns only
-    // tool calls. The previous code jumped straight back to listening, which
-    // presented as a silent listening ↔ thinking loop. The branch must now
-    // speak an audible fallback so the state transitions through 'speaking'
-    // and the user hears confirmation.
     const source = readFileSync(
       join(process.cwd(), 'src/lib/voice-controller.ts'),
       'utf8',
     );
 
-    const toolBranchIndex = source.indexOf('} else if (toolCalls.length > 0) {');
+    const toolBranchIndex = source.indexOf('if (!clean && !response.hadAudio) {');
     expect(toolBranchIndex).toBeGreaterThan(-1);
 
     const toolBranchBlock = source.slice(
       toolBranchIndex,
-      source.indexOf('        } else {', toolBranchIndex),
+      source.indexOf('window.VoiceBus.setState(\'idle\');', toolBranchIndex),
     );
 
     expect(toolBranchBlock).toContain('buildToolFallbackSpeech(toolCalls)');
     expect(toolBranchBlock).toContain("|| 'Got it.'");
     expect(toolBranchBlock).toContain('await speak(fallback)');
-    // The speak must precede the listen resume — otherwise we are still silent.
-    expect(toolBranchBlock.indexOf('await speak(fallback)')).toBeLessThan(
-      toolBranchBlock.indexOf('resumeListeningIfActive();'),
-    );
-    // Stale-turn check: if a newer turn started during speak(), bail without
-    // resuming listening so we don't fight another in-flight turn.
     expect(toolBranchBlock).toContain('if (myTurn !== turnGenerationRef.current) return;');
-    // The acknowledgement should be appended to history so the model sees it
-    // on the next turn — otherwise the conversation appears one-sided.
-    expect(toolBranchBlock).toContain("content: fallback");
+    expect(toolBranchBlock).toContain('content: fallback');
     expect(source).toContain("import {\n  buildToolFallbackSpeech,");
+    const afterFallback = source.slice(toolBranchIndex, toolBranchIndex + 900);
+    expect(afterFallback.indexOf('await speak(fallback)')).toBeLessThan(
+      afterFallback.indexOf('resumeListeningIfActive();'),
+    );
   });
 
-  it('bounds chat and TTS waits so voice cannot hang after a turn', () => {
+  it('bounds the Grok Voice response wait so a turn cannot hang', () => {
     const source = readFileSync(
-      join(process.cwd(), 'src/lib/voice-controller.ts'),
+      join(process.cwd(), 'src/lib/grok-voice-session.ts'),
       'utf8',
     );
 
-    expect(source).toContain('const VOICE_CHAT_RESPONSE_TIMEOUT_MS = 35000');
-    expect(source).toContain('const VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS = 1750');
-    expect(source).toContain('const chatAbortRef = useRef<AbortController | null>(null)');
-    expect(source).toContain('const chatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)');
-    expect(source).toContain('const audioPlaybackGuardRef = useRef<ReturnType<typeof setTimeout> | null>(null)');
-    expect(source).toContain('const abortActiveChatRequest = () => {');
-    expect(source).toContain('signal: chatAc.signal');
-    expect(source).toContain('setTimeout(() => chatAc.abort(), VOICE_CHAT_RESPONSE_TIMEOUT_MS)');
-    expect(source).toContain('if (ctx.state === \'suspended\')');
+    expect(source).toContain('}, 35000);');
     expect(source).toContain("throw new Error('AudioContext still suspended')");
-    expect(source).toContain('audioPlaybackGuardRef.current = setTimeout(() => {');
-    expect(source).toContain('finishBufferPlayback();');
-    expect(source).toContain('VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS');
+    expect(source).toContain('waitForPlayback');
   });
 
   it('clears tour transcript before handing control back to listening', () => {
@@ -443,94 +424,29 @@ describe('voice-controller barge-in wiring', () => {
     );
 
     expect(source).not.toContain('setCaption(text);');
-    // streamTTS now plays each chunk's caption progress via the chunkText var,
-    // and the synth fallback path uses failedText.
-    expect(source).toContain('startTimedSpokenCaptionProgress(chunkText, decoded.duration)');
-    expect(source).toContain('attachSynthSpokenCaptionProgress(u, failedText)');
     expect(source).toContain('stopSpokenCaptionProgress(true)');
+    expect(source).toContain('startTimedSpokenCaptionProgress(text, Math.max(1, text.length * 0.06))');
+    expect(source).toContain('spokenCaptionWindow');
   });
 
-  it('chunks long TTS text and plays each chunk through ElevenLabs back-to-back', () => {
-    // Regression: long Grok answers > /api/tts cap used to 413 and fall back to
-    // the OS SpeechSynthesis voice (the "robotic voice on long answers" bug).
-    // The controller must now split text via chunkForTTS and play chunks
-    // sequentially under one 'speaking' state, only resolving once the last
-    // chunk's onended (or its playback guard) fires.
+  it('speaks scripted lines through Grok Voice instead of ElevenLabs chunks', () => {
     const source = readFileSync(
       join(process.cwd(), 'src/lib/voice-controller.ts'),
       'utf8',
     );
 
-    expect(source).toContain('chunkForTTS');
-    expect(source).toContain('VOICE_TTS_CHUNK_MAX_CHARS');
-    expect(source).toContain('const chunks = chunkForTTS(text, VOICE_TTS_CHUNK_MAX_CHARS)');
-    expect(source).toContain('const playChunkAt = (index: number) => {');
-    expect(source).toContain('const isFinal = index === chunks.length - 1;');
-    // setState('speaking') happens ONCE per streamTTS call (before chunk loop);
-    // the inner chunk loop must NOT toggle speaking again.
-    const streamTtsStart = source.indexOf('const streamTTS = useCallback');
-    const streamTtsEnd = source.indexOf('// speak — public wrapper', streamTtsStart);
-    expect(streamTtsStart).toBeGreaterThan(-1);
-    expect(streamTtsEnd).toBeGreaterThan(streamTtsStart);
-    const streamTtsBlock = source.slice(streamTtsStart, streamTtsEnd);
-    const speakingTransitions = streamTtsBlock.match(/setState\('speaking'\)/g) ?? [];
-    // One for the initial enter, one for the synth fallback path — never per chunk.
-    expect(speakingTransitions.length).toBeLessThanOrEqual(2);
-    // Recursion is the trigger for the next chunk; only the final chunk closes the speak Promise.
-    expect(streamTtsBlock).toContain('playChunkAt(index + 1);');
-    expect(streamTtsBlock).toContain('if (isFinal)');
-    expect(streamTtsBlock).toContain('synthFallback(text)');
+    expect(source).toContain('session.speakVerbatim(text)');
+    expect(source).toContain('fetchGrokVoiceGrant');
+    expect(source).not.toContain('/api/tts');
+    expect(source).not.toContain('@elevenlabs/client');
   });
 
-  it('keeps the chunk size safely under the TTS proxy character cap', () => {
-    // /api/tts caps requests at 4000 chars (see src/app/api/tts/route.ts).
-    // The chunker must not produce pieces that exceed that cap, otherwise the
-    // chunking-as-a-fix premise breaks for long Grok answers.
-    const ttsRoute = readFileSync(
-      join(process.cwd(), 'src/app/api/tts/route.ts'),
-      'utf8',
-    );
-    const policy = readFileSync(
-      join(process.cwd(), 'src/lib/voice-turn-policy.ts'),
-      'utf8',
-    );
-
-    const proxyCapMatch = ttsRoute.match(/text\.length > (\d+)/);
-    const chunkCapMatch = policy.match(/VOICE_TTS_CHUNK_MAX_CHARS = (\d+)/);
-
-    expect(proxyCapMatch).not.toBeNull();
-    expect(chunkCapMatch).not.toBeNull();
-    const proxyCap = Number(proxyCapMatch![1]);
-    const chunkCap = Number(chunkCapMatch![1]);
-    expect(chunkCap).toBeLessThanOrEqual(proxyCap);
-  });
-
-  it('starts the caption rAF clock after source.start so subtitles trail audio', () => {
-    // Regression: captions used to advance ahead of the ElevenLabs voice because
-    // startTimedSpokenCaptionProgress was called before source.start(), so the
-    // rAF clock anchored to the fetch+decode window instead of audio onset.
-    // The chunk-playback path must now schedule the caption tick AFTER
-    // source.start() and the caption tick itself must apply a head-start delay
-    // so words don't pop on screen during the audio buffer's pre-roll latency.
+  it('keeps caption progress trailing the spoken line', () => {
     const source = readFileSync(
       join(process.cwd(), 'src/lib/voice-controller.ts'),
       'utf8',
     );
 
-    const streamTtsStart = source.indexOf('const streamTTS = useCallback');
-    const streamTtsEnd = source.indexOf('// speak — public wrapper', streamTtsStart);
-    expect(streamTtsStart).toBeGreaterThan(-1);
-    expect(streamTtsEnd).toBeGreaterThan(streamTtsStart);
-    const streamTtsBlock = source.slice(streamTtsStart, streamTtsEnd);
-    const startCallIdx = streamTtsBlock.indexOf('source.start();');
-    const captionIdx = streamTtsBlock.indexOf(
-      'startTimedSpokenCaptionProgress(chunkText, decoded.duration)',
-    );
-    expect(startCallIdx).toBeGreaterThan(-1);
-    expect(captionIdx).toBeGreaterThan(startCallIdx);
-
-    // Head-start delay (subtitles trail by a beat). Must clamp so a 1s chunk
-    // doesn't sit on word #0 forever, and must not exceed ~250ms.
     expect(source).toContain('captionHeadStartMs');
     expect(source).toContain('elapsedRaw - captionHeadStartMs');
     expect(source).toContain('durationMs - captionHeadStartMs');
@@ -712,7 +628,8 @@ describe('site-control tool wiring', () => {
     expect(route).toContain('startTour: tool');
     expect(route).toContain('switchToText: tool');
     expect(route).toContain('endCall: tool');
-    expect(voice).toContain('body: JSON.stringify({ messages, isVoice: true })');
+    expect(voice).toContain('fetchGrokVoiceGrant');
+    expect(voice).toContain('submitToolOutput');
     expect(voice).toContain("case 'scrollProjectPreview'");
     expect(voice).toContain("case 'startTour'");
     expect(voice).toContain('startGuidedTour(myTurn)');

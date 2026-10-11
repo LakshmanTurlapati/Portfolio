@@ -20,32 +20,46 @@ function detectKind(url: string): ViewerKind {
 const UNEMBEDDABLE_HOSTS = [
   'github.com', 'githubusercontent.com', 'chromewebstore.google.com',
   'chrome.google.com', 'docs.google.com', 'linkedin.com',
-  'youtube.com', 'youtu.be',
+  'youtube.com', 'youtu.be', 'parzival.live',
 ];
 
+function youtubeEmbedId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const h = u.hostname.toLowerCase().replace(/^www\./, '');
+    if (h === 'youtube.com' && u.pathname === '/watch') {
+      return u.searchParams.get('v') || null;
+    }
+    if (h === 'youtu.be') {
+      return u.pathname.replace(/^\//, '') || null;
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 export function isUnembeddable(url: string): boolean {
+  if (youtubeEmbedId(url)) return false;
   try {
     const h = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
     return UNEMBEDDABLE_HOSTS.some((bad) => h === bad || h.endsWith('.' + bad));
   } catch { return false; }
 }
 
+function isRefusedFrame(frame: HTMLIFrameElement): boolean {
+  try {
+    const href = frame.contentWindow?.location.href ?? '';
+    return href === '' || href === 'about:blank';
+  } catch {
+    return false;
+  }
+}
+
 function buildEmbedUrl(url: string, kind: ViewerKind): string {
   if (kind === 'figma') {
     return 'https://www.figma.com/embed?embed_host=share&url=' + encodeURIComponent(url);
   }
-  try {
-    const u = new URL(url);
-    const h = u.hostname.toLowerCase().replace(/^www\./, '');
-    if (h === 'youtube.com' && u.pathname === '/watch') {
-      const v = u.searchParams.get('v');
-      if (v) return `https://www.youtube.com/embed/${v}`;
-    }
-    if (h === 'youtu.be') {
-      const id = u.pathname.replace(/^\//, '');
-      if (id) return `https://www.youtube.com/embed/${id}`;
-    }
-  } catch { /* ignore */ }
+  const videoId = youtubeEmbedId(url);
+  if (videoId) return `https://www.youtube.com/embed/${videoId}`;
   return url;
 }
 
@@ -69,6 +83,7 @@ export function IframeViewer({
   const embedUrl = useMemo(() => buildEmbedUrl(url, kind), [url, kind]);
   const [loaded, setLoaded] = useState(false);
   const [blocked, setBlocked] = useState(unembeddable);
+  const [refused, setRefused] = useState(false);
   const loadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -83,11 +98,18 @@ export function IframeViewer({
     };
   }, [onClose]);
 
+  const previousEmbedUrl = useRef(embedUrl);
   useEffect(() => {
+    if (previousEmbedUrl.current !== embedUrl) {
+      previousEmbedUrl.current = embedUrl;
+      setLoaded(false);
+      setRefused(false);
+      setBlocked(unembeddable);
+    }
     if (unembeddable) return;
     loadTimer.current = setTimeout(() => { setBlocked(true); }, 8000);
     return () => { if (loadTimer.current) clearTimeout(loadTimer.current); };
-  }, [unembeddable]);
+  }, [embedUrl, unembeddable]);
 
   useEffect(() => {
     if (!onRegisterPreviewScroller) return;
@@ -152,30 +174,28 @@ export function IframeViewer({
 
         {/* Body */}
         <div className="flex-1 relative" style={{ color: isDark ? '#1a1a1a' : '#f3f2ee' }}>
-          {unembeddable ? (
-            kind === 'github' ? (
-              <GithubPreview
-                url={url}
-                isDark={isDark}
-                onRegisterScroller={onRegisterPreviewScroller}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
-                <IconClass className="text-5xl opacity-30" />
-                <h3 className="text-xl font-bold">{hostname} can&apos;t be embedded</h3>
-                <p className="text-sm opacity-60 max-w-md">This site blocks iframe embedding for security. Open it in a new tab to continue.</p>
-                <button
-                  className="mt-2 px-5 py-2.5 rounded-xl text-sm font-medium inline-flex items-center gap-2"
-                  style={{
-                    background: isDark ? '#1a1a1a' : '#f3f2ee',
-                    color: isDark ? '#fff' : '#1a1a1a',
-                  }}
-                  onClick={() => openExternalUrl(url)}
-                >
-                  <FaArrowUpRightFromSquare /> Open in new tab
-                </button>
-              </div>
-            )
+          {unembeddable && kind === 'github' ? (
+            <GithubPreview
+              url={url}
+              isDark={isDark}
+              onRegisterScroller={onRegisterPreviewScroller}
+            />
+          ) : unembeddable || refused ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
+              <IconClass className="text-5xl opacity-30" />
+              <h3 className="text-xl font-bold">{hostname} can&apos;t be embedded</h3>
+              <p className="text-sm opacity-60 max-w-md">This site blocks iframe embedding for security. Open it in a new tab to continue.</p>
+              <button
+                className="mt-2 px-5 py-2.5 rounded-xl text-sm font-medium inline-flex items-center gap-2"
+                style={{
+                  background: isDark ? '#1a1a1a' : '#f3f2ee',
+                  color: isDark ? '#fff' : '#1a1a1a',
+                }}
+                onClick={() => openExternalUrl(url)}
+              >
+                <FaArrowUpRightFromSquare /> Open in new tab
+              </button>
+            </div>
           ) : (
             <>
               {!loaded && (
@@ -189,13 +209,25 @@ export function IframeViewer({
                 title={label || hostname}
                 className="absolute inset-0 w-full h-full border-0 transition-opacity duration-300"
                 style={{ opacity: loaded ? 1 : 0 }}
-                onLoad={() => {
+                onLoad={(event) => {
+                  if (isRefusedFrame(event.currentTarget)) {
+                    setRefused(true);
+                    setLoaded(false);
+                    if (loadTimer.current) clearTimeout(loadTimer.current);
+                    return;
+                  }
+                  setRefused(false);
                   setLoaded(true);
                   setBlocked(false);
                   if (loadTimer.current) clearTimeout(loadTimer.current);
                 }}
-                allow="fullscreen; clipboard-read; clipboard-write"
-                referrerPolicy="no-referrer"
+                allow="fullscreen; clipboard-read; clipboard-write; accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                referrerPolicy={embedUrl.includes('youtube.com/embed/') ? 'strict-origin-when-cross-origin' : 'no-referrer'}
+                onError={() => {
+                  setRefused(true);
+                  setLoaded(false);
+                  if (loadTimer.current) clearTimeout(loadTimer.current);
+                }}
               />
               {blocked && !loaded && (
                 <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3 p-3 rounded-xl text-sm"

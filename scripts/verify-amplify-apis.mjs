@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import { resolve4 } from 'node:dns/promises';
-import { writeFile } from 'node:fs/promises';
 
 const rawBaseUrl = process.env.PRODUCTION_BASE_URL;
 
@@ -45,15 +44,6 @@ function logRoute(routeName, status, type, marker, passed, extra = '') {
 
 function looksTokenLike(value) {
   return typeof value === 'string' && value.length >= 20 && /^[A-Za-z0-9._-]+$/.test(value);
-}
-
-function hasMp3Signature(buffer) {
-  if (buffer.length < 3) return false;
-
-  const hasId3Header = buffer[0] === 0x49 && buffer[1] === 0x44 && buffer[2] === 0x33;
-  const hasMpegSync = buffer[0] === 0xff && [0xfb, 0xf3, 0xf2].includes(buffer[1]);
-
-  return hasId3Header || hasMpegSync;
 }
 
 async function verifyDns() {
@@ -123,8 +113,8 @@ async function testVoiceChat() {
   return passed;
 }
 
-async function testSttToken() {
-  const response = await fetch(`${baseUrl}/api/stt-token`, {
+async function testVoiceSession() {
+  const response = await fetch(`${baseUrl}/api/voice-session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Origin: baseUrl },
   });
@@ -139,41 +129,14 @@ async function testSttToken() {
     body = null;
   }
 
-  const topLevelValues = body && typeof body === 'object' && !Array.isArray(body)
-    ? Object.values(body)
-    : [];
   const tokenPresent = response.status === 200
     && Boolean(body)
-    && (looksTokenLike(body.token) || topLevelValues.some(looksTokenLike));
+    && looksTokenLike(body.token)
+    && typeof body.voice === 'string'
+    && body.voice.length > 0;
 
-  logRoute('/api/stt-token', response.status, type, 'stt_token_present', tokenPresent);
+  logRoute('/api/voice-session', response.status, type, 'voice_session_present', tokenPresent);
   return tokenPresent;
-}
-
-async function testTts() {
-  const response = await fetch(`${baseUrl}/api/tts`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: baseUrl },
-    body: JSON.stringify({
-      text: 'Hello from Parz production verification',
-      voiceId: 'dMWVPH9DSxWOMrrrUso3',
-    }),
-  });
-
-  const type = contentType(response);
-  const buffer = Buffer.from(await response.arrayBuffer());
-
-  if (response.status === 200) {
-    await writeFile('/tmp/parz-amplify-gap-test.mp3', buffer);
-  }
-
-  const passed = response.status === 200
-    && type.includes('audio/mpeg')
-    && buffer.length > 1000
-    && hasMp3Signature(buffer);
-
-  logRoute('/api/tts', response.status, type, 'tts_mp3_signature', passed, `bytes ${buffer.length}`);
-  return passed;
 }
 
 async function main() {
@@ -187,8 +150,7 @@ async function main() {
     const results = [
       await testTextChat(),
       await testVoiceChat(),
-      await testSttToken(),
-      await testTts(),
+      await testVoiceSession(),
     ];
 
     process.exit(results.every(Boolean) ? 0 : 1);

@@ -107,39 +107,34 @@ describe('paid API guard', () => {
     for (let i = 0; i < 100; i += 1) {
       expect(guardApiRequest(request('/api/chat'), { route: 'chat', enforceOrigin: true, now: 0 })).toBeNull();
     }
-    for (let i = 0; i < 150; i += 1) {
-      expect(guardApiRequest(request('/api/tts'), { route: 'tts', enforceOrigin: true, now: 0 })).toBeNull();
-    }
-    for (let i = 0; i < 50; i += 1) {
-      expect(
-        guardApiRequest(request('/api/stt-token'), { route: 'stt-token', enforceOrigin: true, now: 0 }),
-      ).toBeNull();
+    for (let i = 0; i < 200; i += 1) {
+      expect(guardApiRequest(request('/api/voice-session'), { route: 'voice-session', enforceOrigin: true, now: 0 })).toBeNull();
     }
 
     const globallyLimited = guardApiRequest(
-      request('/api/stt-token'),
-      { route: 'stt-token', enforceOrigin: true, now: 0 },
+      request('/api/voice-session'),
+      { route: 'voice-session', enforceOrigin: true, now: 0 },
     );
     expect(globallyLimited?.status).toBe(429);
   });
 
   it('rejects non-json and oversized JSON requests', async () => {
-    const nonJson = await parseGuardedJson(request('/api/tts', {
+    const nonJson = await parseGuardedJson(request('/api/chat', {
       headers: { 'content-type': 'text/plain' },
       body: 'hello',
     }), {
-      route: 'tts',
+      route: 'chat',
       maxBodyBytes: 16 * 1024,
       enforceOrigin: true,
     });
     expect(nonJson.ok).toBe(false);
     if (!nonJson.ok) expect(nonJson.response.status).toBe(415);
 
-    const oversized = await parseGuardedJson(request('/api/tts', {
+    const oversized = await parseGuardedJson(request('/api/chat', {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ text: 'hello' }),
     }), {
-      route: 'tts',
+      route: 'chat',
       maxBodyBytes: 5,
       enforceOrigin: true,
     });

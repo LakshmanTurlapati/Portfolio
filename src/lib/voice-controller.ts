@@ -1,9 +1,8 @@
 'use client';
 
 // src/lib/voice-controller.ts
-// Full voice session state machine — STT (ElevenLabs Scribe + Web Speech fallback),
-// ElevenLabs TTS, AI agent loop, barge-in, persistent memory, accessibility shortcuts.
-// Tours / walkthroughs are driven by the LLM via tool calls (no hardcoded script).
+// Full voice session state machine — Grok Voice speech-to-speech with the custom
+// voice, site-control tool calls, guided tours, and accessibility shortcuts.
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { isStopIntent } from './voice-commands';
@@ -26,8 +25,12 @@ import {
 import { calculateRms, VoiceBargeInDetector } from './voice-barge-in';
 import { pickTourNarration } from '@/data/tour-narration';
 import type { ChatMorphRect, ChatVoiceSnapshot } from '@/lib/chat-morph';
-import { Scribe, RealtimeEvents, CommitStrategy } from '@elevenlabs/client';
-import type { RealtimeConnection } from '@elevenlabs/client';
+import {
+  fetchGrokVoiceGrant,
+  GrokVoiceSession,
+  type GrokVoiceResponse,
+} from '@/lib/grok-voice-session';
+import { GROK_VOICE_SAMPLE_RATE } from '@/lib/grok-voice-tools';
 import type { ControlResult } from '@/providers/site-control-provider';
 
 const VOICE_CHAT_RESPONSE_TIMEOUT_MS = 35000;
@@ -165,7 +168,13 @@ export function useVoiceController({
       : false;
 
   // Refs for non-reactive mutable state
-  const connectionRef = useRef<RealtimeConnection | null>(null);
+  const connectionRef = useRef<{ close: () => void } | null>(null);
+  const grokSessionRef = useRef<GrokVoiceSession | null>(null);
+  const grokConnectRef = useRef<Promise<GrokVoiceSession | null> | null>(null);
+  const playbackCtxRef = useRef<AudioContext | null>(null);
+  const micCtxRef = useRef<AudioContext | null>(null);
+  const turnKindRef = useRef<VoiceTurnKind>('user');
+  const onGrokResponseRef = useRef<(response: GrokVoiceResponse) => void>(() => {});
   const speakingRef = useRef(false);
   // VOICE-06: guard timer that fires if Scribe accepts the connection but never
   // emits SESSION_STARTED. Cleared in SESSION_STARTED / AUTH_ERROR / ERROR /
@@ -194,7 +203,7 @@ export function useVoiceController({
   // Audio-serialization refs (Phase 22 — overlap fix).
   // speakResolverRef holds the resolver of the in-flight speak() Promise so cancelAllAudio
   // can unblock any pending awaiter (otherwise old handleUserTurn calls hang forever).
-  // speakAbortRef cancels in-flight /api/tts fetches so a new speak doesn't race the old.
+  // speakAbortRef is retained so a cancelled speak cannot resume an older turn.
   // speechUtteranceRef tracks the current SpeechSynthesisUtterance for identity checks
   // in onend so a stale fallback utterance doesn't reset state on the new speak.
   // turnGenerationRef increments at the start of every handleUserTurn — older turns
@@ -473,10 +482,7 @@ export function useVoiceController({
     };
   }, [startTimedSpokenCaptionProgress]);
 
-  // cancelAllAudio — single source of truth for stopping in-flight TTS, including
-  // BufferSource playback, queued SpeechSynthesis utterances, and any /api/tts fetch
-  // that is still in flight. Also unblocks any awaiter on speak() so old handleUserTurn
-  // calls don't hang. Does NOT change VoiceBus state — the caller decides the new state.
+  // cancelAllAudio — stops Grok Voice playback and any local caption timer.
   const cancelAllAudio = useCallback((options: { keepBargeInMonitor?: boolean } = {}) => {
     if (!options.keepBargeInMonitor) stopBargeInMonitor();
     stopSpokenCaptionProgress(true);
@@ -490,7 +496,8 @@ export function useVoiceController({
     clearSynthGuard();
     clearAudioPlaybackGuard();
 
-    // Abort any in-flight /api/tts fetch so a stale .then doesn't create another source
+    // Stop Grok Voice playback without dropping the realtime socket.
+    try { grokSessionRef.current?.interrupt(); } catch {}
     try { speakAbortRef.current?.abort(); } catch {}
     speakAbortRef.current = null;
 
@@ -772,6 +779,8 @@ export function useVoiceController({
     turnGenerationRef.current += 1;
     startingListenRef.current = false;
     abortActiveChatRequest();
+    try { grokSessionRef.current?.close(); } catch {}
+    grokSessionRef.current = null;
     try { connectionRef.current?.close(); } catch {}
     connectionRef.current = null;
     cancelAllAudio();
@@ -784,261 +793,120 @@ export function useVoiceController({
     setTranscript('');
   }, [cancelAllAudio, clearInitialGreetTimer]);
 
-  // streamTTS — ElevenLabs streaming TTS via /api/tts (per D-01, D-04).
-  // Phase 22: cancels any prior in-flight TTS at entry, tracks an AbortController so
-  // a cancel-mid-fetch doesn't strand a stale .then, and identity-checks in onended
-  // so a cancelled source doesn't reset state on top of the new one.
-  const streamTTS = useCallback(
-    (text: string): Promise<void> => {
-      return new Promise<void>((resolve) => {
-        // Cancel any prior speak before starting a new one — closes overlap modes O-1, O-5.
-        cancelAllAudio();
+  const ensureGrokSession = useCallback(async (): Promise<GrokVoiceSession | null> => {
+    if (grokSessionRef.current) return grokSessionRef.current;
+    if (grokConnectRef.current) return grokConnectRef.current;
 
-        speakResolverRef.current = resolve;
-        const ac = new AbortController();
-        speakAbortRef.current = ac;
-        speakingTextRef.current = text;
+    const connect = (async () => {
+      const AC = window.AudioContext
+        || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AC) throw new Error('AudioContext unavailable');
+      if (!playbackCtxRef.current) playbackCtxRef.current = new AC({ sampleRate: GROK_VOICE_SAMPLE_RATE });
+      if (!micCtxRef.current) micCtxRef.current = new AC({ sampleRate: GROK_VOICE_SAMPLE_RATE });
+      void playbackCtxRef.current.resume();
+      void micCtxRef.current.resume();
 
-        window.VoiceBus.setState('speaking');
-        setCaption('Speaking\u2026');
-        console.info('[VoiceTrace] streamTTS entry', { textLen: text.length });
-
-        // Why: ElevenLabs and our /api/tts proxy refuse very long single
-        // requests (proxy at 4000 chars). Grok answers can run longer and
-        // would otherwise 413, kick the catch arm, and fall back to the OS
-        // SpeechSynthesis voice — that's the "robotic voice on long answers"
-        // bug. Split here and play each chunk back-to-back through the same
-        // ElevenLabs voice. The 'speaking' state is entered ONCE above; only
-        // the FINAL chunk transitions back to 'idle' and resolves.
-        const chunks = chunkForTTS(text, VOICE_TTS_CHUNK_MAX_CHARS);
-        console.info('[VoiceTrace] streamTTS chunked', { chunkCount: chunks.length });
-        if (chunks.length === 0) {
-          console.warn('[VoiceTrace] streamTTS chunks empty, resolving early');
-          window.VoiceBus.setState('idle');
-          speakingRef.current = false;
-          if (speakResolverRef.current === resolve) speakResolverRef.current = null;
-          speakAbortRef.current = null;
-          resolve();
-          return;
-        }
-
-        const synthFallback = (failedText: string) => {
-          console.info('[VoiceTrace] synthFallback entry', { textLen: failedText.length });
-          const synth = window.speechSynthesis;
-          if (!synth) {
-            console.warn('[VoiceTrace] synthFallback: window.speechSynthesis missing → silent resolve (USER HEARS NOTHING)');
-            window.VoiceBus.setState('idle');
-            speakingRef.current = false;
-            if (speakResolverRef.current === resolve) speakResolverRef.current = null;
-            speakAbortRef.current = null;
-            resolve();
-            return;
-          }
-          console.info('[VoiceTrace] synthFallback: using window.speechSynthesis');
-          // Cancel any queued utterances before starting ours
-          try { synth.cancel(); } catch {}
-          const u = new SpeechSynthesisUtterance(failedText);
-          speakingTextRef.current = failedText;
-          u.rate = 1.05;
-          u.pitch = 1.0;
-          u.volume = 1.0;
-          speechUtteranceRef.current = u;
-          window.VoiceBus.setState('speaking');
-          window.VoiceBus.attachTTSFake(u);
-          attachSynthSpokenCaptionProgress(u, failedText);
-          const finishSynth = () => {
-            if (speechUtteranceRef.current === u) {
-              stopBargeInMonitor();
-              stopSpokenCaptionProgress(true);
-              window.VoiceBus.setState('idle');
-              speakingRef.current = false;
-              speechUtteranceRef.current = null;
-              speakAbortRef.current = null;
-              if (speakResolverRef.current === resolve) speakResolverRef.current = null;
+      let micGranted = true;
+      const grant = await fetchGrokVoiceGrant();
+      if (!activeRef.current) return null;
+      const session = await GrokVoiceSession.connect(
+        grant,
+        {
+          onUserTranscript: (text) => {
+            turnKindRef.current = 'user';
+            setTranscript(text);
+            const words = tokenizeSpeechWords(text);
+            setCaption(spokenCaptionWindow(words, Math.max(0, words.length - 1)));
+          },
+          onAssistantTranscript: (text) => {
+            const words = tokenizeSpeechWords(text);
+            setCaption(spokenCaptionWindow(words, Math.max(0, words.length - 1)));
+          },
+          onResponse: (response) => {
+            onGrokResponseRef.current(response);
+          },
+          onBargeIn: () => {
+            turnKindRef.current = 'user';
+            turnGenerationRef.current += 1;
+            const stoppedTourId = tourGenerationRef.current;
+            tourGenerationRef.current += 1;
+            if (stoppedTourId > 0) {
+              window.VoiceBus.emit('site-control-tour-end', { tourId: stoppedTourId });
             }
-            resolve();
-          };
-          // VOICE-07: wrap onend/onerror to clear the worst-case guard before
-          // calling finishSynth. Identity check inside finishSynth is the final
-          // safety net if both fire (RESEARCH.md Pitfall 3).
-          const wrappedFinishSynth = () => {
-            clearSynthGuard();
-            finishSynth();
-          };
-          u.onend = wrappedFinishSynth;
-          u.onerror = wrappedFinishSynth;
-          speakingRef.current = true;
-          // VOICE-07: worst-case timeout (50ms/char, 1s floor, 30s cap).
-          // Some browsers (notably Safari with disabled synth) silently no-op
-          // synth.speak() and never fire onend/onerror -- this guard ensures
-          // finishSynth is called and the speak() Promise resolves. Cleared by
-          // wrappedFinishSynth above and by clearSynthGuard() in cancelAllAudio.
-          const guardMs = Math.min(30000, Math.max(1000, failedText.length * 50));
-          synthGuardRef.current = setTimeout(() => {
-            synthGuardRef.current = null;
-            try { synth.cancel(); } catch {}
-            finishSynth(); // identity-checked finalizer -- safe even if onend already fired
-          }, guardMs);
-          synth.speak(u);
-          startBargeInMonitor();
-        };
+            window.VoiceBus.setState('listening');
+            setCaption('Listening\u2026');
+          },
+          onError: (message) => {
+            if (/cancel/i.test(message)) return;
+            console.warn('[VoiceTrace] grok voice error', message);
+            window.VoiceBus.setState('idle');
+          },
+          onPlaybackStart: (analyser) => {
+            window.VoiceBus.setState('speaking');
+            window.VoiceBus._startLoop(analyser, 1.4);
+            speakingRef.current = true;
+          },
+          onPlaybackIdle: () => {
+            window.VoiceBus._stopLoop();
+            speakingRef.current = false;
+          },
+          onMicDenied: () => {
+            micGranted = false;
+            micPermissionGrantedRef.current = false;
+            setMicDenied(true);
+            setCaption('Mic access denied. Click to retry.');
+          },
+        },
+        playbackCtxRef.current,
+        micCtxRef.current,
+      );
 
-        const playChunkAt = (index: number) => {
-          if (ac.signal.aborted) {
-            console.info('[VoiceTrace] playChunkAt aborted pre-fetch', { index });
-            return;
-          }
-          const chunkText = chunks[index];
-          const isFinal = index === chunks.length - 1;
-          console.info('[VoiceTrace] playChunkAt fetch start', { index, chunkLen: chunkText.length, isFinal });
+      if (!activeRef.current) {
+        session.close();
+        return null;
+      }
+      grokSessionRef.current = session;
+      connectionRef.current = { close: () => session.close() };
+      if (micGranted) {
+        micPermissionGrantedRef.current = true;
+        setMicDenied(false);
+      }
+      return session;
+    })();
 
-          fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: chunkText, voiceId: 'dMWVPH9DSxWOMrrrUso3' }),
-            signal: ac.signal,
-          })
-            .then(async (res) => {
-              console.info('[VoiceTrace] /api/tts response', { index, status: res.status, ok: res.ok });
-              if (ac.signal.aborted) {
-                console.info('[VoiceTrace] aborted after fetch response', { index });
-                return;
-              }
-              if (!res.ok) throw new Error(`TTS fetch failed: ${res.status}`);
-              const buffer = await res.arrayBuffer();
-              if (ac.signal.aborted) return;
-              const ctx = window.VoiceBus._getCtx();
-              if (!ctx) throw new Error('AudioContext unavailable');
-              console.info('[VoiceTrace] AudioContext state pre-resume', { index, state: ctx.state });
-              // Phase 23 hotfix: actually await resume() before using the context.
-              // _getCtx fires resume() but doesn't await it — if the context is still
-              // suspended when source.start() runs, audio plays silently and onended
-              // never fires, hanging the speak Promise.
-              if (ctx.state === 'suspended') {
-                try { await ctx.resume(); } catch (resumeErr) {
-                  console.warn('[VoiceTrace] AudioContext resume() failed', { index, err: resumeErr instanceof Error ? resumeErr.message : String(resumeErr) });
-                }
-              }
-              if (ctx.state === 'suspended') {
-                console.warn('[VoiceTrace] AudioContext still suspended after resume', { index });
-                throw new Error('AudioContext still suspended');
-              }
-              const decoded = await ctx.decodeAudioData(buffer);
-              if (ac.signal.aborted) return;
-              console.info('[VoiceTrace] audio decoded', { index, duration: decoded.duration, ctxState: ctx.state });
+    grokConnectRef.current = connect;
+    try {
+      return await connect;
+    } finally {
+      if (grokConnectRef.current === connect) grokConnectRef.current = null;
+    }
+  }, []);
 
-              const source = ctx.createBufferSource();
-              source.buffer = decoded;
-
-              // Create AnalyserNode for live RMS amplitude (drives VoiceBus.level)
-              const analyser = ctx.createAnalyser();
-              analyser.fftSize = 1024;
-              source.connect(analyser);
-              analyser.connect(ctx.destination);
-
-              audioSourceRef.current = source;
-
-              // Start RMS loop — hooks live audio level into VoiceBus (per D-06).
-              // Each chunk stops the previous chunk's loop in finishBufferPlayback
-              // below, so we never run two rAFs at once.
-              window.VoiceBus._startLoop(analyser, 1.4);
-
-              const finishBufferPlayback = () => {
-                // Identity check: only mutate state if THIS source is still current.
-                // A cancelled source whose onended fires late must not touch state.
-                if (audioSourceRef.current !== source) {
-                  // Cancelled or stale — the sequence is being torn down elsewhere.
-                  if (isFinal) resolve();
-                  return;
-                }
-                clearAudioPlaybackGuard();
-                audioSourceRef.current = null;
-                window.VoiceBus._stopLoop();
-                if (isFinal) {
-                  stopBargeInMonitor();
-                  stopSpokenCaptionProgress(true);
-                  window.VoiceBus.setState('idle');
-                  speakingRef.current = false;
-                  speakAbortRef.current = null;
-                  if (speakResolverRef.current === resolve) speakResolverRef.current = null;
-                  resolve();
-                } else {
-                  // Kick off the next chunk. Keep state == 'speaking' and the
-                  // shared abort/resolver so cancelAllAudio still tears the
-                  // whole sequence down cleanly.
-                  playChunkAt(index + 1);
-                }
-              };
-
-              source.onended = () => {
-                console.info('[VoiceTrace] source.onended fired', { index });
-                finishBufferPlayback();
-              };
-
-              speakingRef.current = true;
-              audioPlaybackGuardRef.current = setTimeout(() => {
-                if (audioSourceRef.current !== source) return;
-                console.warn('[VoiceTrace] playback guard timeout fired (onended did not fire)', { index, duration: decoded.duration });
-                try { source.stop(); } catch {}
-                finishBufferPlayback();
-              }, Math.round(decoded.duration * 1000) + VOICE_TTS_PLAYBACK_GUARD_BUFFER_MS);
-              console.info('[VoiceTrace] source.start()', { index, ctxState: ctx.state });
-              source.start();
-              // Why: start the caption rAF AFTER source.start() so the clock
-              // anchors to the audio onset, not the fetch+decode window. The
-              // head-start delay inside startTimedSpokenCaptionProgress then
-              // covers any remaining buffer pre-roll latency.
-              startTimedSpokenCaptionProgress(chunkText, decoded.duration);
-              startBargeInMonitor();
-            })
-            .catch((err) => {
-              // Cancelled by us — do not fall back to synth, do not resolve here
-              // (cancelAllAudio already resolved this Promise via speakResolverRef).
-              if (ac.signal.aborted || (err instanceof Error && err.name === 'AbortError')) {
-                console.info('[VoiceTrace] streamTTS aborted', { index });
-                return;
-              }
-              console.warn('[VoiceTrace] streamTTS chunk failed → synth fallback', { index, err: err instanceof Error ? err.message : String(err) });
-              if (index === 0) {
-                // No ElevenLabs audio played yet — fall back to synth for the
-                // full text so the user still hears the answer.
-                synthFallback(text);
-              } else {
-                // Some ElevenLabs audio already played; switching voices
-                // mid-thought is jarring. Resolve cleanly and let the user
-                // re-ask if they need the rest.
-                stopBargeInMonitor();
-                stopSpokenCaptionProgress(true);
-                window.VoiceBus._stopLoop();
-                window.VoiceBus.setState('idle');
-                speakingRef.current = false;
-                if (speakResolverRef.current === resolve) speakResolverRef.current = null;
-                speakAbortRef.current = null;
-                resolve();
-              }
-            });
-        };
-
-        playChunkAt(0);
-      });
-    },
-    [
-      attachSynthSpokenCaptionProgress,
-      cancelAllAudio,
-      startBargeInMonitor,
-      startTimedSpokenCaptionProgress,
-      stopBargeInMonitor,
-      stopSpokenCaptionProgress,
-    ]
-  );
-
-  // speak — public wrapper around streamTTS
+  // speak — scripted lines (tour narration) go through Grok Voice force_message
+  // so they use the same custom voice as the live conversation.
   const speak = useCallback(
-    (text: string): Promise<void> => {
-      if (!text) return Promise.resolve();
-      return streamTTS(text);
+    async (text: string): Promise<void> => {
+      if (!text) return;
+      const session = grokSessionRef.current ?? await ensureGrokSession();
+      if (!session) return;
+      window.VoiceBus.setState('speaking');
+      speakingTextRef.current = text;
+      speakingRef.current = true;
+      const words = tokenizeSpeechWords(text);
+      setCaption(spokenCaptionWindow(words, 0));
+      startTimedSpokenCaptionProgress(text, Math.max(1, text.length * 0.06));
+      try {
+        session.interrupt();
+        await session.speakVerbatim(text);
+      } catch {
+        // Interrupted, timed out, or the socket closed. The caller checks turn generation.
+      } finally {
+        stopSpokenCaptionProgress(true);
+        speakingRef.current = false;
+        speakingTextRef.current = '';
+      }
     },
-    [streamTTS]
+    [ensureGrokSession, startTimedSpokenCaptionProgress, stopSpokenCaptionProgress],
   );
 
   const resumeListeningIfActive = useCallback(() => {
@@ -1129,157 +997,16 @@ export function useVoiceController({
     [dispatchToolCall, resumeListeningIfActive, speak, waitForTourStep],
   );
 
-  // handleUserTurn — ALL utterances go to Grok (except local stop for instant response).
-  // The optional `greet` path drives the first speak-then-listen turn when
-  // voice mode opens.
-  // - kind 'user' (default): existing path. Utterance is the user's transcription.
-  //   It IS appended to history and the LLM sees it as a real user turn.
-  // - kind 'greet': utterance is a synthetic kickoff cue (see
-  //   buildVoiceOpeningPrompt — phrased as an ambient cue, not an
-  //   announcement, so Grok's reply stays nonchalant). It is NOT appended to
-  //   history because the user never said it. Only the assistant's response
-  //   goes to history.
-  const handleUserTurn = useCallback(
-    async (utterance: string, opts: { kind?: VoiceTurnKind } = {}) => {
-      const kind = opts.kind ?? 'user';
-      clearInitialGreetTimer();
-
-      // Close Scribe connection immediately to prevent TTS echo feedback loop.
-      // Without this, Scribe hears Parz's TTS response via the mic and transcribes
-      // it as another user utterance, causing double/overlapping speech.
-      try { connectionRef.current?.close(); } catch {}
-      connectionRef.current = null;
-      try { detachMicRef.current?.(); detachMicRef.current = null; } catch {}
-
-      // Phase 22: cancel any in-flight TTS/fetch from a prior turn so a slow previous
-      // response doesn't keep talking over this one. Closes overlap mode O-4.
-      cancelAllAudio();
-      const stoppedTourId = tourGenerationRef.current;
-      tourGenerationRef.current += 1;
-      if (stoppedTourId > 0) {
-        window.VoiceBus.emit('site-control-tour-end', { tourId: stoppedTourId });
-      }
-
-      // Phase 22: bump the turn generation. Older parallel turns (e.g. Web Speech
-      // multi-final firing handleUserTurn twice — overlap mode O-3) check this and
-      // bail at await checkpoints once a newer turn has started.
-      turnGenerationRef.current += 1;
+  const applyIncomingTools = useCallback(
+    async (response: GrokVoiceResponse) => {
       const myTurn = turnGenerationRef.current;
-
-      window.VoiceBus.setState('thinking');
-      setCaption('Thinking\u2026');
-
-      // Local stop-intent fast path is for real user utterances only — a greet
-      // trigger is never a stop, so skip the check when kind === 'greet'.
-      if (kind === 'user') {
-        const u = utterance.toLowerCase();
-        if (isStopIntent(u)) {
-          stopAll();
-          return;
-        }
-      }
-
-      // Everything else goes to Grok — it decides intent via tool calls
+      const kind = turnKindRef.current;
+      const session = grokSessionRef.current;
       try {
-        // For real user turns: append to history so the LLM sees it.
-        // For greet: do NOT append — the trigger is synthetic, the user never said it.
-        if (shouldPersistVoiceTurn(kind)) {
-          historyRef.current = [
-            ...historyRef.current,
-            { role: 'user', content: utterance },
-          ];
-        }
-
-        const baseMessages = historyRef.current.slice(-20).map((m) => ({
-          id: Math.random().toString(36).slice(2),
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-          parts: [{ type: 'text' as const, text: m.content }],
-        }));
-
-        // For greet: append the synthetic trigger as a one-shot user message
-        // so the LLM has something to respond to. It is not in history.
-        const messages = kind === 'greet'
-          ? [
-              ...baseMessages,
-              {
-                id: Math.random().toString(36).slice(2),
-                role: 'user' as const,
-                content: utterance,
-                parts: [{ type: 'text' as const, text: utterance }],
-              },
-            ]
-          : baseMessages;
-
-        const streamState: VoiceStreamParseState = { responseText: '', toolCalls: [] };
-        const chatAc = new AbortController();
-        const chatTimeout = setTimeout(() => chatAc.abort(), VOICE_CHAT_RESPONSE_TIMEOUT_MS);
-        abortActiveChatRequest();
-        chatAbortRef.current = chatAc;
-        chatTimeoutRef.current = chatTimeout;
-
-        try {
-          const res = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages, isVoice: true }),
-            signal: chatAc.signal,
-          });
-
-          if (!res.ok) throw new Error(`/api/chat returned ${res.status}`);
-
-          const reader = res.body?.getReader();
-          const decoder = new TextDecoder();
-
-          // F-01: keep a leftover buffer between reads so JSON events that span
-          // chunk boundaries are not silently dropped by JSON.parse inside the catch.
-          if (reader) {
-            let buffer = '';
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) {
-                buffer += decoder.decode();
-                if (buffer) parseVoiceStreamLine(buffer, streamState);
-                break;
-              }
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop() ?? '';
-              for (const line of lines) parseVoiceStreamLine(line, streamState);
-            }
-          }
-        } finally {
-          if (chatAbortRef.current === chatAc) chatAbortRef.current = null;
-          if (chatTimeoutRef.current === chatTimeout) {
-            clearTimeout(chatTimeout);
-            chatTimeoutRef.current = null;
-          }
-        }
-
-        const { toolCalls } = streamState;
-        const clean = streamState.responseText.trim();
+        const { toolCalls } = response;
+        const clean = response.transcript.trim();
         let shouldStartTour = false;
 
-        // [VoiceTrace] Diagnostic logs to disambiguate the silent-audio
-        // failure mode in production. Filter the browser console for
-        // [VoiceTrace] to see the full turn lifecycle. Safe in production:
-        // logs only metadata (lengths, status codes, state names) — no
-        // transcripts or response text.
-        console.info('[VoiceTrace] stream complete', {
-          textLen: clean.length,
-          toolCount: toolCalls.length,
-          toolNames: toolCalls.map((t) => t.name),
-          turn: myTurn,
-        });
-
-        // Phase 22: bail if a newer turn started while we were fetching — closes O-3.
-        // Don't dispatch tools or speak; the user moved on to a different utterance.
-        if (myTurn !== turnGenerationRef.current) {
-          console.info('[VoiceTrace] turn stale, bailing before dispatch', { myTurn, current: turnGenerationRef.current });
-          return;
-        }
-
-        // Append assistant response to history (text portion)
         if (clean) {
           historyRef.current = [
             ...historyRef.current,
@@ -1287,21 +1014,20 @@ export function useVoiceController({
           ];
         }
 
-        // Execute tool calls from Grok
         for (const tc of toolCalls) {
+          session?.submitToolOutput(tc.callId, { ok: true, tool: tc.name });
           switch (tc.name) {
             case 'navigate':
               dispatchToolCall('navigate', tc.args);
               break;
-            case 'openProject': {
-              dispatchToolCall('openProject', { slug: (tc.args as { name: string }).name });
+            case 'openProject':
+              dispatchToolCall('openProject', { slug: String(tc.args.name ?? tc.args.slug ?? '') });
               break;
-            }
             case 'scrollTo':
-              dispatchToolCall('scrollTo', { selector: (tc.args as { section: string }).section });
+              dispatchToolCall('scrollTo', { selector: String(tc.args.section ?? tc.args.selector ?? '') });
               break;
             case 'scrollProjectPreview':
-              dispatchToolCall('scrollProjectPreview', { direction: (tc.args as { direction?: string }).direction ?? 'down' });
+              dispatchToolCall('scrollProjectPreview', { direction: typeof tc.args.direction === 'string' ? tc.args.direction : 'down' });
               break;
             case 'toggleTheme':
               dispatchToolCall('toggleTheme', {});
@@ -1319,12 +1045,8 @@ export function useVoiceController({
               dispatchToolCall('unsupportedIframeControl', {});
               break;
             case 'startTour':
-              // Trust Grok's tool-call decision. The system prompt at
-              // src/app/api/chat/route.ts already constrains startTour to
-              // explicit tour requests; a client-side keyword gate on top
-              // of that just discards Grok's reasoning. The `kind === 'user'`
-              // guard remains because synthetic greet kickoffs are not real
-              // user utterances and should never run a tour.
+              // Trust Grok's tool-call decision. Synthetic greet kickoffs are not
+              // real user utterances and should never run a tour.
               shouldStartTour = kind === 'user';
               break;
             case 'switchToText': {
@@ -1333,276 +1055,148 @@ export function useVoiceController({
               openTextChat(undefined, undefined, voiceSnapshot);
               activeRef.current = false;
               setActive(false);
-              return; // Don't speak after switching to text
+              return;
             }
             case 'endCall':
               if (clean) await speak(clean);
               stopAll();
               activeRef.current = false;
               setActive(false);
-              return; // Don't speak again after ending
+              return;
+            default:
+              break;
           }
         }
 
-        // Speak the text response (if any). If the model only emitted tool calls,
-        // return to listening after those actions. If there is neither text nor
-        // tools, stop at idle with a visible caption instead of silently looping
-        // back into listening.
-        if (clean) {
-          console.info('[VoiceTrace] branch=text-speak', { textLen: clean.length });
-          await speak(clean);
-          console.info('[VoiceTrace] text-speak resolved', { turn: myTurn });
+        if (myTurn !== turnGenerationRef.current) return;
+
+        if (toolCalls.length > 0 && !shouldStartTour) {
+          await session?.waitForPlayback();
           if (myTurn !== turnGenerationRef.current) return;
+          if (!clean && !response.hadAudio) {
+            const fallback = buildToolFallbackSpeech(toolCalls) || 'Got it.';
+            await speak(fallback);
+            if (myTurn !== turnGenerationRef.current) return;
+            historyRef.current = [
+              ...historyRef.current,
+              { role: 'assistant', content: fallback },
+            ];
+          }
+          window.VoiceBus.setState('idle');
+          setCaption('');
+          resumeListeningIfActive();
+          return;
+        }
+
+        if (clean || response.hadAudio) {
           if (shouldStartTour) {
+            await session?.waitForPlayback();
+            if (myTurn !== turnGenerationRef.current) return;
             await startGuidedTour(myTurn);
             return;
           }
+          await session?.waitForPlayback();
+          if (myTurn !== turnGenerationRef.current) return;
+          window.VoiceBus.setState('idle');
           resumeListeningIfActive();
         } else if (shouldStartTour) {
-          console.info('[VoiceTrace] branch=tour');
           await startGuidedTour(myTurn);
-        } else if (toolCalls.length > 0) {
-          // Why: post-tour, Grok occasionally returns tool calls without any
-          // narration even though the prompt asks for one. The earlier code
-          // dropped straight back to listening, which presented as a silent
-          // listening ↔ thinking loop (no audible 'speaking' state). Speak a
-          // brief tool-derived acknowledgement so the state actually transitions
-          // through speaking and the user gets audible confirmation before the
-          // next listen turn. Fall back to a neutral phrase when no tool in the
-          // batch has a user-visible acknowledgement (rare: ignored startTour).
-          const fallback = buildToolFallbackSpeech(toolCalls) || 'Got it.';
-          console.info('[VoiceTrace] branch=tool-fallback', { fallback, fallbackLen: fallback.length });
-          await speak(fallback);
-          console.info('[VoiceTrace] tool-fallback speak resolved', { turn: myTurn });
-          if (myTurn !== turnGenerationRef.current) return;
-          historyRef.current = [
-            ...historyRef.current,
-            { role: 'assistant', content: fallback },
-          ];
-          setCaption('');
-          resumeListeningIfActive();
         } else {
-          console.info('[VoiceTrace] branch=empty-no-text-no-tools');
           window.VoiceBus.setState('idle');
           setCaption("I couldn't get a spoken response. Tap to try again.");
         }
-      } catch (err) {
-        console.warn('[VoiceTrace] handleUserTurn threw', { err: err instanceof Error ? err.message : String(err), turn: myTurn });
+      } catch {
         if (myTurn !== turnGenerationRef.current) return;
-        // Surface a UI caption and stop at idle. Auto-resuming here creates the
-        // confusing listening/thinking loop when /api/chat or /api/tts is blocked.
         window.VoiceBus.setState('idle');
         setCaption('Voice connection hiccup. Tap to try again.');
       }
     },
     [
-      openTextChat,
-      speak,
-      stopAll,
-      dispatchToolCall,
-      cancelAllAudio,
-      clearInitialGreetTimer,
-      resumeListeningIfActive,
       buildVoiceSnapshot,
+      dispatchToolCall,
+      openTextChat,
+      resumeListeningIfActive,
+      speak,
       startGuidedTour,
-    ]
+      stopAll,
+    ],
+  );
+
+  onGrokResponseRef.current = (response) => {
+    void applyIncomingTools(response);
+  };
+
+  // handleUserTurn — text kickoffs (the opening greet, stop intent, and any
+  // leftover typed utterance) enter the live Grok Voice session. Spoken user
+  // audio is handled by the realtime socket itself.
+  const handleUserTurn = useCallback(
+    async (utterance: string, opts: { kind?: VoiceTurnKind } = {}) => {
+      const kind = opts.kind ?? 'user';
+      turnKindRef.current = kind;
+      clearInitialGreetTimer();
+
+      const stoppedTourId = tourGenerationRef.current;
+      tourGenerationRef.current += 1;
+      if (stoppedTourId > 0) {
+        window.VoiceBus.emit('site-control-tour-end', { tourId: stoppedTourId });
+      }
+
+      turnGenerationRef.current += 1;
+      const myTurn = turnGenerationRef.current;
+
+      if (kind === 'user') {
+        const u = utterance.toLowerCase();
+        if (isStopIntent(u)) {
+          stopAll();
+          return;
+        }
+      }
+
+      window.VoiceBus.setState('thinking');
+      setCaption('Thinking\u2026');
+
+      try {
+        if (shouldPersistVoiceTurn(kind)) {
+          historyRef.current = [
+            ...historyRef.current,
+            { role: 'user', content: utterance },
+          ];
+        }
+        const session = await ensureGrokSession();
+        if (myTurn !== turnGenerationRef.current || !session) return;
+        session.sendUserText(utterance);
+      } catch {
+        if (myTurn !== turnGenerationRef.current) return;
+        window.VoiceBus.setState('idle');
+        setCaption('Voice connection hiccup. Tap to try again.');
+      }
+    },
+    [clearInitialGreetTimer, ensureGrokSession, stopAll],
   );
 
   handleUserTurnRef.current = handleUserTurn;
 
-  // startListeningFallback — existing Web Speech API STT, called when ElevenLabs fails (per D-02)
-  const startListeningFallback = useCallback(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      setCaption("Speech recognition isn't available in this browser. Try Chrome or Edge.");
-      window.VoiceBus.setState('idle');
-      return;
-    }
-
-    try { connectionRef.current?.close(); } catch {}
-    stopBargeInMonitor();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const r = new SR() as any;
-    r.continuous = false;
-    r.interimResults = true;
-    r.lang = 'en-US';
-
-    r.onstart = () => {
-      micPermissionGrantedRef.current = true;
-      setMicDenied(false);
-      window.VoiceBus.setState('listening');
-      setCaption('Listening\u2026');
-      window.VoiceBus.attachMic().then((detach: () => void) => {
-        if (window.VoiceBus.state !== 'listening') {
-          try { detach(); } catch {}
-          return;
-        }
-        detachMicRef.current = detach;
-      });
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    r.onresult = (ev: any) => {
-      let interim = '';
-      let finalT = '';
-      for (let i = ev.resultIndex; i < ev.results.length; i++) {
-        const t = ev.results[i][0].transcript;
-        if (ev.results[i].isFinal) finalT += t;
-        else interim += t;
-      }
-      setTranscript(interim || finalT);
-      setCaption(interim || finalT);
-      if (finalT) handleUserTurn(finalT.trim());
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    r.onerror = (e: any) => {
-      if (e.error === 'not-allowed') {
-        micPermissionGrantedRef.current = false;
-        setMicDenied(true);
-        setCaption('Mic access denied. Click to retry.');
-      } else {
-        setCaption('Mic error: ' + e.error);
-      }
-      window.VoiceBus.setState('idle');
-    };
-
-    r.onend = () => {
-      try {
-        detachMicRef.current?.();
-        detachMicRef.current = null;
-      } catch {}
-      if (window.VoiceBus.state === 'listening') {
-        window.VoiceBus.setState('idle');
-        setCaption('');
-      }
-    };
-
-    connectionRef.current = r as unknown as RealtimeConnection;
-    try { r.start(); } catch (e) {
-      setCaption("Couldn't start mic: " + (e as Error).message);
-    }
-  }, [handleUserTurn, stopBargeInMonitor]);
-
-  // startListening — ElevenLabs Scribe v2 primary STT, Web Speech API fallback (per D-01, D-02)
   const startListening = useCallback(async () => {
     if (startingListenRef.current || window.VoiceBus.state === 'listening') return;
     startingListenRef.current = true;
     const myListen = ++listenGenerationRef.current;
-    stopBargeInMonitor();
     window.VoiceBus.setState('listening');
     setCaption('Listening\u2026');
-
-    // Create sttCtx BEFORE first await — keeps creation in user gesture frame
-    // (RESEARCH.md Pitfall 3: AudioContext autoplay policy blocks creation after await)
-    // Per D-06: separate 16kHz AudioContext avoids TTS echo on VoiceBus._ctx
-    let sttCtx: AudioContext | null = new AudioContext({ sampleRate: 16000 });
-
     try {
-      // 1. Fetch single-use token — never cache, fresh per session (per D-03, D-04)
-      const res = await fetch('/api/stt-token', { method: 'POST' });
-      if (!res.ok) throw new Error(`stt-token ${res.status}`);
-      const { token } = await res.json() as { token: string };
-      if (myListen !== listenGenerationRef.current || !activeRef.current) {
-        sttCtx.close().catch(() => {});
-        sttCtx = null;
+      const session = await ensureGrokSession();
+      if (myListen !== listenGenerationRef.current || !activeRef.current || !session) {
+        if (myListen === listenGenerationRef.current) window.VoiceBus.setState('idle');
         return;
       }
-
-      // 2. Connect Scribe — SDK manages getUserMedia internally (per D-05)
-      const connection = Scribe.connect({
-        token,
-        modelId: 'scribe_v2_realtime',
-        commitStrategy: CommitStrategy.VAD,
-        vadSilenceThresholdSecs: 1.2,
-        languageCode: 'en',
-        microphone: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-
-      // VOICE-06: arm 5s guard against silent Scribe stall. If SESSION_STARTED
-      // never fires, close the connection and fall back to Web Speech. Set
-      // ref to null BEFORE close() to break CLOSE-handler reentrancy.
-      sessionGuardRef.current = setTimeout(() => {
-        sessionGuardRef.current = null;
-        try { connection.close(); } catch {}
-        setCaption('Speech service slow \u2014 switching to fallback');
-        startListeningFallback();
-      }, 5000);
-
-      // 3. Wire transcript events
-      connection.on(RealtimeEvents.SESSION_STARTED, () => {
-        if (myListen !== listenGenerationRef.current || !activeRef.current) {
-          try { connection.close(); } catch {}
-          return;
-        }
-        clearSessionGuard();
-        micPermissionGrantedRef.current = true;
-        setMicDenied(false);
-        // Per D-06: attach VoiceBus mic AFTER session confirmed — mirrors existing r.onstart pattern
-        window.VoiceBus.attachMic().then((detach: () => void) => {
-          if (window.VoiceBus.state !== 'listening') { detach(); return; }
-          detachMicRef.current = detach;
-        });
-      });
-
-      connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
-        setTranscript((data as { text: string }).text);
-        setCaption((data as { text: string }).text);
-      });
-
-      connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
-        const text = (data as { text: string }).text.trim();
-        if (text) handleUserTurn(text);
-      });
-
-      connection.on(RealtimeEvents.AUTH_ERROR, () => {
-        clearSessionGuard();
-        micPermissionGrantedRef.current = false;
-        setMicDenied(true);
-        setCaption('Mic access denied. Click to retry.');
-        window.VoiceBus.setState('idle');
-        connection.close();
-      });
-
-      connection.on(RealtimeEvents.ERROR, () => {
-        clearSessionGuard();
-        window.VoiceBus.setState('idle');
-        connection.close();
-        startListeningFallback(); // per D-02: silent fallback, no user notification
-      });
-
-      connection.on(RealtimeEvents.CLOSE, () => {
-        sttCtx?.close().catch(() => {});
-        sttCtx = null;
-        detachMicRef.current?.();
-        detachMicRef.current = null;
-        if (window.VoiceBus.state === 'listening') window.VoiceBus.setState('idle');
-      });
-
-      connectionRef.current = connection;
-
+      window.VoiceBus.setState('listening');
     } catch {
-      // VOICE-06: clear guard if token fetch failed (guard may not have been armed
-      // yet, but clearSessionGuard is idempotent).
-      clearSessionGuard();
-      // Token fetch failed or SDK unavailable — silent fallback to Web Speech API (per D-02)
-      sttCtx?.close().catch(() => {});
-      sttCtx = null;
-      if (myListen === listenGenerationRef.current && activeRef.current) {
-        startListeningFallback();
-      }
+      if (myListen !== listenGenerationRef.current) return;
+      window.VoiceBus.setState('idle');
+      setCaption('Voice connection hiccup. Tap to try again.');
     } finally {
-      if (myListen === listenGenerationRef.current) {
-        startingListenRef.current = false;
-      }
+      if (myListen === listenGenerationRef.current) startingListenRef.current = false;
     }
-  }, [handleUserTurn, startListeningFallback, stopBargeInMonitor]);
+  }, [ensureGrokSession]);
 
   startListeningRef.current = startListening;
 
@@ -1630,8 +1224,22 @@ export function useVoiceController({
     setActive(true);
     setCaption('');
     setTranscript('');
-    if (typeof window !== 'undefined' && window.VoiceBus) {
-      try { window.VoiceBus._getCtx(); } catch {}
+    if (typeof window !== 'undefined') {
+      const AudioContextCtor = window.AudioContext
+        || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextCtor) {
+        if (!playbackCtxRef.current) {
+          playbackCtxRef.current = new AudioContextCtor({ sampleRate: GROK_VOICE_SAMPLE_RATE });
+        }
+        if (!micCtxRef.current) {
+          micCtxRef.current = new AudioContextCtor({ sampleRate: GROK_VOICE_SAMPLE_RATE });
+        }
+        void playbackCtxRef.current.resume();
+        void micCtxRef.current.resume();
+      }
+      if (window.VoiceBus) {
+        try { window.VoiceBus._getCtx(); } catch {}
+      }
     }
     initialGreetTimerRef.current = setTimeout(() => {
       initialGreetTimerRef.current = null;
@@ -1678,10 +1286,8 @@ export function useVoiceController({
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !isTypingTarget(e.target)) {
-        connectionRef.current?.close();
-        connectionRef.current = null;
-      }
+      if (e.code !== 'Space' || isTypingTarget(e.target)) return;
+      // Server VAD owns turn taking. Releasing Space must not hang up the session.
     };
 
     window.addEventListener('keydown', handleKeyDown);

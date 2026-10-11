@@ -11,12 +11,11 @@ export const experienceData: ExperienceEntry[] = [
   {
     timeline: "2026 - Present",
     title: "AI Enablement Engineer",
-    company: "InfiniteChoice",
+    company: "Voyza",
     descriptions: [
       "Building Voyza, an AI-first hotel booking platform, with a public-safe focus on practical AI enablement, product workflows, and user-facing intelligence.",
     ],
     skills: ["AI Enablement", "Product Engineering", "AI Workflows", "Full-Stack"],
-    url: "https://www.linkedin.com/company/infinitechoice/",
   },
   {
     timeline: "June 2025 - December 2025",

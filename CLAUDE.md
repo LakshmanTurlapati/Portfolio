@@ -13,7 +13,7 @@ The portfolio showcases projects, experience, education, a Parz AI chat persona,
 - TypeScript
 - Tailwind CSS v4
 - AI SDK with xAI
-- ElevenLabs STT/TTS
+- Grok Voice speech-to-speech
 - Vitest for unit tests
 - Playwright for browser tests
 
@@ -36,8 +36,8 @@ Server-side secrets must stay out of the client bundle.
 
 Required:
 
-- `XAI_API_KEY` for chat and site-control responses
-- `ELEVENLABS_API_KEY` for voice STT/TTS features
+- `XAI_API_KEY` for chat and Grok Voice
+- `GROK_VOICE_ID` optional override for the custom Grok voice (defaults to the portfolio voice)
 
 Optional:
 
