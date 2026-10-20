@@ -7,6 +7,13 @@ const DIRECT_ALLOWED_HOSTS = new Set([
   'www.full-selfbrowsing.com',
   'gitfly.ai',
   'www.gitfly.ai',
+  'cmd-k.site',
+  'www.cmd-k.site',
+  'iconicchargers.com',
+  'www.iconicchargers.com',
+  'software-3.com',
+  'www.software-3.com',
+  'shelf-scanner.fly.dev',
 ]);
 
 function normalizeUrl(value: string): string | null {

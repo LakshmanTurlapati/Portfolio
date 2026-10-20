@@ -15,6 +15,12 @@ describe('project resolution safety', () => {
     ['GitFly', 'GitFly', 'https://gitfly.ai'],
     ['Review Gate', 'Review Gate', 'https://github.com/LakshmanTurlapati/Review-Gate'],
     ['T2S', 'T2S CLI', 'https://github.com/LakshmanTurlapati/t2s-cli'],
+    ['Cmd-K', 'Cmd-K', 'https://www.cmd-k.site'],
+    ['Lyra', 'Lyra', 'https://github.com/LakshmanTurlapati/Lyra'],
+    ['Drawgram', 'Drawgram', 'https://github.com/LakshmanTurlapati/drawgram'],
+    ['Iconic Chargers', 'Iconic Chargers', 'https://iconicchargers.com'],
+    ['Software 3.0', 'Software 3.0', 'https://www.software-3.com'],
+    ['ShelfScanner', 'ShelfScanner', 'https://shelf-scanner.fly.dev'],
     ['Parz-AI', 'Parz-AI', 'https://github.com/LakshmanTurlapati/Parz-AI'],
   ])('resolves %s to canonical project target', (alias, expectedName, expectedUrl) => {
     const project = resolveProject(alias);

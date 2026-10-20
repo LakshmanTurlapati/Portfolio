@@ -21,6 +21,7 @@ const UNEMBEDDABLE_HOSTS = [
   'github.com', 'githubusercontent.com', 'chromewebstore.google.com',
   'chrome.google.com', 'docs.google.com', 'linkedin.com',
   'youtube.com', 'youtu.be', 'parzival.live',
+  'iconicchargers.com',
 ];
 
 function youtubeEmbedId(url: string): string | null {
